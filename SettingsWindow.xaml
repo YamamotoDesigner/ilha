@@ -2,9 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Ilha"
-        Title="Configurações do Ilha" Width="860" Height="620" MinWidth="720" MinHeight="460"
-        WindowStartupLocation="CenterScreen" ThemeMode="Dark"
-        Background="#121214" Foreground="#F5F5F7"
+        Title="{local:T 'Configurações do Ilha'}" Width="860" Height="620" MinWidth="720" MinHeight="460"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource WinBg}" Foreground="{DynamicResource WinFg}"
         FontFamily="{DynamicResource UiFont}" FontSize="13.5"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="Grayscale">
 
@@ -21,13 +21,13 @@
         <Style x:Key="Section" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{StaticResource Text3}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text3}"/>
             <Setter Property="Margin" Value="4,22,0,8"/>
         </Style>
 
         <Style x:Key="Group" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource CardBg}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource Line}"/>
+            <Setter Property="Background" Value="{DynamicResource CardBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="12"/>
         </Style>
@@ -35,12 +35,12 @@
         <Style x:Key="Divider" TargetType="Border">
             <Setter Property="Height" Value="1"/>
             <Setter Property="Margin" Value="16,0,0,0"/>
-            <Setter Property="Background" Value="{StaticResource Line}"/>
+            <Setter Property="Background" Value="{DynamicResource Line}"/>
         </Style>
 
         <Style x:Key="Hint" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="{StaticResource Text3}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text3}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="Margin" Value="4,8,4,0"/>
         </Style>
@@ -49,7 +49,7 @@
         <Style x:Key="NavItem" TargetType="RadioButton">
             <Setter Property="GroupName" Value="Nav"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="{StaticResource Text2}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text2}"/>
             <Setter Property="Height" Value="34"/>
             <Setter Property="Margin" Value="0,0,0,2"/>
             <Setter Property="FontSize" Value="13"/>
@@ -59,25 +59,22 @@
                     <ControlTemplate TargetType="RadioButton">
                         <Grid>
                             <Border x:Name="Sel" CornerRadius="9" Background="{DynamicResource Accent}" Opacity="0"/>
-                            <Border x:Name="Hover" CornerRadius="9" Background="White" Opacity="0"/>
+                            <Border x:Name="Hover" CornerRadius="9" Background="{DynamicResource Ink_FF}" Opacity="0"/>
                             <DockPanel Margin="10,0">
-                                <Border x:Name="IconBox" Width="22" Height="22" CornerRadius="6" Background="#26FFFFFF"
-                                        VerticalAlignment="Center">
-                                    <local:Glyph Data="{TemplateBinding Tag}" Size="14"/>
-                                </Border>
+                                <local:Glyph x:Name="NavIcon" Data="{TemplateBinding Tag}" Size="17" Filled="True" Thickness="0"
+                                             VerticalAlignment="Center"/>
                                 <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center"/>
                             </DockPanel>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Hover" Property="Opacity" Value="0.05"/>
-                                <Setter Property="Foreground" Value="#F5F5F7"/>
+                                <Setter Property="Foreground" Value="{DynamicResource WinFg}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Sel" Property="Opacity" Value="0.16"/>
-                                <Setter TargetName="IconBox" Property="Background" Value="{DynamicResource Accent}"/>
-                                <Setter TargetName="IconBox" Property="TextElement.Foreground" Value="#111111"/>
-                                <Setter Property="Foreground" Value="#F5F5F7"/>
+                                <Setter TargetName="NavIcon" Property="Foreground" Value="{DynamicResource Accent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource WinFg}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -88,7 +85,7 @@
         <!-- Linha com interruptor à direita -->
         <Style x:Key="Switch" TargetType="CheckBox">
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#F5F5F7"/>
+            <Setter Property="Foreground" Value="{DynamicResource WinFg}"/>
             <Setter Property="Padding" Value="16,11"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -96,7 +93,7 @@
                         <Border Background="Transparent" Padding="{TemplateBinding Padding}">
                             <DockPanel>
                                 <Border x:Name="Track" DockPanel.Dock="Right" Width="40" Height="23" CornerRadius="7"
-                                        Background="#3A3A40" Margin="12,0,0,0">
+                                        Background="{DynamicResource ControlOff}" Margin="12,0,0,0">
                                     <Border x:Name="Knob" Width="19" Height="19" CornerRadius="5" Background="White"
                                             HorizontalAlignment="Left" Margin="2,0,0,0">
                                         <Border.Effect>
@@ -149,21 +146,44 @@
             </Setter>
         </Style>
 
+        <!-- Controle segmentado (idioma) -->
+        <Style x:Key="Segment" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinWidth" Value="92"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text2}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bg" CornerRadius="7" Padding="14,5" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{DynamicResource CardBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource WinFg}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Cartão de escolha com prévia desenhada (Vidro/Sólido, Colada/Flutuante, Lateral/Topo) -->
         <Style x:Key="ChoiceCard" TargetType="RadioButton">
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#F5F5F7"/>
+            <Setter Property="Foreground" Value="{DynamicResource WinFg}"/>
             <Setter Property="Margin" Value="0,0,12,0"/>
             <Setter Property="Width" Value="170"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
                         <Grid>
-                            <Border x:Name="Frame" CornerRadius="13" Background="{StaticResource CardBg}"
-                                    BorderBrush="{StaticResource Line}" BorderThickness="1.5" Padding="8,8,8,10">
+                            <Border x:Name="Frame" CornerRadius="13" Background="{DynamicResource CardBg}"
+                                    BorderBrush="{DynamicResource Line}" BorderThickness="1.5" Padding="8,8,8,10">
                                 <ContentPresenter/>
                             </Border>
-                            <Border x:Name="Hover" CornerRadius="13" Background="White" Opacity="0" IsHitTestVisible="False"/>
+                            <Border x:Name="Hover" CornerRadius="13" Background="{DynamicResource Ink_FF}" Opacity="0" IsHitTestVisible="False"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -200,7 +220,7 @@
         </Style>
         <Style x:Key="ChoiceHint" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11.5"/>
-            <Setter Property="Foreground" Value="{StaticResource Text3}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text3}"/>
             <Setter Property="Margin" Value="2,1,0,0"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
@@ -232,7 +252,7 @@
                             </Track.DecreaseRepeatButton>
                             <Track.IncreaseRepeatButton>
                                 <RepeatButton Style="{StaticResource SliderFill}" Command="Slider.IncreaseLarge"
-                                              Background="#3A3A40"/>
+                                              Background="{DynamicResource ControlOff}"/>
                             </Track.IncreaseRepeatButton>
                             <Track.Thumb>
                                 <Thumb>
@@ -267,7 +287,7 @@
         <Style x:Key="Value" TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="TextAlignment" Value="Right"/>
-            <Setter Property="Foreground" Value="{StaticResource Text2}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text2}"/>
             <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
         </Style>
 
@@ -279,12 +299,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Rectangle x:Name="Ring" Stroke="#40FFFFFF" StrokeThickness="1" RadiusX="7" RadiusY="7"
+                        <Rectangle x:Name="Ring" Stroke="{DynamicResource Ink_40}" StrokeThickness="1" RadiusX="7" RadiusY="7"
                                    Fill="{TemplateBinding Background}"/>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Ring" Property="StrokeThickness" Value="2.5"/>
-                                <Setter TargetName="Ring" Property="Stroke" Value="#B3FFFFFF"/>
+                                <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource Ink_B3}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -300,43 +320,43 @@
         </Grid.ColumnDefinitions>
 
         <!-- ── Barra lateral ── -->
-        <Border Background="#18181B" BorderBrush="{StaticResource Line}" BorderThickness="0,0,1,0">
+        <Border Background="{DynamicResource SideBg}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
             <DockPanel Margin="14,16,14,16">
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,2,0,22">
                     <Image Source="pack://application:,,,/Ilha.ico" Width="34" Height="34"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                     <StackPanel Margin="11,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="Ilha" FontSize="16" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="VersionText" FontSize="11.5" Foreground="{StaticResource Text3}"/>
+                        <TextBlock Text="{local:T 'Ilha'}" FontSize="16" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="VersionText" FontSize="11.5" Foreground="{DynamicResource Text3}"/>
                     </StackPanel>
                 </StackPanel>
 
-                <TextBlock DockPanel.Dock="Bottom" Text="Feito com carinho no Brasil" FontSize="11"
-                           Foreground="{StaticResource Text3}" Margin="8,0,0,0"/>
+                <TextBlock DockPanel.Dock="Bottom" Text="{local:T 'Feito com carinho no Brasil'}" FontSize="11"
+                           Foreground="{DynamicResource Text3}" Margin="8,0,0,0"/>
                 <Button DockPanel.Dock="Bottom" Style="{StaticResource SoftButton}" Margin="0,0,0,12"
                         HorizontalContentAlignment="Left" Padding="10,9" Click="Support_Click">
                     <StackPanel Orientation="Horizontal">
                         <Border Width="22" Height="22" CornerRadius="6" Background="#33FF5C7C">
                             <local:Glyph Data="{StaticResource IcoHeart}" Filled="True" Size="13" Foreground="#FF5C7C"/>
                         </Border>
-                        <TextBlock Text="Apoie o Ilha" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{local:T 'Apoie o Ilha'}" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
 
                 <StackPanel>
-                    <RadioButton Style="{StaticResource NavItem}" Content="Geral" Tag="{StaticResource IcoSettings}"
+                    <RadioButton Style="{StaticResource NavItem}" Content="{local:T 'Geral'}" Tag="{StaticResource FillSettings}"
                                  x:Name="NavGeneral" IsChecked="True" Checked="Nav_Checked"/>
-                    <RadioButton Style="{StaticResource NavItem}" Content="Aparência" Tag="{StaticResource IcoPalette}"
+                    <RadioButton Style="{StaticResource NavItem}" Content="{local:T 'Aparência'}" Tag="{StaticResource FillPalette}"
                                  x:Name="NavLook" Checked="Nav_Checked"/>
-                    <RadioButton Style="{StaticResource NavItem}" Content="Ilha e posição" Tag="{StaticResource IcoIsland}"
+                    <RadioButton Style="{StaticResource NavItem}" Content="{local:T 'Ilha e posição'}" Tag="{StaticResource FillIsland}"
                                  x:Name="NavIsland" Checked="Nav_Checked"/>
-                    <RadioButton Style="{StaticResource NavItem}" Content="Recursos" Tag="{StaticResource IcoGrid}"
+                    <RadioButton Style="{StaticResource NavItem}" Content="{local:T 'Recursos'}" Tag="{StaticResource FillGrid}"
                                  x:Name="NavFeatures" Checked="Nav_Checked"/>
-                    <RadioButton Style="{StaticResource NavItem}" Content="Avisos" Tag="{StaticResource IcoBell}"
+                    <RadioButton Style="{StaticResource NavItem}" Content="{local:T 'Avisos'}" Tag="{StaticResource FillBell}"
                                  x:Name="NavAlerts" Checked="Nav_Checked"/>
-                    <RadioButton Style="{StaticResource NavItem}" Content="Atualizações" Tag="{StaticResource IcoRefresh}"
+                    <RadioButton Style="{StaticResource NavItem}" Content="{local:T 'Atualizações'}" Tag="{StaticResource FillRefresh}"
                                  x:Name="NavUpdates" Checked="Nav_Checked"/>
-                    <RadioButton Style="{StaticResource NavItem}" Content="Sobre" Tag="{StaticResource IcoInfo}"
+                    <RadioButton Style="{StaticResource NavItem}" Content="{local:T 'Sobre'}" Tag="{StaticResource FillInfo}"
                                  x:Name="NavAbout" Checked="Nav_Checked"/>
                 </StackPanel>
             </DockPanel>
@@ -351,12 +371,12 @@
 
             <DockPanel Margin="32,18,12,0">
                 <Button DockPanel.Dock="Right" Style="{StaticResource CloseButton}" VerticalAlignment="Top"
-                        Click="Close_Click" ToolTip="Fechar">
+                        Click="Close_Click" ToolTip="{local:T 'Fechar'}">
                     <local:Glyph Data="{StaticResource IcoClose}" Size="14"/>
                 </Button>
                 <StackPanel Margin="0,10,0,0">
-                    <TextBlock x:Name="PageTitle" Text="Geral" FontSize="24" FontWeight="SemiBold"/>
-                    <TextBlock x:Name="PageSubtitle" FontSize="13" Foreground="{StaticResource Text2}" Margin="0,3,0,0"/>
+                    <TextBlock x:Name="PageTitle" Text="{local:T 'Geral'}" FontSize="24" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="PageSubtitle" FontSize="13" Foreground="{DynamicResource Text2}" Margin="0,3,0,0"/>
                 </StackPanel>
             </DockPanel>
 
@@ -364,15 +384,38 @@
                 <Grid Margin="32,0,32,32" MaxWidth="640">
 
                     <!-- ═══ Geral ═══ -->
-                    <StackPanel x:Name="PageGeneral" Tag="Como a ilha se comporta no dia a dia.">
-                        <TextBlock Text="ABRIR E FECHAR" Style="{StaticResource Section}"/>
+                    <StackPanel x:Name="PageGeneral" Tag="{local:T 'Como a ilha se comporta no dia a dia.'}">
+                        <TextBlock Text="{local:T 'IDIOMA'}" Style="{StaticResource Section}"/>
+                        <Border Style="{StaticResource Group}">
+                            <StackPanel>
+                                <DockPanel Margin="16,10">
+                                    <Border DockPanel.Dock="Right" CornerRadius="9" Padding="2" Background="{DynamicResource Control}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <RadioButton x:Name="LangPt" Style="{StaticResource Segment}" GroupName="Lang"
+                                                         Content="Português" Checked="Lang_Checked"/>
+                                            <RadioButton x:Name="LangEn" Style="{StaticResource Segment}" GroupName="Lang"
+                                                         Content="English" Checked="Lang_Checked"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Text="{local:T 'Idioma do app'}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <DockPanel x:Name="RestartRow" Margin="16,0,16,10" Visibility="Collapsed">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Padding="12,5"
+                                            Content="{local:T 'Reiniciar agora'}" Click="Restart_Click"/>
+                                    <TextBlock Text="{local:T 'O Ilha reinicia para trocar o idioma.'}" Foreground="{DynamicResource Text2}"
+                                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="{local:T 'ABRIR E FECHAR'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
                                 <Grid Style="{StaticResource SliderRow}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Atraso para abrir" Style="{StaticResource RowLabel}"/>
+                                    <TextBlock Text="{local:T 'Atraso para abrir'}" Style="{StaticResource RowLabel}"/>
                                     <Slider x:Name="HoverSlider" Grid.Column="1" Minimum="0" Maximum="1000" TickFrequency="50"
                                             IsSnapToTickEnabled="True" Value="{Binding HoverDelayMs}"/>
                                     <TextBlock Grid.Column="2" Style="{StaticResource Value}"
@@ -383,50 +426,76 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Atraso para fechar" Style="{StaticResource RowLabel}"/>
+                                    <TextBlock Text="{local:T 'Atraso para fechar'}" Style="{StaticResource RowLabel}"/>
                                     <Slider x:Name="CollapseSlider" Grid.Column="1" Minimum="100" Maximum="2000" TickFrequency="50"
                                             IsSnapToTickEnabled="True" Value="{Binding CollapseDelayMs}"/>
                                     <TextBlock Grid.Column="2" Style="{StaticResource Value}"
                                                Text="{Binding Value, ElementName=CollapseSlider, StringFormat={}{0:0} ms}"/>
                                 </Grid>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Atalho Ctrl + Alt + N abre e fecha" IsChecked="{Binding HotkeyEnabled}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Atalho Ctrl + Alt + N abre e fecha'}" IsChecked="{Binding HotkeyEnabled}"/>
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="TELA" Style="{StaticResource Section}"/>
+                        <TextBlock Text="{local:T 'TELA'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
                                 <DockPanel Margin="16,9">
-                                    <TextBlock Text="Monitor" Width="180" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{local:T 'Monitor'}" Width="180" VerticalAlignment="Center"/>
                                     <ComboBox x:Name="MonitorCombo" DisplayMemberPath="Label" SelectedValuePath="Device"
                                               SelectedValue="{Binding MonitorDevice}"/>
                                 </DockPanel>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Esconder com app em tela cheia" IsChecked="{Binding HideOnFullscreen}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Esconder com app em tela cheia'}" IsChecked="{Binding HideOnFullscreen}"/>
                             </StackPanel>
                         </Border>
-                        <TextBlock Style="{StaticResource Hint}" Text="Com a ilha flutuante, ela fica no monitor para onde você arrastar."/>
+                        <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Com a ilha flutuante, ela fica no monitor para onde você arrastar.'}"/>
 
-                        <TextBlock Text="RELÓGIO" Style="{StaticResource Section}"/>
+                        <TextBlock Text="{local:T 'RELÓGIO'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
-                                <CheckBox Style="{StaticResource Switch}" Content="Formato de 24 horas" IsChecked="{Binding Use24h}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Formato de 24 horas'}" IsChecked="{Binding Use24h}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Mostrar segundos" IsChecked="{Binding ShowSeconds}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Mostrar segundos'}" IsChecked="{Binding ShowSeconds}"/>
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="SISTEMA" Style="{StaticResource Section}"/>
+                        <TextBlock Text="{local:T 'SISTEMA'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
-                            <CheckBox x:Name="StartupCheck" Style="{StaticResource Switch}" Content="Abrir o Ilha ao ligar o computador"
+                            <CheckBox x:Name="StartupCheck" Style="{StaticResource Switch}" Content="{local:T 'Abrir o Ilha ao ligar o computador'}"
                                       Click="StartupCheck_Click"/>
                         </Border>
                     </StackPanel>
 
                     <!-- ═══ Aparência ═══ -->
-                    <StackPanel x:Name="PageLook" Visibility="Collapsed" Tag="Material, cores e sombra da ilha.">
-                        <TextBlock Text="MATERIAL" Style="{StaticResource Section}"/>
+                    <StackPanel x:Name="PageLook" Visibility="Collapsed" Tag="{local:T 'Material, cores e sombra da ilha.'}">
+                        <TextBlock Text="{local:T 'MODO'}" Style="{StaticResource Section}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton x:Name="DarkRadio" Style="{StaticResource ChoiceCard}" GroupName="Theme" Checked="Theme_Checked">
+                                <StackPanel>
+                                    <Border Style="{StaticResource Preview}" Background="#1A1A1F">
+                                        <Border Width="110" Height="26" CornerRadius="0,0,9,9" VerticalAlignment="Top" Background="#000000">
+                                            <Border Width="40" Height="5" CornerRadius="2.5" Background="#7CE3A1" Margin="0,0,0,2"/>
+                                        </Border>
+                                    </Border>
+                                    <TextBlock Text="{local:T 'Escuro'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Ilha preta, textos claros'}" Style="{StaticResource ChoiceHint}"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton x:Name="LightRadio" Style="{StaticResource ChoiceCard}" GroupName="Theme" Checked="Theme_Checked">
+                                <StackPanel>
+                                    <Border Style="{StaticResource Preview}" Background="#DCDCE3">
+                                        <Border Width="110" Height="26" CornerRadius="0,0,9,9" VerticalAlignment="Top" Background="#F7F7FA">
+                                            <Border Width="40" Height="5" CornerRadius="2.5" Background="#2B2B30" Margin="0,0,0,2"/>
+                                        </Border>
+                                    </Border>
+                                    <TextBlock Text="{local:T 'Claro'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Ilha clara, textos escuros'}" Style="{StaticResource ChoiceHint}"/>
+                                </StackPanel>
+                            </RadioButton>
+                        </StackPanel>
+
+                        <TextBlock Text="{local:T 'MATERIAL'}" Style="{StaticResource Section}"/>
                         <StackPanel Orientation="Horizontal">
                             <RadioButton x:Name="GlassRadio" Style="{StaticResource ChoiceCard}" GroupName="Material"
                                          Checked="Material_Checked">
@@ -436,11 +505,11 @@
                                             <Ellipse Width="60" Height="60" Fill="#E0607A" Margin="-60,-20,0,0" Opacity="0.8"/>
                                             <Ellipse Width="50" Height="50" Fill="#F2B34A" Margin="70,30,0,0" Opacity="0.8"/>
                                             <Border Width="110" Height="26" CornerRadius="0,0,9,9" VerticalAlignment="Top"
-                                                    Background="#66101014" BorderBrush="#40FFFFFF" BorderThickness="1,0,1,1"/>
+                                                    Background="#66101014" BorderBrush="{DynamicResource Ink_40}" BorderThickness="1,0,1,1"/>
                                         </Grid>
                                     </Border>
-                                    <TextBlock Text="Vidro" Style="{StaticResource ChoiceLabel}"/>
-                                    <TextBlock Text="Desfoca o que está atrás" Style="{StaticResource ChoiceHint}"/>
+                                    <TextBlock Text="{local:T 'Vidro'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Desfoca o que está atrás'}" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
                             <RadioButton x:Name="SolidRadio" Style="{StaticResource ChoiceCard}" GroupName="Material"
@@ -454,8 +523,8 @@
                                                     Background="#0A0A0C"/>
                                         </Grid>
                                     </Border>
-                                    <TextBlock Text="Sólido" Style="{StaticResource ChoiceLabel}"/>
-                                    <TextBlock Text="Cor cheia, sem transparência" Style="{StaticResource ChoiceHint}"/>
+                                    <TextBlock Text="{local:T 'Sólido'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Cor cheia, sem transparência'}" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
                         </StackPanel>
@@ -464,7 +533,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Intensidade da cor" Style="{StaticResource RowLabel}"/>
+                                <TextBlock Text="{local:T 'Intensidade da cor'}" Style="{StaticResource RowLabel}"/>
                                 <Slider x:Name="TintSlider" Grid.Column="1" Minimum="0" Maximum="100" TickFrequency="1"
                                         IsSnapToTickEnabled="True" Value="{Binding GlassTint}"/>
                                 <TextBlock Grid.Column="2" Style="{StaticResource Value}"
@@ -473,18 +542,18 @@
                         </Border>
                         <TextBlock x:Name="MaterialHint" Style="{StaticResource Hint}"/>
 
-                        <TextBlock Text="CORES" Style="{StaticResource Section}"/>
+                        <TextBlock Text="{local:T 'CORES'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
                                 <DockPanel Margin="16,10">
-                                    <TextBlock Text="Ilha" Width="110" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{local:T 'Ilha'}" Width="110" VerticalAlignment="Center"/>
                                     <TextBox x:Name="IslandColorBox" DockPanel.Dock="Right" Width="92"
                                              Text="{Binding IslandColor, UpdateSourceTrigger=PropertyChanged}"/>
                                     <StackPanel x:Name="IslandSwatches" Orientation="Horizontal" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <Border Style="{StaticResource Divider}"/>
                                 <DockPanel Margin="16,10">
-                                    <TextBlock Text="Destaque" Width="110" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{local:T 'Destaque'}" Width="110" VerticalAlignment="Center"/>
                                     <TextBox x:Name="AccentColorBox" DockPanel.Dock="Right" Width="92"
                                              Text="{Binding AccentColor, UpdateSourceTrigger=PropertyChanged}"/>
                                     <StackPanel x:Name="AccentSwatches" Orientation="Horizontal" VerticalAlignment="Center"/>
@@ -492,19 +561,19 @@
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="DETALHES" Style="{StaticResource Section}"/>
+                        <TextBlock Text="{local:T 'DETALHES'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
-                                <CheckBox Style="{StaticResource Switch}" Content="Sombra (modo sólido e ilha flutuante)" IsChecked="{Binding ShowShadow}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Sombra (modo sólido e ilha flutuante)'}" IsChecked="{Binding ShowShadow}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Animação com efeito de mola" IsChecked="{Binding SpringAnimation}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Animação com efeito de mola'}" IsChecked="{Binding SpringAnimation}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
                     <!-- ═══ Ilha e posição ═══ -->
-                    <StackPanel x:Name="PageIsland" Visibility="Collapsed" Tag="Onde a ilha fica, onde ficam as abas e o tamanho dela.">
-                        <TextBlock Text="ESTILO" Style="{StaticResource Section}"/>
+                    <StackPanel x:Name="PageIsland" Visibility="Collapsed" Tag="{local:T 'Onde a ilha fica, onde ficam as abas e o tamanho dela.'}">
+                        <TextBlock Text="{local:T 'ESTILO'}" Style="{StaticResource Section}"/>
                         <StackPanel Orientation="Horizontal">
                             <RadioButton x:Name="AttachedRadio" Style="{StaticResource ChoiceCard}" GroupName="IslandStyle"
                                          Checked="IslandStyle_Checked">
@@ -513,8 +582,8 @@
                                         <Border Width="96" Height="22" CornerRadius="0,0,8,8" VerticalAlignment="Top"
                                                 Background="#0A0A0C"/>
                                     </Border>
-                                    <TextBlock Text="Colada no topo" Style="{StaticResource ChoiceLabel}"/>
-                                    <TextBlock Text="Presa na borda da tela" Style="{StaticResource ChoiceHint}"/>
+                                    <TextBlock Text="{local:T 'Colada no topo'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Presa na borda da tela'}" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
                             <RadioButton x:Name="TopFloatRadio" Style="{StaticResource ChoiceCard}" GroupName="IslandStyle"
@@ -528,8 +597,8 @@
                                             </Border.Effect>
                                         </Border>
                                     </Border>
-                                    <TextBlock Text="Solta no topo" Style="{StaticResource ChoiceLabel}"/>
-                                    <TextBlock Text="Centralizada, com um respiro" Style="{StaticResource ChoiceHint}"/>
+                                    <TextBlock Text="{local:T 'Solta no topo'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Centralizada, com um respiro'}" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
                             <RadioButton x:Name="FloatingRadio" Style="{StaticResource ChoiceCard}" GroupName="IslandStyle"
@@ -543,33 +612,27 @@
                                             </Border.Effect>
                                         </Border>
                                     </Border>
-                                    <TextBlock Text="Livre" Style="{StaticResource ChoiceLabel}"/>
-                                    <TextBlock Text="Solta, arraste para onde quiser" Style="{StaticResource ChoiceHint}"/>
+                                    <TextBlock Text="{local:T 'Livre'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Solta, arraste para onde quiser'}" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
                         </StackPanel>
                         <Border x:Name="FloatOptions" Style="{StaticResource Group}" Margin="0,12,0,0">
                             <StackPanel>
-                                <CheckBox x:Name="FloatLockCheck" Style="{StaticResource Switch}" Content="Fixar posição (não deixa arrastar)"
+                                <CheckBox x:Name="FloatLockCheck" Style="{StaticResource Switch}" Content="{local:T 'Fixar posição (não deixa arrastar)'}"
                                           IsChecked="{Binding FloatLocked}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <DockPanel Margin="16,9">
                                     <Button DockPanel.Dock="Right" Style="{StaticResource SoftButton}" Padding="12,5"
-                                            Content="Centralizar" Click="CenterIsland_Click"/>
-                                    <TextBlock Text="Voltar para o centro, no topo da tela" VerticalAlignment="Center"/>
-                                </DockPanel>
-                                <Border Style="{StaticResource Divider}"/>
-                                <DockPanel Margin="16,9">
-                                    <Button DockPanel.Dock="Right" Style="{StaticResource SoftButton}" Padding="12,5"
-                                            Content="Restaurar" Click="DefaultSize_Click"/>
-                                    <TextBlock Text="Tamanho padrão da ilha aberta" VerticalAlignment="Center"/>
+                                            Content="{local:T 'Centralizar'}" Click="CenterIsland_Click"/>
+                                    <TextBlock Text="{local:T 'Voltar para o centro, no topo da tela'}" VerticalAlignment="Center"/>
                                 </DockPanel>
                             </StackPanel>
                         </Border>
                         <TextBlock x:Name="FloatHint" Style="{StaticResource Hint}"
-                                   Text="Para mover: segure a ilha pelo cabeçalho (onde fica o relógio) e arraste. Para mudar o tamanho: arraste o cantinho de baixo, à direita. O alfinete na ilha fixa e solta."/>
+                                   Text="{local:T 'Para mover: segure a ilha pelo cabeçalho (onde fica o relógio) e arraste. Para mudar o tamanho: arraste o cantinho de baixo, à direita. O alfinete na ilha fixa e solta.'}"/>
 
-                        <TextBlock Text="ABAS" Style="{StaticResource Section}"/>
+                        <TextBlock Text="{local:T 'ABAS'}" Style="{StaticResource Section}"/>
                         <StackPanel Orientation="Horizontal">
                             <RadioButton x:Name="SideTabsRadio" Style="{StaticResource ChoiceCard}" GroupName="Tabs"
                                          Checked="Tabs_Checked">
@@ -578,14 +641,14 @@
                                         <Border Width="120" Height="52" CornerRadius="9" Background="#0A0A0C" Padding="7">
                                             <StackPanel HorizontalAlignment="Left">
                                                 <Border Width="9" Height="7" CornerRadius="2" Background="{DynamicResource Accent}" Margin="0,0,0,3"/>
-                                                <Border Width="9" Height="7" CornerRadius="2" Background="#4DFFFFFF" Margin="0,0,0,3"/>
-                                                <Border Width="9" Height="7" CornerRadius="2" Background="#4DFFFFFF" Margin="0,0,0,3"/>
-                                                <Border Width="9" Height="7" CornerRadius="2" Background="#4DFFFFFF"/>
+                                                <Border Width="9" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}" Margin="0,0,0,3"/>
+                                                <Border Width="9" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}" Margin="0,0,0,3"/>
+                                                <Border Width="9" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}"/>
                                             </StackPanel>
                                         </Border>
                                     </Border>
-                                    <TextBlock Text="Na lateral" Style="{StaticResource ChoiceLabel}"/>
-                                    <TextBlock Text="Coluna de ícones à esquerda" Style="{StaticResource ChoiceHint}"/>
+                                    <TextBlock Text="{local:T 'Na lateral'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Coluna de ícones à esquerda'}" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
                             <RadioButton x:Name="TopTabsRadio" Style="{StaticResource ChoiceCard}" GroupName="Tabs"
@@ -595,26 +658,96 @@
                                         <Border Width="120" Height="52" CornerRadius="9" Background="#0A0A0C" Padding="7">
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top">
                                                 <Border Width="10" Height="7" CornerRadius="2" Background="{DynamicResource Accent}" Margin="0,0,3,0"/>
-                                                <Border Width="10" Height="7" CornerRadius="2" Background="#4DFFFFFF" Margin="0,0,3,0"/>
-                                                <Border Width="10" Height="7" CornerRadius="2" Background="#4DFFFFFF" Margin="0,0,3,0"/>
-                                                <Border Width="10" Height="7" CornerRadius="2" Background="#4DFFFFFF"/>
+                                                <Border Width="10" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}" Margin="0,0,3,0"/>
+                                                <Border Width="10" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}" Margin="0,0,3,0"/>
+                                                <Border Width="10" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}"/>
                                             </StackPanel>
                                         </Border>
                                     </Border>
-                                    <TextBlock Text="No topo" Style="{StaticResource ChoiceLabel}"/>
-                                    <TextBlock Text="Barra de ícones no cabeçalho" Style="{StaticResource ChoiceHint}"/>
+                                    <TextBlock Text="{local:T 'No topo'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Barra de ícones no cabeçalho'}" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
                         </StackPanel>
 
-                        <TextBlock Text="FORMA E TAMANHO" Style="{StaticResource Section}"/>
+                        <TextBlock Text="{local:T 'TAMANHO'}" Style="{StaticResource Section}"/>
+                        <Border Style="{StaticResource Group}">
+                            <StackPanel>
+                                <!-- Prévia: topo da tela com a ilha fechada e o contorno de até onde ela abre -->
+                                <Border Margin="12,12,12,4" Height="150" CornerRadius="10" ClipToBounds="True"
+                                        Background="{DynamicResource Ink_08}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
+                                    <Canvas x:Name="SizeCanvas" ClipToBounds="True"/>
+                                </Border>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,8">
+                                    <Border Width="10" Height="10" CornerRadius="3" Background="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="SizeClosedText" FontSize="12" Foreground="{DynamicResource Text2}" Margin="6,0,18,0"/>
+                                    <Border Width="10" Height="10" CornerRadius="3" BorderThickness="1.5"
+                                            BorderBrush="{DynamicResource Text2}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="SizeOpenText" FontSize="12" Foreground="{DynamicResource Text2}" Margin="6,0,0,0"/>
+                                </StackPanel>
+                                <Border Style="{StaticResource Divider}"/>
+                                <Grid Style="{StaticResource SliderRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:T 'Largura fechada'}" Style="{StaticResource RowLabel}"/>
+                                    <Slider x:Name="CWidthSlider" Grid.Column="1" Minimum="80" Maximum="360" TickFrequency="5"
+                                            IsSnapToTickEnabled="True" Value="{Binding CollapsedWidth}"/>
+                                    <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                               Text="{Binding Value, ElementName=CWidthSlider, StringFormat={}{0:0} px}"/>
+                                </Grid>
+                                <Border Style="{StaticResource Divider}"/>
+                                <Grid Style="{StaticResource SliderRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:T 'Altura fechada'}" Style="{StaticResource RowLabel}"/>
+                                    <Slider x:Name="CHeightSlider" Grid.Column="1" Minimum="20" Maximum="48" TickFrequency="1"
+                                            IsSnapToTickEnabled="True" Value="{Binding CollapsedHeight}"/>
+                                    <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                               Text="{Binding Value, ElementName=CHeightSlider, StringFormat={}{0:0} px}"/>
+                                </Grid>
+                                <Border Style="{StaticResource Divider}"/>
+                                <Grid Style="{StaticResource SliderRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:T 'Largura aberta'}" Style="{StaticResource RowLabel}"/>
+                                    <Slider x:Name="OWidthSlider" Grid.Column="1" Minimum="340" Maximum="1040" TickFrequency="10"
+                                            IsSnapToTickEnabled="True" Value="{Binding OpenWidth}"/>
+                                    <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                               Text="{Binding Value, ElementName=OWidthSlider, StringFormat={}{0:0} px}"/>
+                                </Grid>
+                                <Border Style="{StaticResource Divider}"/>
+                                <Grid Style="{StaticResource SliderRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:T 'Altura aberta'}" Style="{StaticResource RowLabel}"/>
+                                    <Slider x:Name="OHeightSlider" Grid.Column="1" Minimum="130" Maximum="460" TickFrequency="5"
+                                            IsSnapToTickEnabled="True" Value="{Binding OpenHeight}"/>
+                                    <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                               Text="{Binding Value, ElementName=OHeightSlider, StringFormat={}{0:0} px}"/>
+                                </Grid>
+                                <Border Style="{StaticResource Divider}"/>
+                                <DockPanel Margin="16,9">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource SoftButton}" Padding="12,5"
+                                            Content="{local:T 'Restaurar'}" Click="DefaultSize_Click"/>
+                                    <TextBlock Text="{local:T 'Tamanhos padrão'}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Style="{StaticResource Hint}"
+                                   Text="{local:T 'Quanto menor a ilha aberta, menos coisas aparecem: o que não cabe sai sozinho.'}"/>
+
+                        <TextBlock Text="{local:T 'FORMA'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
                                 <Grid Style="{StaticResource SliderRow}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Tamanho geral" Style="{StaticResource RowLabel}"/>
+                                    <TextBlock Text="{local:T 'Escala geral'}" Style="{StaticResource RowLabel}"/>
                                     <Slider x:Name="ScaleSlider" Grid.Column="1" Minimum="0.7" Maximum="1.5" TickFrequency="0.05"
                                             IsSnapToTickEnabled="True" Value="{Binding Scale}"/>
                                     <TextBlock Grid.Column="2" Style="{StaticResource Value}"
@@ -625,150 +758,128 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Arredondamento" Style="{StaticResource RowLabel}"/>
+                                    <TextBlock Text="{local:T 'Arredondamento'}" Style="{StaticResource RowLabel}"/>
                                     <Slider x:Name="RadiusSlider" Grid.Column="1" Minimum="0" Maximum="36" TickFrequency="1"
                                             IsSnapToTickEnabled="True" Value="{Binding CornerRadius}"/>
                                     <TextBlock Grid.Column="2" Style="{StaticResource Value}"
                                                Text="{Binding Value, ElementName=RadiusSlider, StringFormat={}{0:0} px}"/>
-                                </Grid>
-                                <Border Style="{StaticResource Divider}"/>
-                                <Grid Style="{StaticResource SliderRow}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Largura recolhida" Style="{StaticResource RowLabel}"/>
-                                    <Slider x:Name="CWidthSlider" Grid.Column="1" Minimum="100" Maximum="360" TickFrequency="5"
-                                            IsSnapToTickEnabled="True" Value="{Binding CollapsedWidth}"/>
-                                    <TextBlock Grid.Column="2" Style="{StaticResource Value}"
-                                               Text="{Binding Value, ElementName=CWidthSlider, StringFormat={}{0:0} px}"/>
-                                </Grid>
-                                <Border Style="{StaticResource Divider}"/>
-                                <Grid Style="{StaticResource SliderRow}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Altura recolhida" Style="{StaticResource RowLabel}"/>
-                                    <Slider x:Name="CHeightSlider" Grid.Column="1" Minimum="20" Maximum="48" TickFrequency="1"
-                                            IsSnapToTickEnabled="True" Value="{Binding CollapsedHeight}"/>
-                                    <TextBlock Grid.Column="2" Style="{StaticResource Value}"
-                                               Text="{Binding Value, ElementName=CHeightSlider, StringFormat={}{0:0} px}"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
                     <!-- ═══ Recursos ═══ -->
-                    <StackPanel x:Name="PageFeatures" Visibility="Collapsed" Tag="Escolha o que aparece dentro da ilha.">
-                        <TextBlock Text="INÍCIO" Style="{StaticResource Section}"/>
+                    <StackPanel x:Name="PageFeatures" Visibility="Collapsed" Tag="{local:T 'Escolha o que aparece dentro da ilha.'}">
+                        <TextBlock Text="{local:T 'INÍCIO'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
-                                <CheckBox Style="{StaticResource Switch}" Content="Controles de mídia" IsChecked="{Binding ShowMedia}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Controles de mídia'}" IsChecked="{Binding ShowMedia}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding EnablePip}">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding EnableLike}">
                                     <StackPanel>
-                                        <TextBlock Text="Picture in picture para vídeos do YouTube"/>
-                                        <TextBlock Text="Botão na ilha que leva o vídeo do navegador para uma janela flutuante."
-                                                   FontSize="12" Foreground="{StaticResource Text3}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{local:T 'Botão de curtir no Spotify'}"/>
+                                        <TextBlock Text="{local:T 'Salva a música tocando nas suas Músicas Curtidas. Clicar de novo tira a curtida.'}"
+                                                   FontSize="12" Foreground="{DynamicResource Text3}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </CheckBox>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Monitor do sistema (CPU e memória)" IsChecked="{Binding ShowStats}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Monitor do sistema (CPU e memória)'}" IsChecked="{Binding ShowStats}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Prateleira de arquivos" IsChecked="{Binding ShowShelf}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Prateleira de arquivos'}" IsChecked="{Binding ShowShelf}"/>
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="PRODUTIVIDADE" Style="{StaticResource Section}"/>
+                        <TextBlock Text="{local:T 'PRODUTIVIDADE'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
-                                <CheckBox Style="{StaticResource Switch}" Content="Agenda e tarefas" IsChecked="{Binding ShowCalendar}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Agenda e tarefas'}" IsChecked="{Binding ShowCalendar}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Notas" IsChecked="{Binding ShowNotes}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Notas'}" IsChecked="{Binding ShowNotes}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Foco (timer)" IsChecked="{Binding ShowTimer}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Foco (timer)'}" IsChecked="{Binding ShowTimer}"/>
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="FERRAMENTAS" Style="{StaticResource Section}"/>
+                        <TextBlock Text="{local:T 'FERRAMENTAS'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
-                                <CheckBox Style="{StaticResource Switch}" Content="Histórico da área de transferência" IsChecked="{Binding ShowClipboard}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Histórico da área de transferência'}" IsChecked="{Binding ShowClipboard}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <Grid Style="{StaticResource SliderRow}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Itens no histórico" Style="{StaticResource RowLabel}"/>
+                                    <TextBlock Text="{local:T 'Itens no histórico'}" Style="{StaticResource RowLabel}"/>
                                     <Slider x:Name="ClipMaxSlider" Grid.Column="1" Minimum="5" Maximum="100" TickFrequency="5"
                                             IsSnapToTickEnabled="True" Value="{Binding ClipboardMax}"/>
                                     <TextBlock Grid.Column="2" Style="{StaticResource Value}"
                                                Text="{Binding Value, ElementName=ClipMaxSlider, StringFormat={}{0:0}}"/>
                                 </Grid>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Espelho (câmera)" IsChecked="{Binding ShowMirror}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Espelho (câmera)'}" IsChecked="{Binding ShowMirror}"/>
                             </StackPanel>
                         </Border>
                         <TextBlock Style="{StaticResource Hint}"
-                                   Text="A câmera só liga enquanto a aba Espelho está aberta, e nada é gravado. O histórico fica só na memória."/>
+                                   Text="{local:T 'A câmera só liga enquanto a aba Espelho está aberta, e nada é gravado. O histórico fica só na memória.'}"/>
                     </StackPanel>
 
                     <!-- ═══ Avisos ═══ -->
-                    <StackPanel x:Name="PageAlerts" Visibility="Collapsed" Tag="O que a ilha mostra quando está recolhida.">
-                        <TextBlock Text="AVISOS RÁPIDOS" Style="{StaticResource Section}"/>
+                    <StackPanel x:Name="PageAlerts" Visibility="Collapsed" Tag="{local:T 'O que a ilha mostra quando está recolhida.'}">
+                        <TextBlock Text="{local:T 'AVISOS RÁPIDOS'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
-                                <CheckBox Style="{StaticResource Switch}" Content="Volume ao mudar" IsChecked="{Binding LiveVolume}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Volume ao mudar'}" IsChecked="{Binding LiveVolume}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Carregador conectado ou desconectado" IsChecked="{Binding LiveCharging}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Carregador conectado ou desconectado'}" IsChecked="{Binding LiveCharging}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Música nova começando" IsChecked="{Binding LiveTrack}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Música nova começando'}" IsChecked="{Binding LiveTrack}"/>
                             </StackPanel>
                         </Border>
-                        <TextBlock Style="{StaticResource Hint}" Text="A ilha recolhida cresce por um instante para mostrar o aviso."/>
+                        <TextBlock Style="{StaticResource Hint}" Text="{local:T 'A ilha recolhida cresce por um instante para mostrar o aviso.'}"/>
 
-                        <TextBlock Text="ILHA RECOLHIDA" Style="{StaticResource Section}"/>
+                        <TextBlock Text="{local:T 'ILHA RECOLHIDA'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
-                                <CheckBox Style="{StaticResource Switch}" Content="Capa da música tocando" IsChecked="{Binding CollapsedShowArt}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Capa da música tocando'}" IsChecked="{Binding CollapsedShowArt}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Equalizador animado" IsChecked="{Binding CollapsedShowEqualizer}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Equalizador animado'}" IsChecked="{Binding CollapsedShowEqualizer}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="Contagem do timer" IsChecked="{Binding CollapsedShowTimer}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Contagem do timer'}" IsChecked="{Binding CollapsedShowTimer}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
                     <!-- ═══ Atualizações ═══ -->
-                    <StackPanel x:Name="PageUpdates" Visibility="Collapsed" Tag="O Ilha se atualiza sozinho, sem perder nada.">
-                        <TextBlock Text="VERSÕES" Style="{StaticResource Section}"/>
+                    <StackPanel x:Name="PageUpdates" Visibility="Collapsed" Tag="{local:T 'O Ilha se atualiza sozinho, sem perder nada.'}">
+                        <TextBlock Text="{local:T 'VERSÕES'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
-                                <CheckBox Style="{StaticResource Switch}" Content="Verificar automaticamente" IsChecked="{Binding AutoCheckUpdates}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Verificar automaticamente'}" IsChecked="{Binding AutoCheckUpdates}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <DockPanel Margin="16,11">
                                     <Button x:Name="CheckUpdatesButton" DockPanel.Dock="Right" Style="{StaticResource AccentButton}"
-                                            Content="Verificar agora" Click="CheckUpdates_Click"/>
+                                            Content="{local:T 'Verificar agora'}" Click="CheckUpdates_Click"/>
                                     <TextBlock x:Name="UpdateStatus" VerticalAlignment="Center" TextWrapping="Wrap"
-                                               Foreground="{StaticResource Text2}" Margin="0,0,12,0"
-                                               Text="Novas versões são instaladas com um clique."/>
+                                               Foreground="{DynamicResource Text2}" Margin="0,0,12,0"
+                                               Text="{local:T 'Novas versões são instaladas com um clique.'}"/>
                                 </DockPanel>
                             </StackPanel>
                         </Border>
                         <TextBlock Style="{StaticResource Hint}"
-                                   Text="A única conexão com a internet é esta verificação. Configurações, notas e tarefas ficam no seu PC."/>
+                                   Text="{local:T 'A única conexão com a internet é esta verificação. Configurações, notas e tarefas ficam no seu PC.'}"/>
                     </StackPanel>
 
                     <!-- ═══ Sobre ═══ -->
-                    <StackPanel x:Name="PageAbout" Visibility="Collapsed" Tag="O topo da sua tela, finalmente útil.">
+                    <StackPanel x:Name="PageAbout" Visibility="Collapsed" Tag="{local:T 'O topo da sua tela, finalmente útil.'}">
                         <Border Style="{StaticResource Group}" Margin="0,22,0,0" Padding="20">
                             <DockPanel>
                                 <Image Source="pack://application:,,,/Ilha.ico" Width="56" Height="56"
                                        RenderOptions.BitmapScalingMode="HighQuality"/>
                                 <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="Ilha" FontSize="20" FontWeight="SemiBold"/>
-                                    <TextBlock x:Name="AboutVersion" Foreground="{StaticResource Text2}" Margin="0,2,0,0"/>
-                                    <TextBlock Text="Gratuito e feito por uma pessoa só. Se ele te ajuda, considere apoiar."
-                                               Foreground="{StaticResource Text3}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{local:T 'Ilha'}" FontSize="20" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="AboutVersion" Foreground="{DynamicResource Text2}" Margin="0,2,0,0"/>
+                                    <TextBlock Text="{local:T 'Gratuito e feito por uma pessoa só. Se ele te ajuda, considere apoiar.'}"
+                                               Foreground="{DynamicResource Text3}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                         </Border>
@@ -776,14 +887,16 @@
                             <Button x:Name="SupportButton" Style="{StaticResource AccentButton}" Click="Support_Click" Margin="0,0,10,0">
                                 <StackPanel Orientation="Horizontal">
                                     <local:Glyph Data="{StaticResource IcoHeart}" Filled="True" Size="13" Margin="0,0,7,0"/>
-                                    <TextBlock Text="Apoiar o projeto"/>
+                                    <TextBlock Text="{local:T 'Apoiar o projeto'}"/>
                                 </StackPanel>
                             </Button>
-                            <Button Style="{StaticResource SoftButton}" Content="Restaurar padrões" Click="Reset_Click" Margin="0,0,10,0"/>
-                            <Button Style="{StaticResource SoftButton}" Content="Sair do Ilha" Click="Quit_Click"/>
+                            <Button Style="{StaticResource SoftButton}" Content="{local:T 'Restaurar padrões'}" Click="Reset_Click" Margin="0,0,10,0"/>
+                            <Button Style="{StaticResource SoftButton}" Content="{local:T 'Sair do Ilha'}" Click="Quit_Click"/>
                         </StackPanel>
+                        <Button Style="{StaticResource SoftButton}" HorizontalAlignment="Left" Margin="0,10,0,0"
+                                Content="{local:T 'Ver a apresentação de novo'}" Click="Onboarding_Click"/>
                         <TextBlock Style="{StaticResource Hint}" Margin="4,14,4,0"
-                                   Text="Restaurar padrões volta a aparência e o comportamento ao original, mas mantém notas, tarefas e arquivos da prateleira."/>
+                                   Text="{local:T 'Restaurar padrões volta a aparência e o comportamento ao original, mas mantém notas, tarefas e arquivos da prateleira.'}"/>
                     </StackPanel>
                 </Grid>
             </ScrollViewer>

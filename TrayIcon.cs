@@ -26,16 +26,16 @@ namespace Ilha
                     menu.Items.Add(item);
                     menu.Items.Add(new Forms.ToolStripSeparator());
                 }
-                menu.Items.Add("Abrir/fechar ilha  (Ctrl+Alt+N)", null, (_, _) => toggleIsland());
-                menu.Items.Add("Configurações…", null, (_, _) => openSettings());
+                menu.Items.Add(L.T("Abrir/fechar ilha") + "  (Ctrl+Alt+N)", null, (_, _) => toggleIsland());
+                menu.Items.Add(L.T("Configurações…"), null, (_, _) => openSettings());
 
-                var startup = new Forms.ToolStripMenuItem("Iniciar com o Windows") { Checked = Startup.IsEnabled };
+                var startup = new Forms.ToolStripMenuItem(L.T("Iniciar com o Windows")) { Checked = Startup.IsEnabled };
                 startup.Click += (_, _) => Startup.Set(!Startup.IsEnabled);
                 menu.Items.Add(startup);
 
                 menu.Items.Add(new Forms.ToolStripSeparator());
-                menu.Items.Add("Apoie o Ilha ❤", null, (_, _) => SupportWindow.ShowSingle());
-                menu.Items.Add("Sair", null, (_, _) => exit());
+                menu.Items.Add(L.T("Apoie o Ilha") + " ❤", null, (_, _) => SupportWindow.ShowSingle());
+                menu.Items.Add(L.T("Sair"), null, (_, _) => exit());
                 e.Cancel = false;
             };
 
@@ -59,7 +59,7 @@ namespace Ilha
             _updateLabel = label;
             _installUpdate = install;
             if (notify && label != null)
-                _icon.ShowBalloonTip(8000, "Atualização do Ilha disponível", label + " — clique para instalar.", Forms.ToolTipIcon.Info);
+                _icon.ShowBalloonTip(8000, L.T("Atualização do Ilha disponível"), label + L.T(" — clique para instalar."), Forms.ToolTipIcon.Info);
         }
 
         private static Icon CreateIcon()

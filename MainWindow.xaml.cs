@@ -20,11 +20,10 @@ namespace Ilha
 {
     public partial class MainWindow : Window
     {
-        private const double BaseWindowWidth = 720, BaseWindowHeight = 300;
-        private const double ExpandedWidth = 660, ExpandedHeight = 244;
+        private const double DefaultOpenWidth = 560, DefaultOpenHeight = 200;
         // Ilha flutuante redimensionável: limites do tamanho aberto.
         private const double MinFloatWidth = 340, MaxFloatWidth = 1040, MinFloatHeight = 130, MaxFloatHeight = 460;
-        private double _expW = ExpandedWidth, _expH = ExpandedHeight;
+        private double _expW = DefaultOpenWidth, _expH = DefaultOpenHeight;
         private const double CollapsedExtraWidth = 64;
         private const double PeekExtraWidth = 170;
         private const int HotkeyId = 0x4948;
@@ -95,13 +94,26 @@ namespace Ilha
         public MainWindow(BackdropWindow? glass)
         {
             InitializeComponent();
+            L.ApplyTo(this);
 #if DEBUG
             // Testes visuais: muda só na memória (as configurações reais não são tocadas).
             if (Environment.GetEnvironmentVariable("ILHA_TEST_FLOAT") == "1") _settings.IslandStyle = "Floating";
             if (Environment.GetEnvironmentVariable("ILHA_TEST_STYLE") is { Length: > 0 } testStyle) _settings.IslandStyle = testStyle;
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_THEME") == "Light") SettingsWindow.SetTheme(_settings, light: true);
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_RESTART") == "1")
+            {
+                var restart = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+                restart.Tick += (_, _) =>
+                {
+                    restart.Stop();
+                    Environment.SetEnvironmentVariable("ILHA_TEST_RESTART", null); // a nova instância não reinicia de novo
+                    App.Restart(ExitApp);
+                };
+                restart.Start();
+            }
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TABSTOP") == "1") _settings.TabPosition = "Top";
-            if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FW"), out double tfw)) _settings.FloatWidth = tfw;
-            if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FH"), out double tfh)) _settings.FloatHeight = tfh;
+            if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FW"), out double tfw)) _settings.OpenWidth = tfw;
+            if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FH"), out double tfh)) _settings.OpenHeight = tfh;
 #endif
             _glassWindow = glass;
             Owner = glass;
@@ -252,16 +264,6 @@ namespace Ilha
                             enc.Save(fs);
                         };
                         snap.Start();
-                        return;
-                    }
-                    if (testTab == "pip")
-                    {
-                        // Vídeo público curto, sem som; e registra o que o localizador acha nos navegadores.
-                        PipWindow.TestMute = true;
-                        string? found = YouTubeLocator.FromBrowsers(_media.Title);
-                        System.IO.File.WriteAllText(Environment.GetEnvironmentVariable("ILHA_TEST_SHOT") ?? "pip.txt",
-                                                    $"browser={found ?? "(nenhum)"}");
-                        PipWindow.Open("jNQXAC9IVRw", 3, "Me at the zoo");
                         return;
                     }
                     if (testTab == "peek")
@@ -416,9 +418,9 @@ namespace Ilha
             PinButton.Visibility = floating ? Visibility.Visible : Visibility.Collapsed;
             GripGlyph.Visibility = floating && !_settings.FloatLocked ? Visibility.Visible : Visibility.Collapsed;
             PinGlyph.Filled = _settings.FloatLocked;
-            PinButton.Foreground = _settings.FloatLocked ? (Brush)Resources["Accent"] : new SolidColorBrush(Color.FromArgb(0xA6, 0xFF, 0xFF, 0xFF));
-            PinButton.ToolTip = _settings.FloatLocked ? "Posição fixada — clique para soltar e poder arrastar"
-                                                      : "Fixar a ilha neste lugar";
+            PinButton.Foreground = _settings.FloatLocked ? (Brush)Resources["Accent"] : Ink(0xA6);
+            PinButton.ToolTip = _settings.FloatLocked ? L.T("Posição fixada — clique para soltar e poder arrastar")
+                                                      : L.T("Fixar a ilha neste lugar");
             HeaderBar.Cursor = floating && !_settings.FloatLocked ? Cursors.SizeAll : null;
             ResizeGrip.Visibility = floating && !_settings.FloatLocked ? Visibility.Visible : Visibility.Collapsed;
         }
@@ -466,8 +468,8 @@ namespace Ilha
             if (!_resizing) return;
             _resizing = false;
             _draggingOut = false;
-            _settings.FloatWidth = Math.Round(_expW);
-            _settings.FloatHeight = Math.Round(_expH);
+            _settings.OpenWidth = Math.Round(_expW);
+            _settings.OpenHeight = Math.Round(_expH);
             _settings.Save();
             if (!Island.IsMouseOver) RestartCollapseTimer();
         }
@@ -667,7 +669,6 @@ namespace Ilha
             if (_hotkeyRegistered) Native.UnregisterHotKey(_hwnd, HotkeyId);
             if (_clipboardListening) Native.RemoveClipboardFormatListener(_hwnd);
             _camera.Stop();
-            PipWindow.CloseIfOpen();
             _tray?.Dispose();
             _tray = null;
             Application.Current.Shutdown();
@@ -690,11 +691,11 @@ namespace Ilha
                 return false;
             }
 
-            UpdateButton.Content = $"Atualizar para {info.Version}";
-            UpdateButton.ToolTip = "Baixa e instala a nova versão; o Ilha reabre sozinho.";
+            UpdateButton.Content = L.F("Atualizar para {0}", info.Version);
+            UpdateButton.ToolTip = L.T("Baixa e instala a nova versão; o Ilha reabre sozinho.");
             UpdateButton.IsEnabled = true;
             UpdateButton.Visibility = Visibility.Visible;
-            _tray?.SetUpdate($"Instalar atualização {info.Version}", () => _ = InstallUpdateAsync(), notify && isNew);
+            _tray?.SetUpdate(L.F("Instalar atualização {0}", info.Version), () => _ = InstallUpdateAsync(), notify && isNew);
             return true;
         }
 
@@ -716,13 +717,13 @@ namespace Ilha
             try
             {
                 if (!await CheckForUpdatesAsync(notify: false))
-                    return $"Você já está na versão mais recente ({UpdateService.CurrentVersion}).";
+                    return L.F("Você já está na versão mais recente ({0}).", UpdateService.CurrentVersion);
                 _ = InstallUpdateAsync();
-                return $"Baixando a versão {_availableUpdate!.Version}… o Ilha vai reabrir sozinho.";
+                return L.F("Baixando a versão {0}… o Ilha vai reabrir sozinho.", _availableUpdate!.Version);
             }
             catch (Exception ex)
             {
-                return "Não foi possível verificar: " + ex.Message;
+                return L.T("Não foi possível verificar: ") + ex.Message;
             }
         }
 
@@ -736,9 +737,9 @@ namespace Ilha
             UpdateButton.Visibility = Visibility.Visible;
             try
             {
-                var progress = new Progress<double>(p => UpdateButton.Content = $"Baixando… {p:P0}");
+                var progress = new Progress<double>(p => UpdateButton.Content = L.T("Baixando…") + $" {p:P0}");
                 string installer = await _updates.DownloadAsync(info, progress);
-                UpdateButton.Content = "Instalando…";
+                UpdateButton.Content = L.T("Instalando…");
                 UpdateService.LaunchInstaller(installer);
                 ExitApp(); // o instalador substitui o exe e reabre o Ilha
             }
@@ -746,8 +747,8 @@ namespace Ilha
             {
                 _installingUpdate = false;
                 UpdateButton.IsEnabled = true;
-                UpdateButton.Content = "Tentar atualizar de novo";
-                UpdateButton.ToolTip = "Falhou: " + ex.Message;
+                UpdateButton.Content = L.T("Tentar atualizar de novo");
+                UpdateButton.ToolTip = L.T("Falhou: ") + ex.Message;
             }
         }
 
@@ -765,6 +766,8 @@ namespace Ilha
             _settingsWindow = new SettingsWindow(_settings);
             _settingsWindow.SettingsChanged += ApplySettings;
             _settingsWindow.QuitRequested += ExitApp;
+            _settingsWindow.RestartRequested += () => App.Restart(ExitApp);
+            _settingsWindow.OnboardingRequested += ReplayOnboarding;
             _settingsWindow.CheckForUpdates = CheckUpdatesFromSettingsAsync;
             _settingsWindow.Closed += (_, _) => _settingsWindow = null;
             _settingsWindow.Show();
@@ -772,11 +775,27 @@ namespace Ilha
             Collapse();
         }
 
+        /// <summary>Mostra a apresentação de novo; as escolhas valem na hora (idioma novo reinicia o app).</summary>
+        private void ReplayOnboarding()
+        {
+            _settingsWindow?.Close();
+            string langBefore = L.Lang;
+            var welcome = new OnboardingWindow(_settings, replay: true);
+            welcome.Finished += () =>
+            {
+                if (L.Lang != langBefore) App.Restart(ExitApp);
+                else ApplySettings();
+            };
+            welcome.Show();
+        }
+
         private void ApplySettings()
         {
             var s = _settings;
 
-            // Cores e material
+            // Tema, cores e material
+            bool dark = !string.Equals(s.Theme, "Light", StringComparison.OrdinalIgnoreCase);
+            if (dark != ThemePalette.IsDark) ThemePalette.Apply(dark);
             Resources["Accent"] = new SolidColorBrush(ParseColor(s.AccentColor, Color.FromRgb(0x7C, 0xE3, 0xA1)));
 
             // Forma
@@ -792,22 +811,21 @@ namespace Ilha
             // Tamanho geral
             double scale = Math.Clamp(s.Scale, 0.6, 1.6);
             RootScale.ScaleX = RootScale.ScaleY = scale;
-            // Flutuante: tamanho escolhido pelo usuário, e a janela (transparente) já comporta o máximo,
-            // para redimensionar sem mover a ilha.
-            bool floating = Floating;
-            _expW = floating ? Math.Clamp(s.FloatWidth ?? ExpandedWidth, MinFloatWidth, MaxFloatWidth) : ExpandedWidth;
-            _expH = floating ? Math.Clamp(s.FloatHeight ?? ExpandedHeight, MinFloatHeight, MaxFloatHeight) : ExpandedHeight;
+            // Tamanho da ilha aberta (o mesmo em todos os estilos; na "Livre" o canto também muda).
+            // A janela (transparente) já comporta o máximo, para redimensionar sem mover a ilha.
+            _expW = Math.Clamp(s.OpenWidth, MinFloatWidth, MaxFloatWidth);
+            _expH = Math.Clamp(s.OpenHeight, MinFloatHeight, MaxFloatHeight);
             ExpandedView.Width = _expW;
             ExpandedView.Height = _expH;
-            Width = (floating ? MaxFloatWidth + 60 : BaseWindowWidth) * scale;
-            Height = (floating ? MaxFloatHeight + 56 : BaseWindowHeight) * scale;
+            Width = (MaxFloatWidth + 60) * scale;
+            Height = (MaxFloatHeight + 56) * scale;
             if (_expanded) AnimateSize(_expW, _expH, spring: false);
 
             // Tempos
             _expandTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, s.HoverDelayMs));
             _collapseTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(50, s.CollapseDelayMs));
 
-            PipButton.Visibility = s.EnablePip && _media.FromBrowser ? Visibility.Visible : Visibility.Collapsed;
+            UpdateLikeUi();
 
             // Abas
             TabHome.Visibility = s.ShowMedia || s.ShowShelf || s.ShowStats ? Visibility.Visible : Visibility.Collapsed;
@@ -850,6 +868,9 @@ namespace Ilha
             PositionOnScreen();
             UpdateCollapsedState(force: true);
         }
+
+        /// <summary>Cor do texto/ícones do tema atual com a transparência pedida.</summary>
+        private Brush Ink(byte alpha) => (Brush)FindResource($"Ink_{alpha:X2}");
 
         private static Color ParseColor(string? text, Color fallback)
         {
@@ -998,7 +1019,7 @@ namespace Ilha
             PeekGlyph.Data = icon;
             PeekGlyph.Filled = filled;
             PeekGlyph2.Data = icon2;
-            PeekGlyph.Foreground = PeekGlyph2.Foreground = accent ?? Brushes.White;
+            PeekGlyph.Foreground = PeekGlyph2.Foreground = accent ?? Ink(0xFF);
             PeekArtBrush.ImageSource = art;
             PeekArt.Visibility = art != null ? Visibility.Visible : Visibility.Collapsed;
             PeekGlyph.Visibility = PeekGlyph2.Visibility = art != null ? Visibility.Collapsed : Visibility.Visible;
@@ -1008,7 +1029,7 @@ namespace Ilha
             PeekBar.Visibility = level.HasValue ? Visibility.Visible : Visibility.Collapsed;
             if (level is double l)
             {
-                PeekBarFill.Background = accent ?? Brushes.White;
+                PeekBarFill.Background = accent ?? Ink(0xFF);
                 PeekBarFill.BeginAnimation(WidthProperty, new DoubleAnimation(Math.Clamp(l, 0, 1) * 70, TimeSpan.FromMilliseconds(140)));
             }
 
@@ -1051,7 +1072,7 @@ namespace Ilha
 
             var speaker = (Geometry)FindResource("IcoSpeaker");
             var extra = (Geometry)FindResource(muted || level < 0.005 ? "IcoMute" : "IcoWaves");
-            ShowPeek(speaker, true, extra, null, muted ? "Mudo" : "Volume", muted ? 0 : level,
+            ShowPeek(speaker, true, extra, null, muted ? L.T("Mudo") : L.T("Volume"), muted ? 0 : level,
                      muted ? "" : $"{Math.Round(level * 100)}");
         }
 
@@ -1067,7 +1088,7 @@ namespace Ilha
             int percent = (int)Math.Round(power.BatteryLifePercent * 100);
             var green = new SolidColorBrush(Color.FromRgb(0x30, 0xD1, 0x58));
             ShowPeek((Geometry)FindResource("IcoBolt"), true, null, null,
-                     charging ? "Carregando" : "Na bateria", power.BatteryLifePercent, $"{percent}%",
+                     charging ? L.T("Carregando") : L.T("Na bateria"), power.BatteryLifePercent, $"{percent}%",
                      charging ? green : null, seconds: 2.6);
         }
 
@@ -1152,7 +1173,7 @@ namespace Ilha
             if (_camera.IsRunning) return;
             MirrorPlaceholder.Visibility = Visibility.Visible;
             MirrorRetry.Visibility = Visibility.Collapsed;
-            MirrorStatus.Text = "Ligando a câmera…";
+            MirrorStatus.Text = L.T("Ligando a câmera…");
             MirrorBrush.ImageSource = null;
             string? error = await _camera.StartAsync();
             if (error == null)
@@ -1170,7 +1191,7 @@ namespace Ilha
             _camera.Stop();
             MirrorBrush.ImageSource = null;
             MirrorPlaceholder.Visibility = Visibility.Visible;
-            MirrorStatus.Text = "Ligando a câmera…";
+            MirrorStatus.Text = L.T("Ligando a câmera…");
         }
 
         private void MirrorRetry_Click(object sender, RoutedEventArgs e) => StartMirror();
@@ -1245,13 +1266,13 @@ namespace Ilha
 
             // Hoje (painel das tarefas)
             AgendaWeekday.Text = today.ToString("dddd", culture).ToUpper(culture);
-            AgendaDate.Text = today.ToString("d 'de' MMMM", culture);
+            AgendaDate.Text = today.ToString(L.English ? "MMMM d" : "d 'de' MMMM", culture);
 
             // Mês exibido
             var month = new DateTime(today.Year, today.Month, 1).AddMonths(_monthOffset);
             CalMonth.Text = culture.TextInfo.ToTitleCase(month.ToString("MMMM yyyy", culture));
             int week = ISOWeek.GetWeekOfYear(_monthOffset == 0 ? today : month);
-            CalWeekNumber.Text = $"SEMANA {week}";
+            CalWeekNumber.Text = L.F("SEMANA {0}", week);
 
             var firstDay = culture.DateTimeFormat.FirstDayOfWeek;
             CalHeader.Children.Clear();
@@ -1263,7 +1284,7 @@ namespace Ilha
                     Text = culture.DateTimeFormat.GetAbbreviatedDayName(dow).TrimEnd('.').Substring(0, 1).ToUpper(culture),
                     FontSize = 10.5,
                     FontWeight = FontWeights.SemiBold,
-                    Foreground = (Brush)Resources["Tertiary"],
+                    Foreground = (Brush)FindResource("Tertiary"),
                     HorizontalAlignment = HorizontalAlignment.Center,
                 });
             }
@@ -1295,8 +1316,8 @@ namespace Ilha
                         FontSize = 11.5,
                         FontWeight = isToday ? FontWeights.Bold : FontWeights.Medium,
                         Foreground = isToday ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11))
-                            : !inMonth ? new SolidColorBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF))
-                            : weekend ? (Brush)Resources["Tertiary"] : Brushes.White,
+                            : !inMonth ? Ink(0x40)
+                            : weekend ? (Brush)FindResource("Tertiary") : Ink(0xFF),
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center,
                         Typography = { NumeralAlignment = FontNumeralAlignment.Tabular },
@@ -1355,7 +1376,7 @@ namespace Ilha
             BatteryFill.Width = Math.Max(1.5, 18 * Math.Clamp(power.BatteryLifePercent, 0, 1));
             BatteryFill.Background = charging ? new SolidColorBrush(Color.FromRgb(0x30, 0xD1, 0x58))
                 : percent <= 20 ? new SolidColorBrush(Color.FromRgb(0xFF, 0x45, 0x3A))
-                : Brushes.White;
+                : Ink(0xFF);
         }
 
         private void UpdateProgress()
@@ -1406,14 +1427,14 @@ namespace Ilha
             MediaDetails.Visibility = has ? Visibility.Visible : Visibility.Hidden;
             NoMediaPanel.Visibility = has ? Visibility.Collapsed : Visibility.Visible;
 
-            TitleText.Text = string.IsNullOrEmpty(_media.Title) ? "Sem título" : _media.Title;
+            TitleText.Text = string.IsNullOrEmpty(_media.Title) ? L.T("Sem título") : _media.Title;
             ArtistText.Text = _media.Artist;
             SourceText.Text = _media.SourceApp;
             ArtBrush.ImageSource = _media.Art;
             MiniArtBrush.ImageSource = _media.Art;
             ArtFallback.Visibility = _media.Art == null ? Visibility.Visible : Visibility.Collapsed;
             PlayPauseGlyph.Data = _media.IsPlaying ? GlyphPause : GlyphPlay;
-            PipButton.Visibility = _settings.EnablePip && _media.FromBrowser ? Visibility.Visible : Visibility.Collapsed;
+            UpdateLikeUi();
 
             WatchTrack();
             UpdateCollapsedState();
@@ -1422,35 +1443,31 @@ namespace Ilha
 
         private async void PlayPause_Click(object sender, RoutedEventArgs e) => await _media.TogglePlayPauseAsync();
 
-        /// <summary>
-        /// Picture in picture: acha o vídeo do YouTube aberto no navegador, pausa lá e continua
-        /// do mesmo ponto numa janela flutuante.
-        /// </summary>
-        private async void Pip_Click(object sender, RoutedEventArgs e)
+        // Curtir: o Spotify não diz se a faixa já está curtida, então lembramos o que foi feito
+        // nesta faixa (o atalho alterna curtir/descurtir).
+        private string _likedTrackKey = "";
+
+        private void UpdateLikeUi()
         {
-            PipButton.IsEnabled = false;
-            string title = _media.Title;
-            double position = _media.Position.TotalSeconds;
-            try
-            {
-                string? id = await System.Threading.Tasks.Task.Run(() => YouTubeLocator.FromBrowsers(title));
-                if (id != null)
-                {
-                    await _media.PauseAsync();
-                    PipWindow.Open(id, position, title);
-                }
-                else
-                {
-                    // Não achou no navegador: tenta um link copiado; senão a janela pede o link.
-                    PipWindow.Open(YouTubeLocator.FromClipboard(), 0);
-                }
-                _pinned = false;
-                Collapse();
-            }
-            finally
-            {
-                PipButton.IsEnabled = true;
-            }
+            bool show = _settings.EnableLike && _media.HasSession && LikeService.IsSpotify(_media.SourceAppId);
+            LikeButton.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+            bool liked = _likedTrackKey.Length > 0 && _likedTrackKey == _media.Title + "\n" + _media.Artist;
+            LikeGlyph.Filled = liked;
+            LikeButton.Foreground = liked ? new SolidColorBrush(Color.FromRgb(0xFF, 0x4D, 0x6D)) : (Brush)FindResource("Ink_A6");
+        }
+
+        private void Like_Click(object sender, RoutedEventArgs e)
+        {
+            string key = _media.Title + "\n" + _media.Artist;
+            if (!LikeService.ToggleSpotifyLike()) return;
+            _likedTrackKey = _likedTrackKey == key ? "" : key;
+            UpdateLikeUi();
+            // Pequeno "pulo" no coração para confirmar.
+            var pop = new DoubleAnimation(1.25, 1, TimeSpan.FromMilliseconds(320)) { EasingFunction = new BackEase { Amplitude = 0.6 } };
+            var scale = new ScaleTransform(1, 1, 8, 8);
+            LikeGlyph.RenderTransform = scale;
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
         }
         private async void Next_Click(object sender, RoutedEventArgs e) => await _media.NextAsync();
         private async void Previous_Click(object sender, RoutedEventArgs e) => await _media.PreviousAsync();
@@ -1612,7 +1629,7 @@ namespace Ilha
         private void UpdateTodoSummary()
         {
             int open = _todos.Count(t => !t.Done);
-            TodoCount.Text = _todos.Count == 0 ? "" : open == 0 ? "TUDO FEITO" : $"{open} A FAZER";
+            TodoCount.Text = _todos.Count == 0 ? "" : open == 0 ? L.T("TUDO FEITO") : L.F("{0} A FAZER", open);
             TodoEmpty.Visibility = _todos.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -1657,7 +1674,7 @@ namespace Ilha
         private void TimerPreset_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button { Tag: string tag } || !int.TryParse(tag, out int minutes)) return;
-            TimerMode.Text = "TIMER";
+            TimerMode.Text = L.T("TIMER");
             StopAlert();
             _timerPreset = TimeSpan.FromMinutes(minutes);
             _timerPaused = _timerPreset;
@@ -1671,7 +1688,7 @@ namespace Ilha
             if (sender is not Button { Tag: string tag }) return;
             var parts = tag.Split('|');
             if (!int.TryParse(parts[0], out int minutes)) return;
-            TimerMode.Text = parts.Length > 1 ? parts[1] : "TIMER";
+            TimerMode.Text = L.T(parts.Length > 1 ? parts[1] : "TIMER");
             StopAlert();
             _timerPreset = TimeSpan.FromMinutes(minutes);
             _timerPaused = _timerPreset;
@@ -1754,14 +1771,14 @@ namespace Ilha
             TimerDisplay.Text = text;
             CollapsedTimerText.Text = text;
             TimerStartGlyph.Data = TimerRunning ? GlyphPause : GlyphPlay;
-            TimerStartText.Text = TimerRunning ? "Pausar" : remaining < _timerPreset && remaining > TimeSpan.Zero ? "Continuar" : "Iniciar";
+            TimerStartText.Text = L.T(TimerRunning ? "Pausar" : remaining < _timerPreset && remaining > TimeSpan.Zero ? "Continuar" : "Iniciar");
             double total = Math.Max(_timerPreset.TotalSeconds, TimerRemaining.TotalSeconds);
             DrawTimerRing(total <= 0 ? 0 : TimerRemaining.TotalSeconds / total);
-            TimerStatus.Text = _timerAlerting ? "Tempo esgotado!"
+            TimerStatus.Text = L.T(_timerAlerting ? "Tempo esgotado!"
                 : TimerRunning ? "Em andamento"
                 : remaining < _timerPreset && remaining > TimeSpan.Zero ? "Pausado"
-                : "Pronto";
-            TimerStatus.Foreground = (Brush)Resources[_timerAlerting ? "Accent" : "Secondary"];
+                : "Pronto");
+            TimerStatus.Foreground = (Brush)FindResource(_timerAlerting ? "Accent" : "Secondary");
             UpdateCollapsedState();
         }
 
@@ -1880,19 +1897,19 @@ namespace Ilha
                 Clipboard.SetText(item.Text);
                 _clips.Remove(item);
                 _clips.Insert(0, item);
-                ClipboardStatus.Text = "Copiado! ✓";
+                ClipboardStatus.Text = L.T("Copiado! ✓");
             }
             catch
             {
                 _ignoreNextClipboard = false;
-                ClipboardStatus.Text = "Não foi possível copiar agora";
+                ClipboardStatus.Text = L.T("Não foi possível copiar agora");
             }
 
             var reset = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
             reset.Tick += (_, _) =>
             {
                 reset.Stop();
-                ClipboardStatus.Text = "Clique em um item para copiar de novo";
+                ClipboardStatus.Text = L.T("Clique em um item para copiar de novo");
             };
             reset.Start();
         }

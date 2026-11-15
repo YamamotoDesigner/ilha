@@ -231,7 +231,8 @@
 
 <svg width="0" height="0" style="position:absolute">
   <defs>
-    <symbol id="i-pip" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M6 5h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3zM13.5 12.5h4v3.5h-4z"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.5 2.4C19.5 15.4 12 20 12 20z"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.3 3.4 5.1 3.4 8.5s-1.1 6.2-3.4 8.5M12 3.5C9.7 5.8 8.6 8.6 8.6 12s1.1 6.2 3.4 8.5"/></g></symbol>
     <symbol id="i-cal" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 5h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3zM4 10h16M8.5 3v4M15.5 3v4M8 14l2 2 4-4"/></symbol>
     <symbol id="i-cpu" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 17l5-6 4 3 5-7 4 4"/></symbol>
     <symbol id="i-cam" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.5-2h4.4l1.5 2h1.8A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5zM8.8 13a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0"/></symbol>
@@ -334,9 +335,9 @@
 <header class="hero">
   <div class="glow"></div>
   <div class="wrap">
-    <span class="pill-tag"><b>Novo</b> Versão <span class="version">1.5</span> com picture in picture e ilha flutuante</span>
+    <span class="pill-tag"><b>Novo</b> Versão <span class="version">1.6</span> com modo claro, inglês e tela de boas-vindas</span>
     <h1>O topo da sua tela,<br><em>finalmente útil.</em></h1>
-    <p class="lead">A Ilha vive no topo do Windows e se abre com um passar de mouse — música, vídeos em picture in picture, agenda, tarefas, foco, arquivos e notas, sempre à mão e nunca no caminho.</p>
+    <p class="lead">A Ilha vive no topo do Windows e se abre com um passar de mouse — música, agenda, tarefas, foco, arquivos e notas, sempre à mão e nunca no caminho.</p>
     <div class="cta">
       <a class="btn btn-primary download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest">
         <svg><use href="#i-win"/></svg> Baixar para Windows — grátis
@@ -364,8 +365,8 @@
     <div class="grid">
       <div class="card wide reveal"><div class="ico"><svg><use href="#i-music"/></svg></div>
         <h3>Controle de mídia</h3><p>Capa, título, progresso e controles do que estiver tocando — Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows. Clique na barra para pular para qualquer ponto.</p></div>
-      <div class="card wide reveal"><div class="ico"><svg><use href="#i-pip"/></svg></div>
-        <h3>Picture in picture</h3><p>Está vendo um vídeo do YouTube no navegador? Um clique na ilha leva ele para uma janelinha flutuante, sempre por cima, continuando do mesmo ponto. Dá para ligar ou desligar nas configurações.</p></div>
+      <div class="card wide reveal"><div class="ico"><svg><use href="#i-heart"/></svg></div>
+        <h3>Curtir no Spotify</h3><p>Gostou da música? Um toque no coração da ilha salva ela nas suas Músicas Curtidas, sem abrir o Spotify. Toque de novo para tirar.</p></div>
       <div class="card reveal"><div class="ico"><svg><use href="#i-cal"/></svg></div>
         <h3>Agenda e tarefas</h3><p>Calendário do mês inteiro e uma lista de tarefas do dia. Marque o que fez, apague o que não precisa — tudo salvo.</p></div>
       <div class="card reveal"><div class="ico"><svg><use href="#i-timer"/></svg></div>
@@ -400,6 +401,8 @@
       <p class="sub">Material, cores, tamanho, arredondamento, posição, atrasos de abertura e quais recursos aparecem — tudo organizado em configurações por categoria. Experimente as cores aqui ao lado.</p>
       <ul class="checks">
         <li>Visual com o capricho da Apple: cantos suaves, fonte fácil de ler, animações com mola</li>
+        <li>Modo claro ou escuro, em português ou inglês</li>
+        <li>Tamanho da ilha fechada e aberta do jeito que você quiser, com prévia</li>
         <li>Some sozinha em jogos e vídeos em tela cheia</li>
         <li>Funciona em qualquer monitor, com qualquer escala</li>
         <li>Inicia junto com o Windows (se você quiser)</li>
@@ -464,8 +467,10 @@
         <p>Não. A Ilha instala só para o seu usuário, em <code>%LOCALAPPDATA%\Programs\Ilha</code>.</p></details>
       <details><summary>Meus dados vão para algum lugar?</summary>
         <p>Não. Notas, tarefas, prateleira e configurações ficam no seu PC, em <code>%APPDATA%\Ilha</code>. O histórico da área de transferência fica só na memória e some ao fechar o app. A única conexão de internet é para verificar atualizações — e dá para desligar.</p></details>
-      <details><summary>Como funciona o picture in picture?</summary>
-        <p>Com um vídeo do YouTube tocando no navegador (Chrome, Edge, Firefox, Brave, Opera…), abra a ilha e clique no ícone de janelinha ao lado do título. A Ilha pausa o vídeo no navegador e continua do mesmo ponto numa janela flutuante, que você arrasta e redimensiona. Se não encontrar o vídeo, é só colar o link. Dá para desligar em Configurações → Recursos.</p></details>
+      <details><summary>Tem em inglês? E modo claro?</summary>
+        <p>Sim. Na primeira vez que abre, a Ilha mostra uma apresentação onde você escolhe <b>Português</b> ou <b>English</b>, modo <b>claro</b> ou <b>escuro</b>, o estilo da ilha e os recursos. Tudo dá para mudar depois em Configurações.</p></details>
+      <details><summary>A ilha aberta está grande demais. Dá para diminuir?</summary>
+        <p>Dá. Em Configurações → Ilha e posição → Tamanho, você ajusta a largura e a altura da ilha fechada e da aberta, vendo uma prévia das duas. O que não cabe sai sozinho.</p></details>
       <details><summary>Como deixo a ilha solta e mudo ela de lugar?</summary>
         <p>Em Configurações → Ilha e posição, escolha <b>Solta no topo</b> (um retângulo arredondado centralizado) ou <b>Livre</b>. Na livre, segure pelo cabeçalho para arrastar, puxe o cantinho de baixo para mudar o tamanho e clique no alfinete para fixar.</p></details>
       <details><summary>A câmera do Espelho fica ligada?</summary>

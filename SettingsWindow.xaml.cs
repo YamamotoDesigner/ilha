@@ -22,6 +22,8 @@ namespace Ilha
 
         public event Action? SettingsChanged;
         public event Action? QuitRequested;
+        public event Action? RestartRequested;
+        public event Action? OnboardingRequested;
 
         /// <summary>Verifica atualizações agora e devolve a mensagem para mostrar.</summary>
         public Func<System.Threading.Tasks.Task<string>>? CheckForUpdates { get; set; }
@@ -30,10 +32,12 @@ namespace Ilha
         {
             InitializeComponent();
             _settings = settings;
+            ThemePalette.ApplyTo(this);
+            L.ApplyTo(this);
 
             MonitorCombo.ItemsSource = Forms.Screen.AllScreens.Select((s, i) => new
             {
-                Label = $"Monitor {i + 1}{(s.Primary ? " (principal)" : "")} — {s.Bounds.Width}×{s.Bounds.Height}",
+                Label = L.F("Monitor {0}", i + 1) + (s.Primary ? L.T(" (principal)") : "") + $" — {s.Bounds.Width}×{s.Bounds.Height}",
                 Device = s.DeviceName,
             }).ToList();
             _settings.MonitorDevice ??= Forms.Screen.PrimaryScreen?.DeviceName;
@@ -42,8 +46,8 @@ namespace Ilha
             AddSwatches(AccentSwatches, AccentColorBox, AccentPresets);
 
             StartupCheck.IsChecked = Startup.IsEnabled;
-            VersionText.Text = $"Versão {UpdateService.CurrentVersion}";
-            AboutVersion.Text = $"Versão {UpdateService.CurrentVersion}";
+            VersionText.Text = L.F("Versão {0}", UpdateService.CurrentVersion);
+            AboutVersion.Text = L.F("Versão {0}", UpdateService.CurrentVersion);
             SyncMaterial();
             SyncChoices();
             ApplyAccent();
@@ -57,6 +61,8 @@ namespace Ilha
                 ApplyAccent();
                 SettingsChanged?.Invoke();
             };
+            AddHandler(RangeBase.ValueChangedEvent, new RoutedPropertyChangedEventHandler<double>((_, _) => DrawSizePreview()));
+            SizeCanvas.SizeChanged += (_, _) => DrawSizePreview();
 
             // Qualquer alteração aplica ao vivo (com pequeno atraso para agrupar mudanças).
             AddHandler(RangeBase.ValueChangedEvent, new RoutedPropertyChangedEventHandler<double>((_, _) => ScheduleApply()));
@@ -156,8 +162,102 @@ namespace Ilha
             bool top = string.Equals(_settings.TabPosition, "Top", StringComparison.OrdinalIgnoreCase);
             SideTabsRadio.IsChecked = !top;
             TopTabsRadio.IsChecked = top;
+            bool light = string.Equals(_settings.Theme, "Light", StringComparison.OrdinalIgnoreCase);
+            DarkRadio.IsChecked = !light;
+            LightRadio.IsChecked = light;
+            LangPt.IsChecked = !L.English;
+            LangEn.IsChecked = L.English;
             UpdateFloatOptions();
             _syncing = false;
+            DrawSizePreview();
+        }
+
+        // ───────────── Tema e idioma ─────────────
+
+        private void Theme_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized || _syncing) return;
+            bool light = sender == LightRadio;
+            SetTheme(_settings, light);
+            IslandColorBox.Text = _settings.IslandColor;
+            ThemePalette.Apply(!light);
+            ThemePalette.ApplyTo(this);
+        }
+
+        /// <summary>
+        /// Muda o tema e, se a ilha estiver na cor padrão do tema anterior, troca para a do novo
+        /// (preta no escuro, clara no claro). Cores escolhidas pelo usuário são mantidas.
+        /// </summary>
+        public static void SetTheme(AppSettings s, bool light)
+        {
+            s.Theme = light ? "Light" : "Dark";
+            const string darkIsland = "#000000", lightIsland = "#F2F2F5";
+            if (light && string.Equals(s.IslandColor, darkIsland, StringComparison.OrdinalIgnoreCase)) s.IslandColor = lightIsland;
+            if (!light && string.Equals(s.IslandColor, lightIsland, StringComparison.OrdinalIgnoreCase)) s.IslandColor = darkIsland;
+        }
+
+        private void Lang_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized || _syncing) return;
+            string lang = sender == LangEn ? "en" : "pt";
+            _settings.Language = lang;
+            _settings.Save();
+            RestartRow.Visibility = lang != L.Lang ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void Restart_Click(object sender, RoutedEventArgs e) => RestartRequested?.Invoke();
+
+        private void Onboarding_Click(object sender, RoutedEventArgs e) => OnboardingRequested?.Invoke();
+
+        // ───────────── Prévia do tamanho ─────────────
+
+        /// <summary>
+        /// Desenha o topo da tela com a ilha fechada (cheia) e o contorno de até onde ela abre,
+        /// na mesma proporção entre si — para ver o tamanho antes de abrir.
+        /// </summary>
+        private void DrawSizePreview()
+        {
+            if (SizeCanvas == null || SizeCanvas.ActualWidth <= 0) return;
+            var s = _settings;
+            double cw = SizeCanvas.ActualWidth, ch = SizeCanvas.ActualHeight;
+            double openW = OWidthSlider.Value, openH = OHeightSlider.Value;
+            double closedW = CWidthSlider.Value, closedH = CHeightSlider.Value;
+            if (openW <= 0 || openH <= 0) return; // antes dos valores chegarem
+            double scale = Math.Min((cw - 24) / openW, (ch - 18) / openH) * 0.92;
+            bool detached = !string.Equals(s.IslandStyle, "Attached", StringComparison.OrdinalIgnoreCase);
+            double top = detached ? 8 : 0;
+            double r = RadiusSlider.Value * scale;
+
+            SizeCanvas.Children.Clear();
+            var accent = (Brush)FindResource("Accent");
+            var outline = new Border
+            {
+                Width = openW * scale,
+                Height = openH * scale,
+                CornerRadius = detached ? new CornerRadius(Math.Min(r, openH * scale * 0.4)) : new CornerRadius(0, 0, r, r),
+                BorderBrush = (Brush)FindResource("Text2"),
+                BorderThickness = detached ? new Thickness(1.5) : new Thickness(1.5, 0, 1.5, 1.5),
+                Background = (Brush)FindResource("Ink_08"),
+                Opacity = 0.9,
+            };
+            Canvas.SetLeft(outline, (cw - outline.Width) / 2);
+            Canvas.SetTop(outline, top);
+            SizeCanvas.Children.Add(outline);
+
+            double cr = Math.Min(r, closedH * scale * 0.4);
+            var closed = new Border
+            {
+                Width = Math.Max(4, closedW * scale),
+                Height = Math.Max(3, closedH * scale),
+                CornerRadius = detached ? new CornerRadius(cr) : new CornerRadius(0, 0, cr, cr),
+                Background = accent,
+            };
+            Canvas.SetLeft(closed, (cw - closed.Width) / 2);
+            Canvas.SetTop(closed, top);
+            SizeCanvas.Children.Add(closed);
+
+            SizeClosedText.Text = L.F("Fechada {0} × {1}", Math.Round(closedW), Math.Round(closedH));
+            SizeOpenText.Text = L.F("Aberta {0} × {1}", Math.Round(openW), Math.Round(openH));
         }
 
         private void UpdateFloatOptions()
@@ -172,6 +272,7 @@ namespace Ilha
             if (!IsInitialized || _syncing) return;
             _settings.IslandStyle = sender == FloatingRadio ? "Floating" : sender == TopFloatRadio ? "TopFloating" : "Attached";
             UpdateFloatOptions();
+            DrawSizePreview();
         }
 
         private void Tabs_Checked(object sender, RoutedEventArgs e)
@@ -191,8 +292,13 @@ namespace Ilha
 
         private void DefaultSize_Click(object sender, RoutedEventArgs e)
         {
-            _settings.FloatWidth = null;
-            _settings.FloatHeight = null;
+            var d = new AppSettings();
+            _settings.OpenWidth = d.OpenWidth;
+            _settings.OpenHeight = d.OpenHeight;
+            _settings.CollapsedWidth = d.CollapsedWidth;
+            _settings.CollapsedHeight = d.CollapsedHeight;
+            DataContext = null;
+            DataContext = _settings;
             _apply.Stop();
             _settings.Save();
             SettingsChanged?.Invoke();
@@ -220,8 +326,8 @@ namespace Ilha
         }
 
         private void UpdateMaterialHint() => MaterialHint.Text = IsGlass
-            ? "Vidro: o que está atrás da ilha aparece desfocado, tingido pela cor escolhida."
-            : "Sólido: a ilha usa a cor escolhida, sem transparência.";
+            ? L.T("Vidro: o que está atrás da ilha aparece desfocado, tingido pela cor escolhida.")
+            : L.T("Sólido: a ilha usa a cor escolhida, sem transparência.");
 
         private void Material_Checked(object sender, RoutedEventArgs e)
         {
@@ -238,7 +344,7 @@ namespace Ilha
         {
             if (CheckForUpdates == null) return;
             CheckUpdatesButton.IsEnabled = false;
-            UpdateStatus.Text = "Verificando…";
+            UpdateStatus.Text = L.T("Verificando…");
             UpdateStatus.Text = await CheckForUpdates();
             CheckUpdatesButton.IsEnabled = true;
         }

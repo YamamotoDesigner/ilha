@@ -44,7 +44,9 @@ namespace Ilha
         {
             if (Data == null) return;
             double scale = Size / 24.0;
-            var pen = new Pen(Foreground, Filled ? 2.4 : Thickness)
+            // Preenchido: contorno de 2,4 arredonda as quinas; com Thickness = 0, só o preenchimento
+            // (para ícones "cheios" com recortes, que o contorno fecharia).
+            Pen? pen = Filled && Thickness <= 0 ? null : new Pen(Foreground, Filled ? 2.4 : Thickness)
             {
                 StartLineCap = PenLineCap.Round,
                 EndLineCap = PenLineCap.Round,

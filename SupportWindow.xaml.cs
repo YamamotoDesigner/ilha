@@ -29,6 +29,7 @@ namespace Ilha
         private SupportWindow()
         {
             InitializeComponent();
+            ThemePalette.ApplyTo(this);
             if (Support.IsConfigured)
             {
                 string code = Support.PixCode;
@@ -50,22 +51,22 @@ namespace Ilha
         {
             if (TryCopy(Support.PixCode))
             {
-                CopyText.Text = "Copiado! Cole no app do seu banco ✓";
+                CopyText.Text = L.T("Copiado! Cole no app do seu banco ✓");
             }
             else
             {
                 CodeBox.Visibility = Visibility.Visible;
                 CodeBox.Focus();
                 CodeBox.SelectAll();
-                CopyText.Text = "Não deu para copiar — selecione o código abaixo";
+                CopyText.Text = L.T("Não deu para copiar — selecione o código abaixo");
             }
-            After(3, () => CopyText.Text = "Copiar código Pix (copia e cola)");
+            After(3, () => CopyText.Text = L.T("Copiar código Pix (copia e cola)"));
         }
 
         private void Share_Click(object sender, RoutedEventArgs e)
         {
-            ShareText.Text = TryCopy(SiteUrl) ? "Link copiado! Agora é só colar na conversa ✓" : SiteUrl;
-            After(3, () => ShareText.Text = "Copia o link do site para você mandar.");
+            ShareText.Text = TryCopy(SiteUrl) ? L.T("Link copiado! Agora é só colar na conversa ✓") : SiteUrl;
+            After(3, () => ShareText.Text = L.T("Copia o link do site para você mandar."));
         }
 
         private void Link_Click(object sender, RoutedEventArgs e)

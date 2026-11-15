@@ -49,7 +49,7 @@ namespace Ilha
                                   Windows.Devices.Enumeration.Panel.Front ? 0 : 1)
                     .ThenBy(x => x.Info.MediaStreamType == MediaStreamType.VideoPreview ? 0 : 1)
                     .FirstOrDefault();
-                if (choice.Group == null) return "Nenhuma câmera encontrada.";
+                if (choice.Group == null) return L.T("Nenhuma câmera encontrada.");
 
                 var capture = new MediaCapture();
                 bool exclusive = true;
@@ -85,7 +85,7 @@ namespace Ilha
                 {
                     reader.Dispose();
                     capture.Dispose();
-                    return session != _session ? null : "Não foi possível ligar a câmera.";
+                    return session != _session ? null : L.T("Não foi possível ligar a câmera.");
                 }
 
                 _capture = capture;
@@ -94,11 +94,11 @@ namespace Ilha
             }
             catch (UnauthorizedAccessException)
             {
-                return "Sem permissão: ative \"Permitir que aplicativos da área de trabalho acessem a câmera\" em Configurações → Privacidade → Câmera.";
+                return L.T("Sem permissão: ative \"Permitir que aplicativos da área de trabalho acessem a câmera\" em Configurações → Privacidade → Câmera.");
             }
             catch (Exception)
             {
-                return "Não foi possível ligar a câmera.";
+                return L.T("Não foi possível ligar a câmera.");
             }
         }
 

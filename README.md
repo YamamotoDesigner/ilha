@@ -32,7 +32,8 @@ timer e área de transferência, sempre à mão e nunca no caminho.
 | | |
 |---|---|
 | 🎵 **Controle de mídia** | Capa, título, progresso e controles do que estiver tocando — Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows. |
-| 📺 **Picture in picture** | Vídeo do YouTube no navegador? Um clique leva ele para uma janelinha flutuante, sempre por cima, do mesmo ponto. Liga e desliga nas configurações. |
+| ❤️ **Curtir no Spotify** | Um toque no coração da ilha salva a música tocando nas suas Músicas Curtidas. |
+| 🌗 **Claro ou escuro, PT ou EN** | Modo claro e escuro, e a interface inteira em português ou inglês. Tudo escolhido numa apresentação animada na primeira vez. |
 | 📂 **Prateleira de arquivos** | Arraste arquivos para a ilha e solte onde quiser depois. Leve coisas entre pastas, e-mails e apps sem perder nada. |
 | 📝 **Notas rápidas** | Um bloco sempre à mão, salvo automaticamente. |
 | ⏱️ **Foco** | Modos Foco, Pausa e Pausa longa em um clique. A contagem aparece na ilha recolhida e ela avisa quando acabar. |
@@ -49,7 +50,7 @@ timer e área de transferência, sempre à mão e nunca no caminho.
 
 Visual próprio, com o capricho da Apple: abas na lateral ou no topo, cantos suaves (nada de pílulas),
 fonte fácil de ler, ícones desenhados à mão e animações com mola.
-Material vidro ou sólido, intensidade da cor, cor da ilha e de destaque, tamanho, arredondamento, largura e altura da pílula, sombra,
+Tamanho da ilha fechada e aberta (com prévia), material vidro ou sólido, intensidade da cor, cor da ilha e de destaque, tamanho, arredondamento, largura e altura da pílula, sombra,
 animação com mola, atrasos de abertura e fechamento, monitor, relógio 24 h, quais recursos
 aparecem — tudo muda ao vivo. E ela **some sozinha em jogos e vídeos em tela cheia**.
 

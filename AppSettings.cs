@@ -8,6 +8,14 @@ namespace Ilha
 {
     public sealed class AppSettings
     {
+        // Primeira execução, idioma e tema
+        /// <summary>A tela de apresentação já foi vista.</summary>
+        public bool OnboardingDone { get; set; }
+        /// <summary>"pt" (Português do Brasil) ou "en" (English US); null = idioma do Windows.</summary>
+        public string? Language { get; set; }
+        /// <summary>"Dark" ou "Light".</summary>
+        public string Theme { get; set; } = "Dark";
+
         // Posição
         public string? MonitorDevice { get; set; }
         public bool HideOnFullscreen { get; set; } = true;
@@ -21,8 +29,8 @@ namespace Ilha
         public string AccentColor { get; set; } = "#7CE3A1";
         public double Scale { get; set; } = 1.0;
         public double CornerRadius { get; set; } = 22;
-        public double CollapsedWidth { get; set; } = 190;
-        public double CollapsedHeight { get; set; } = 34;
+        public double CollapsedWidth { get; set; } = 160;
+        public double CollapsedHeight { get; set; } = 32;
         public bool ShowShadow { get; set; } = true;
         public bool SpringAnimation { get; set; } = true;
         /// <summary>
@@ -35,9 +43,9 @@ namespace Ilha
         /// <summary>Posição da ilha flutuante: centro horizontal e topo, em pixels físicos da tela.</summary>
         public int? FloatCenterX { get; set; }
         public int? FloatTop { get; set; }
-        /// <summary>Tamanho da ilha flutuante aberta (pixels lógicos, antes do "Tamanho geral"); null = padrão.</summary>
-        public double? FloatWidth { get; set; }
-        public double? FloatHeight { get; set; }
+        /// <summary>Tamanho da ilha aberta (pixels lógicos, antes do "Tamanho geral"), em todos os estilos.</summary>
+        public double OpenWidth { get; set; } = 560;
+        public double OpenHeight { get; set; } = 200;
         /// <summary>"Side" (trilho lateral) ou "Top" (barra no topo).</summary>
         public string TabPosition { get; set; } = "Side";
 
@@ -64,8 +72,8 @@ namespace Ilha
         public bool ShowCalendar { get; set; } = true;
         public bool ShowMirror { get; set; } = true;
         public bool ShowStats { get; set; } = true;
-        /// <summary>Botão de picture in picture para vídeos do YouTube tocando no navegador.</summary>
-        public bool EnablePip { get; set; } = true;
+        /// <summary>Botão de curtir a música do Spotify.</summary>
+        public bool EnableLike { get; set; } = true;
 
         // Avisos rápidos na ilha recolhida
         public bool LiveVolume { get; set; } = true;
@@ -96,8 +104,8 @@ namespace Ilha
             FloatLocked = d.FloatLocked;
             FloatCenterX = d.FloatCenterX;
             FloatTop = d.FloatTop;
-            FloatWidth = d.FloatWidth;
-            FloatHeight = d.FloatHeight;
+            OpenWidth = d.OpenWidth;
+            OpenHeight = d.OpenHeight;
             TabPosition = d.TabPosition;
             HoverDelayMs = d.HoverDelayMs;
             CollapseDelayMs = d.CollapseDelayMs;
@@ -116,7 +124,7 @@ namespace Ilha
             ShowCalendar = d.ShowCalendar;
             ShowMirror = d.ShowMirror;
             ShowStats = d.ShowStats;
-            EnablePip = d.EnablePip;
+            EnableLike = d.EnableLike;
             LiveVolume = d.LiveVolume;
             LiveCharging = d.LiveCharging;
             LiveTrack = d.LiveTrack;
