@@ -14,6 +14,11 @@
         <SolidColorBrush x:Key="Secondary" Color="#B8FFFFFF"/>
         <SolidColorBrush x:Key="Tertiary" Color="#80FFFFFF"/>
         <SolidColorBrush x:Key="Hairline" Color="#1AFFFFFF"/>
+        <!-- Gráficos: preenchimento que some suavemente para baixo -->
+        <LinearGradientBrush x:Key="GraphFade" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#FF000000" Offset="0"/>
+            <GradientStop Color="#00000000" Offset="1"/>
+        </LinearGradientBrush>
 
         <!-- Cartão: retângulo de cantos suaves, nunca pílula -->
         <Style x:Key="Card" TargetType="Border">
@@ -370,6 +375,15 @@
                                 <TranslateTransform x:Name="ExpandedShift" Y="-6"/>
                             </TransformGroup>
                         </Grid.RenderTransform>
+                        <!-- Ilha flutuante: canto para redimensionar com o mouse -->
+                        <Grid x:Name="ResizeGrip" Width="18" Height="18" Margin="0,0,5,5" Background="Transparent"
+                              HorizontalAlignment="Right" VerticalAlignment="Bottom" Cursor="SizeNWSE"
+                              ToolTip="Arraste para redimensionar" Visibility="Collapsed"
+                              MouseLeftButtonDown="ResizeGrip_MouseDown" MouseMove="ResizeGrip_MouseMove"
+                              MouseLeftButtonUp="ResizeGrip_MouseUp" LostMouseCapture="ResizeGrip_LostCapture">
+                            <Path Data="M15 7 7 15 M15 11.5 11.5 15" Stroke="#73FFFFFF" StrokeThickness="1.6"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        </Grid>
                         <Grid Margin="14,12,20,18">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition x:Name="RailCol" Width="36"/>
@@ -413,7 +427,7 @@
 
                             <Grid Grid.Column="2">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="26"/>
+                                    <RowDefinition x:Name="HeaderRow" Height="26"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
@@ -462,7 +476,7 @@
                                             Click="UpdateButton_Click" Content="Atualizar"/>
                                 </DockPanel>
                                 <Border x:Name="TopTabsHost" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                        CornerRadius="11" Padding="3" Background="#0FFFFFFF"
+                                        CornerRadius="10" Padding="2" Background="#0FFFFFFF"
                                         BorderBrush="{StaticResource Hairline}" BorderThickness="1" Visibility="Collapsed"/>
                                 </Grid>
 
@@ -590,7 +604,8 @@
                                                                    HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular"/>
                                                     </DockPanel>
                                                     <Grid x:Name="CpuGraph" Margin="-10,4,-10,0">
-                                                        <Path x:Name="CpuArea" Opacity="0.22" Fill="{DynamicResource Accent}"/>
+                                                        <Path x:Name="CpuArea" Opacity="0.35" Fill="{DynamicResource Accent}"
+                                                              OpacityMask="{StaticResource GraphFade}"/>
                                                         <Path x:Name="CpuLine" StrokeThickness="1.5" Stroke="{DynamicResource Accent}"
                                                               StrokeLineJoin="Round"/>
                                                     </Grid>
@@ -606,7 +621,8 @@
                                                                    HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular"/>
                                                     </DockPanel>
                                                     <Grid x:Name="MemGraph" Margin="-10,4,-10,0">
-                                                        <Path x:Name="MemArea" Opacity="0.22" Fill="#FFC861"/>
+                                                        <Path x:Name="MemArea" Opacity="0.35" Fill="#FFC861"
+                                                              OpacityMask="{StaticResource GraphFade}"/>
                                                         <Path x:Name="MemLine" StrokeThickness="1.5" Stroke="#FFC861"
                                                               StrokeLineJoin="Round"/>
                                                     </Grid>

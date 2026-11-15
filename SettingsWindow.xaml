@@ -599,10 +599,16 @@
                                             Content="Centralizar" Click="CenterIsland_Click"/>
                                     <TextBlock Text="Voltar para o centro, no topo da tela" VerticalAlignment="Center"/>
                                 </DockPanel>
+                                <Border Style="{StaticResource Divider}"/>
+                                <DockPanel Margin="16,9">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource SoftButton}" Padding="12,5"
+                                            Content="Restaurar" Click="DefaultSize_Click"/>
+                                    <TextBlock Text="Tamanho padrão da ilha aberta" VerticalAlignment="Center"/>
+                                </DockPanel>
                             </StackPanel>
                         </Border>
                         <TextBlock x:Name="FloatHint" Style="{StaticResource Hint}"
-                                   Text="Para mover: segure a ilha pelo cabeçalho (onde fica o relógio) e arraste. O alfinete na ilha também fixa e solta."/>
+                                   Text="Para mover: segure a ilha pelo cabeçalho (onde fica o relógio) e arraste. Para mudar o tamanho: arraste o cantinho de baixo, à direita. O alfinete na ilha fixa e solta."/>
 
                         <TextBlock Text="ABAS" Style="{StaticResource Section}"/>
                         <StackPanel Orientation="Horizontal">

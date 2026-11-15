@@ -22,6 +22,9 @@ namespace Ilha
     {
         private const double BaseWindowWidth = 720, BaseWindowHeight = 300;
         private const double ExpandedWidth = 660, ExpandedHeight = 244;
+        // Ilha flutuante redimensionável: limites do tamanho aberto.
+        private const double MinFloatWidth = 580, MaxFloatWidth = 1040, MinFloatHeight = 214, MaxFloatHeight = 460;
+        private double _expW = ExpandedWidth, _expH = ExpandedHeight;
         private const double CollapsedExtraWidth = 64;
         private const double PeekExtraWidth = 170;
         private const int HotkeyId = 0x4948;
@@ -278,19 +281,21 @@ namespace Ilha
 
         private bool Floating => string.Equals(_settings.IslandStyle, "Floating", StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>Posição salva da ilha flutuante, se ainda estiver dentro de algum monitor.</summary>
+        /// <summary>
+        /// Posição salva da ilha flutuante (centro horizontal, topo), se ainda estiver dentro de
+        /// algum monitor (ex.: o monitor pode ter sido desconectado).
+        /// </summary>
         private System.Drawing.Point? SavedFloatPosition()
         {
-            if (!Floating || _settings.FloatX is not int x || _settings.FloatY is not int y) return null;
+            if (!Floating || _settings.FloatCenterX is not int x || _settings.FloatTop is not int y) return null;
             var p = new System.Drawing.Point(x, y);
-            // O meio da janela precisa estar em algum monitor (ex.: monitor desconectado).
-            var probe = new System.Drawing.Point(x + 40, y + 10);
+            var probe = new System.Drawing.Point(x, y + 10);
             return Forms.Screen.AllScreens.Any(s => s.Bounds.Contains(probe)) ? p : null;
         }
 
         private Forms.Screen TargetScreen()
         {
-            if (SavedFloatPosition() is { } p) return Forms.Screen.FromPoint(new System.Drawing.Point(p.X + 40, p.Y + 10));
+            if (SavedFloatPosition() is { } p) return Forms.Screen.FromPoint(new System.Drawing.Point(p.X, p.Y + 10));
             return Forms.Screen.AllScreens.FirstOrDefault(s => s.DeviceName == _settings.MonitorDevice)
                    ?? Forms.Screen.PrimaryScreen
                    ?? Forms.Screen.AllScreens[0];
@@ -312,7 +317,7 @@ namespace Ilha
             int top = bounds.Top + (Floating ? (int)Math.Round(10 * dpi.DpiScaleY) : 0);
             if (SavedFloatPosition() is { } saved)
             {
-                left = saved.X;
+                left = saved.X - widthPx / 2;
                 top = saved.Y;
             }
 #if DEBUG
@@ -328,6 +333,9 @@ namespace Ilha
         {
             double r = Math.Min(_cornerRadius, Island.ActualHeight * 0.4);
             Island.CornerRadius = Floating ? new CornerRadius(r) : new CornerRadius(0, 0, r, r);
+            // O canto de redimensionar fica dentro da curva (o ponto a 45° do arco fica a ~0,29·r da borda).
+            double inset = Math.Min(_cornerRadius, ExpandedView.Height * 0.4) * 0.29 + 3;
+            ResizeGrip.Margin = new Thickness(0, 0, inset, inset);
         }
 
         // ───────────── Ilha flutuante: arrastar e fixar ─────────────
@@ -359,8 +367,8 @@ namespace Ilha
             }
             if (GetWindowRect(_hwnd, out var r))
             {
-                _settings.FloatX = r.Left;
-                _settings.FloatY = r.Top;
+                _settings.FloatCenterX = (r.Left + r.Right) / 2;
+                _settings.FloatTop = r.Top;
                 _settings.Save();
             }
             _glassWindow?.Follow(_hwnd);
@@ -384,6 +392,55 @@ namespace Ilha
             PinButton.ToolTip = _settings.FloatLocked ? "Posição fixada — clique para soltar e poder arrastar"
                                                       : "Fixar a ilha neste lugar";
             HeaderBar.Cursor = floating && !_settings.FloatLocked ? Cursors.SizeAll : null;
+            ResizeGrip.Visibility = floating && !_settings.FloatLocked ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // Redimensionar pelo canto: a ilha cresce para os dois lados (fica centralizada) e para baixo.
+        private bool _resizing;
+        private Point _resizeStart;
+        private double _resizeW0, _resizeH0;
+
+        private void ResizeGrip_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (!Floating || _settings.FloatLocked || !_expanded) return;
+            e.Handled = true;
+            _resizing = true;
+            _draggingOut = true; // não recolhe durante o gesto
+            _collapseTimer.Stop();
+            _resizeStart = PointToScreen(e.GetPosition(this));
+            _resizeW0 = _expW;
+            _resizeH0 = _expH;
+            ResizeGrip.CaptureMouse();
+        }
+
+        private void ResizeGrip_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_resizing) return;
+            var p = PointToScreen(e.GetPosition(this));
+            var dpi = VisualTreeHelper.GetDpi(this);
+            double dx = (p.X - _resizeStart.X) / (dpi.DpiScaleX * RootScale.ScaleX);
+            double dy = (p.Y - _resizeStart.Y) / (dpi.DpiScaleY * RootScale.ScaleY);
+            _expW = Math.Clamp(_resizeW0 + 2 * dx, MinFloatWidth, MaxFloatWidth);
+            _expH = Math.Clamp(_resizeH0 + dy, MinFloatHeight, MaxFloatHeight);
+            ExpandedView.Width = _expW;
+            ExpandedView.Height = _expH;
+            Island.BeginAnimation(WidthProperty, null);
+            Island.BeginAnimation(HeightProperty, null);
+            Island.Width = _expW;
+            Island.Height = _expH;
+        }
+
+        private void ResizeGrip_MouseUp(object sender, MouseButtonEventArgs e) => ResizeGrip.ReleaseMouseCapture();
+
+        private void ResizeGrip_LostCapture(object sender, MouseEventArgs e)
+        {
+            if (!_resizing) return;
+            _resizing = false;
+            _draggingOut = false;
+            _settings.FloatWidth = Math.Round(_expW);
+            _settings.FloatHeight = Math.Round(_expH);
+            _settings.Save();
+            if (!Island.IsMouseOver) RestartCollapseTimer();
         }
 
         /// <summary>Abas no trilho lateral ou numa barra no topo do cabeçalho.</summary>
@@ -408,6 +465,7 @@ namespace Ilha
                 tab.Height = top ? 24 : 30;
                 tab.Margin = top ? new Thickness(1, 0, 1, 0) : new Thickness(0, 0, 0, 3);
             }
+            HeaderRow.Height = new GridLength(top ? 30 : 26); // a barra de abas tem 30 de altura
             RailCol.Width = new GridLength(top ? 0 : 36);
             RailGapCol.Width = new GridLength(top ? 0 : 14);
             RailLine.Visibility = top ? Visibility.Collapsed : Visibility.Visible;
@@ -629,8 +687,16 @@ namespace Ilha
             // Tamanho geral
             double scale = Math.Clamp(s.Scale, 0.6, 1.6);
             RootScale.ScaleX = RootScale.ScaleY = scale;
-            Width = BaseWindowWidth * scale;
-            Height = BaseWindowHeight * scale;
+            // Flutuante: tamanho escolhido pelo usuário, e a janela (transparente) já comporta o máximo,
+            // para redimensionar sem mover a ilha.
+            bool floating = Floating;
+            _expW = floating ? Math.Clamp(s.FloatWidth ?? ExpandedWidth, MinFloatWidth, MaxFloatWidth) : ExpandedWidth;
+            _expH = floating ? Math.Clamp(s.FloatHeight ?? ExpandedHeight, MinFloatHeight, MaxFloatHeight) : ExpandedHeight;
+            ExpandedView.Width = _expW;
+            ExpandedView.Height = _expH;
+            Width = (floating ? MaxFloatWidth + 60 : BaseWindowWidth) * scale;
+            Height = (floating ? MaxFloatHeight + 56 : BaseWindowHeight) * scale;
+            if (_expanded) AnimateSize(_expW, _expH, spring: false);
 
             // Tempos
             _expandTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, s.HoverDelayMs));
@@ -757,7 +823,7 @@ namespace Ilha
             _expanded = true;
             if (_peeking) EndPeek(animate: false);
 
-            AnimateSize(ExpandedWidth, ExpandedHeight, _settings.SpringAnimation);
+            AnimateSize(_expW, _expH, _settings.SpringAnimation);
             Fade(CollapsedView, 0, 100);
             Fade(ExpandedView, 1, 260, delayMs: 80);
             var ease = new CubicEase { EasingMode = EasingMode.EaseOut };

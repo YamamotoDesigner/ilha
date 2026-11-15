@@ -181,8 +181,17 @@ namespace Ilha
 
         private void CenterIsland_Click(object sender, RoutedEventArgs e)
         {
-            _settings.FloatX = null;
-            _settings.FloatY = null;
+            _settings.FloatCenterX = null;
+            _settings.FloatTop = null;
+            _apply.Stop();
+            _settings.Save();
+            SettingsChanged?.Invoke();
+        }
+
+        private void DefaultSize_Click(object sender, RoutedEventArgs e)
+        {
+            _settings.FloatWidth = null;
+            _settings.FloatHeight = null;
             _apply.Stop();
             _settings.Save();
             SettingsChanged?.Invoke();
