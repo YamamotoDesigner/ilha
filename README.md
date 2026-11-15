@@ -4,18 +4,15 @@
 
 # Ilha
 
-### O topo da sua tela, finalmente útil.
+### O topo da tela, com uma função.
 
-A Ilha vive no topo do Windows e se abre com um passar de mouse — música, arquivos, notas,
-timer e área de transferência, sempre à mão e nunca no caminho.
+Ilha é uma barra discreta no topo do Windows. Passe o mouse e ela abre com a música que está
+tocando, a sua agenda, um timer, notas e os arquivos que você quer ter à mão.
 
-[![Baixar para Windows](https://img.shields.io/badge/Baixar_para_Windows-gr%C3%A1tis-7CE3A1?style=for-the-badge&logo=windows&logoColor=white&labelColor=111113)](https://github.com/YamamotoDesigner/ilha/releases/latest)
-&nbsp;
-[![Site](https://img.shields.io/badge/Conhecer_o_site-%E2%86%92-111113?style=for-the-badge)](https://yamamotodesigner.github.io/ilha/)
+[**Baixar para Windows**](https://github.com/YamamotoDesigner/ilha/releases/latest) &nbsp;·&nbsp; [Conhecer o site](https://yamamotodesigner.github.io/ilha/)
 
-[![Versão](https://img.shields.io/github/v/release/YamamotoDesigner/ilha?label=vers%C3%A3o&color=7CE3A1&labelColor=1c1c1e)](https://github.com/YamamotoDesigner/ilha/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/YamamotoDesigner/ilha/total?label=downloads&color=7CE3A1&labelColor=1c1c1e)](https://github.com/YamamotoDesigner/ilha/releases)
-![Windows 10 e 11](https://img.shields.io/badge/Windows-10_%7C_11-7CE3A1?labelColor=1c1c1e)
+[![Versão](https://img.shields.io/github/v/release/YamamotoDesigner/ilha?label=vers%C3%A3o&color=1c1c1e&labelColor=1c1c1e)](https://github.com/YamamotoDesigner/ilha/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/YamamotoDesigner/ilha/total?label=downloads&color=1c1c1e&labelColor=1c1c1e)](https://github.com/YamamotoDesigner/ilha/releases)
 
 <br>
 
@@ -25,47 +22,40 @@ timer e área de transferência, sempre à mão e nunca no caminho.
 
 <br>
 
-## ✨ Tudo que você abre dez vezes por dia — a um gesto de distância
+## O que ela faz
 
-<img src="docs/assets/tabs.png" alt="As quatro abas da Ilha: mídia e prateleira, notas, timer e área de transferência" width="100%">
+<img src="docs/assets/tabs.png" alt="A aba Agenda da Ilha, com as tarefas do dia e o calendário do mês" width="100%">
 
 | | |
 |---|---|
-| 🎵 **Controle de mídia** | Capa, título, progresso e controles do que estiver tocando — Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows. |
-| ❤️ **Curtir no Spotify** | Um toque no coração da ilha salva a música tocando nas suas Músicas Curtidas. |
-| 🌗 **Claro ou escuro, PT ou EN** | Modo claro e escuro, e a interface inteira em português ou inglês. Tudo escolhido numa apresentação animada na primeira vez. |
-| 📂 **Prateleira de arquivos** | Arraste arquivos para a ilha e solte onde quiser depois. Leve coisas entre pastas, e-mails e apps sem perder nada. |
-| 📝 **Notas rápidas** | Um bloco sempre à mão, salvo automaticamente. |
-| ⏱️ **Foco** | Modos Foco, Pausa e Pausa longa, além de atalhos de 1 min a 1 h. A contagem aparece na ilha recolhida e ela avisa quando acabar. |
-| ✅ **Agenda e tarefas** | Calendário do mês inteiro e uma lista de tarefas para o dia, salva automaticamente. |
-| 🎬 **Teleprompter** | Seu roteiro rola logo abaixo da câmera, com contagem 3-2-1, linha atual em destaque, velocidade ajustável e lembretes como [pausa]. |
-| ⬇️ **Downloads** | Quando um download termina, a ilha avisa e o arquivo já vai para a prateleira. |
-| 📈 **Monitor do sistema** | Uso de processador e memória com gráfico dos últimos segundos. |
-| 📋 **Área de transferência** | Histórico do que você copiou; clique para copiar de novo. Fica só na memória. |
-| ✨ **Luz ambiente** | A capa da música vira um brilho colorido atrás da ilha, e a cor dela pinta o progresso e as barrinhas. |
-| 🫧 **Vidro ou sólido** | Efeito de vidro com desfoque real do que está atrás (o mesmo do Windows 11), tingido pela sua cor — ou cor sólida, se preferir. |
-| 🪞 **Espelho** | Confira o cabelo antes da call: a câmera aparece na ilha e só fica ligada enquanto a aba está aberta. |
-| 🔔 **Avisos rápidos** | A ilha recolhida cresce por um instante para mostrar volume, carregador conectado e música nova. |
-| 🏝️ **Colada, solta ou livre** | Presa no topo da tela, solta no topo como um retângulo arredondado, ou livre: arraste para qualquer lugar, mude o tamanho pelo canto e fixe com o alfinete. |
-| ⌨️ **Atalho global** | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd> abre e fecha de qualquer lugar. |
+| **Música** | Capa, título, progresso e controles do que estiver tocando: Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows. No Spotify, o coração salva a faixa nas Músicas Curtidas. |
+| **Agenda e tarefas** | Calendário do mês inteiro e uma lista de tarefas para o dia, salva automaticamente. |
+| **Foco** | Modos Foco, Pausa e Pausa longa, além de atalhos de 1 min a 1 h. A contagem aparece na ilha recolhida e ela avisa quando acabar. |
+| **Prateleira** | Arraste arquivos para a ilha e solte onde quiser depois. Downloads concluídos já aparecem lá. |
+| **Notas** | Um bloco sempre à mão, salvo automaticamente. |
+| **Área de transferência** | Histórico do que você copiou; clique para copiar de novo. Fica só na memória. |
+| **Teleprompter** | O roteiro rola logo abaixo da câmera, com contagem 3-2-1, linha atual em destaque, velocidade ajustável e lembretes como [pausa]. |
+| **Espelho** | A câmera aparece na ilha e só fica ligada enquanto a aba está aberta. |
+| **Monitor do sistema** | Uso de processador e memória com gráfico dos últimos segundos. |
+| **Avisos rápidos** | A ilha recolhida cresce por um instante para mostrar volume, carregador conectado, música nova e downloads. |
+| **Atalho global** | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd> abre e fecha de qualquer lugar. |
 
-## 🎨 Do seu jeito
+## Do seu jeito
 
-Visual próprio, com o capricho da Apple: abas na lateral ou no topo, cantos suaves (nada de pílulas),
-fonte fácil de ler, ícones desenhados à mão e animações com mola.
-Tamanho da ilha fechada e aberta (com prévia), material vidro ou sólido, intensidade da cor, cor da ilha e de destaque, tamanho, arredondamento, largura e altura da pílula, sombra,
-animação com mola, atrasos de abertura e fechamento, monitor, relógio 24 h, quais recursos
-aparecem — tudo muda ao vivo. E ela **some sozinha em jogos e vídeos em tela cheia**.
+Vidro (com o desfoque real do Windows 11) ou cor sólida. Colada na borda, solta no topo ou livre
+para arrastar e redimensionar. Abas na lateral ou no topo, modo claro ou escuro, português ou inglês.
+Cor da ilha e de destaque, arredondamento, tamanho fechada e aberta (com prévia), atrasos de abertura,
+monitor e quais recursos aparecem: tudo muda ao vivo. Ela some sozinha em jogos e vídeos em tela cheia.
 
-## 🔄 Sempre atualizada
+## Atualizações
 
 Quando sai uma versão nova, a Ilha avisa. Um clique e ela se atualiza e reabre, com
 configurações e notas no lugar. (Dá para desligar em Configurações → Atualizações.)
 
-## 📥 Instalar
+## Instalar
 
 1. Baixe o **`Ilha-Setup-x.y.z.exe`** na [página de versões](https://github.com/YamamotoDesigner/ilha/releases/latest).
-2. Execute — não precisa de administrador.
+2. Execute. Não precisa de administrador.
 3. Se aparecer "O Windows protegeu o computador", clique em **Mais informações → Executar assim mesmo**
    (o app ainda não tem assinatura digital paga).
 

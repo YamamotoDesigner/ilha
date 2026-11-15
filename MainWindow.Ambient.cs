@@ -111,8 +111,10 @@ namespace Ilha
         /// <summary>O brilho só aparece com a ilha aberta, com capa, e se a opção estiver ligada.</summary>
         private void UpdateAmbientVisibility(bool animate)
         {
-            bool show = _expanded && _ambientHasArt && _settings.AmbientArt && _settings.ShowMedia;
-            double to = !show ? 0 : ThemePalette.IsDark ? 0.62 : 0.42;
+            // Só no modo vidro: no sólido a ilha tem que ficar com a cor cheia, sem nada por cima.
+            bool glass = string.Equals(_settings.Material, "Glass", StringComparison.OrdinalIgnoreCase);
+            bool show = _expanded && glass && _ambientHasArt && _settings.AmbientArt && _settings.ShowMedia;
+            double to = !show ? 0 : ThemePalette.IsDark ? 0.5 : 0.34;
             AmbientLayer.BeginAnimation(OpacityProperty,
                 new DoubleAnimation(to, TimeSpan.FromMilliseconds(animate && !ReduceMotion ? (show ? 700 : 220) : 0)));
         }

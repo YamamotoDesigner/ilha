@@ -25,12 +25,12 @@
             <Setter Property="Background" Value="{DynamicResource CardFill}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource CardStroke}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="15"/>
+            <Setter Property="CornerRadius" Value="16"/>
         </Style>
 
         <Style x:Key="Label" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="Foreground" Value="{DynamicResource Tertiary}"/>
         </Style>
 
@@ -117,21 +117,21 @@
         <Style x:Key="ChipButton" TargetType="Button">
             <Setter Property="Foreground" Value="{DynamicResource Ink_FF}"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontWeight" Value="Normal"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Margin" Value="0,0,6,6"/>
-            <Setter Property="Background" Value="{DynamicResource Ink_17}"/>
+            <Setter Property="Background" Value="{DynamicResource Ink_14}"/>
             <Setter Property="Padding" Value="11,5"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid>
-                            <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="8"
-                                    Padding="{TemplateBinding Padding}" BorderBrush="{DynamicResource Ink_12}" BorderThickness="1">
+                            <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="9"
+                                    Padding="{TemplateBinding Padding}">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <Border x:Name="Hover" CornerRadius="8" Background="{DynamicResource Ink_FF}" Opacity="0"
+                            <Border x:Name="Hover" CornerRadius="9" Background="{DynamicResource Ink_FF}" Opacity="0"
                                     IsHitTestVisible="False"/>
                         </Grid>
                         <ControlTemplate.Triggers>
@@ -231,7 +231,7 @@
                                 </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Ink_FF}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -241,6 +241,7 @@
 
         <!-- Caixa de seleção das tarefas: quadradinho de cantos suaves -->
         <Style x:Key="TodoCheck" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource Ink_FF}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Template">
@@ -426,7 +427,7 @@
                                   StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                         </Grid>
                         <!-- Conteúdo: em tamanhos pequenos (ilha flutuante) encolhe por igual, sem cortar -->
-                        <Grid x:Name="ContentRoot" Margin="14,12,20,18" HorizontalAlignment="Left" VerticalAlignment="Top"
+                        <Grid x:Name="ContentRoot" Margin="26,20,26,24" HorizontalAlignment="Left" VerticalAlignment="Top"
                               Width="626" Height="214">
                             <Grid.LayoutTransform>
                                 <ScaleTransform x:Name="ContentScale" ScaleX="1" ScaleY="1"/>
@@ -441,7 +442,7 @@
                             <Grid x:Name="RailHost">
                                 <!-- Abas + destaque que desliza até a aba escolhida -->
                                 <Grid x:Name="TabStrip" VerticalAlignment="Top" HorizontalAlignment="Left">
-                                <Border x:Name="TabIndicator" Background="{DynamicResource Accent}" Opacity="0.2" CornerRadius="9"
+                                <Border x:Name="TabIndicator" Background="{DynamicResource Ink_FF}" Opacity="0.13" CornerRadius="9"
                                         HorizontalAlignment="Left" VerticalAlignment="Top" Width="36" Height="30" IsHitTestVisible="False">
                                     <Border.RenderTransform><TranslateTransform x:Name="TabIndicatorShift"/></Border.RenderTransform>
                                 </Border>
@@ -499,7 +500,7 @@
                                     <local:Glyph x:Name="GripGlyph" Data="{StaticResource IcoGrip}" Size="14" Thickness="3.2"
                                                  Foreground="{DynamicResource Ink_66}" Margin="-3,0,4,0" VerticalAlignment="Center"
                                                  Cursor="SizeAll" ToolTip="{local:T 'Arraste para mover a ilha'}"/>
-                                    <TextBlock x:Name="ClockText" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                                    <TextBlock x:Name="ClockText" FontSize="15.5" FontWeight="Medium" VerticalAlignment="Center"
                                                Typography.NumeralAlignment="Tabular"/>
                                     <TextBlock x:Name="DateText" FontSize="12" Foreground="{DynamicResource Tertiary}"
                                                Margin="9,1,0,0" VerticalAlignment="Center"/>
@@ -537,11 +538,11 @@
                                             Click="UpdateButton_Click" Content="{local:T 'Atualizar'}"/>
                                 </DockPanel>
                                 <Border x:Name="TopTabsHost" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                        CornerRadius="10" Padding="2" Background="{DynamicResource Ink_0F}"
-                                        BorderBrush="{DynamicResource Hairline}" BorderThickness="1" Visibility="Collapsed"/>
+                                        CornerRadius="12" Padding="3" Background="{DynamicResource Ink_0D}"
+                                        Visibility="Collapsed"/>
                                 </Grid>
 
-                                <Grid x:Name="Pages" Grid.Row="1" Margin="0,10,0,0" ClipToBounds="True">
+                                <Grid x:Name="Pages" Grid.Row="1" Margin="0,16,0,0" ClipToBounds="True">
 
                                     <!-- ── Início: mídia + sistema + prateleira ── -->
                                     <Grid x:Name="PageHome">
@@ -561,7 +562,7 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <!-- Capa grande, com um brilho da própria cor por baixo -->
-                                                <Grid VerticalAlignment="Center" Margin="2,0,16,0">
+                                                <Grid VerticalAlignment="Center" Margin="2,0,20,0">
                                                     <Border x:Name="ArtGlow" Width="{Binding Width, ElementName=ArtBox}"
                                                             Height="{Binding Height, ElementName=ArtBox}" CornerRadius="18" Opacity="0.5"
                                                             Background="{DynamicResource MediaAccent}" IsHitTestVisible="False"
@@ -623,18 +624,18 @@
                                                             <local:Glyph x:Name="LikeGlyph" Data="{StaticResource IcoHeart}" Size="16"/>
                                                         </Button>
                                                         <StackPanel VerticalAlignment="Top">
-                                                            <TextBlock x:Name="TitleText" FontSize="15.5" FontWeight="SemiBold"
+                                                            <TextBlock x:Name="TitleText" FontSize="15" FontWeight="Medium"
                                                                        TextTrimming="CharacterEllipsis"/>
                                                             <TextBlock x:Name="ArtistText" FontSize="12.5"
                                                                        Foreground="{DynamicResource Secondary}"
-                                                                       TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                                                            <TextBlock x:Name="SourceText" FontSize="10.5" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource Tertiary}"
                                                                        TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
+                                                            <TextBlock x:Name="SourceText" FontSize="10" FontWeight="Medium"
+                                                                       Foreground="{DynamicResource Tertiary}"
+                                                                       TextTrimming="CharacterEllipsis" Margin="0,5,0,0"/>
                                                         </StackPanel>
                                                     </DockPanel>
 
-                                                    <Grid x:Name="ProgressRow" Grid.Row="1" Margin="0,8,0,4">
+                                                    <Grid x:Name="ProgressRow" Grid.Row="1" Margin="0,12,0,6">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto" MinWidth="30"/>
                                                             <ColumnDefinition Width="*"/>
@@ -646,10 +647,10 @@
                                                         <Grid x:Name="ProgressHit" Grid.Column="1" Height="14" Background="Transparent"
                                                               Cursor="Hand" MouseLeftButtonDown="Progress_MouseDown"
                                                               MouseEnter="Progress_MouseEnter" MouseLeave="Progress_MouseLeave">
-                                                            <Border x:Name="ProgressTrack" Height="4" CornerRadius="1.5"
-                                                                    Background="{DynamicResource Ink_24}" VerticalAlignment="Center"/>
-                                                            <Border x:Name="ProgressFill" Height="4" CornerRadius="1.5"
-                                                                    Background="{DynamicResource MediaAccent}" VerticalAlignment="Center"
+                                                            <Border x:Name="ProgressTrack" Height="3" CornerRadius="1.5"
+                                                                    Background="{DynamicResource Ink_1F}" VerticalAlignment="Center"/>
+                                                            <Border x:Name="ProgressFill" Height="3" CornerRadius="1.5"
+                                                                    Background="{DynamicResource Ink_E6}" VerticalAlignment="Center"
                                                                     HorizontalAlignment="Left" Width="0"/>
                                                         </Grid>
                                                         <TextBlock x:Name="DurationText" Grid.Column="2" FontSize="10.5" Margin="8,0,0,0"
@@ -659,19 +660,21 @@
                                                     </Grid>
 
                                                     <StackPanel x:Name="MediaButtons" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
-                                                        <Button Style="{StaticResource IconButton}" Width="40" Height="34"
+                                                        <Button Style="{StaticResource IconButton}" Width="40" Height="36"
+                                                                Foreground="{DynamicResource Ink_D9}"
                                                                 Click="Previous_Click" ToolTip="{local:T 'Anterior'}">
-                                                            <local:Glyph Data="{StaticResource IcoPrev}" Filled="True" Size="17"/>
+                                                            <local:Glyph Data="{StaticResource IcoPrev}" Filled="True" Size="18"/>
                                                         </Button>
-                                                        <Button x:Name="PlayPauseButton" Style="{StaticResource PrimaryButton}"
-                                                                Width="50" Height="36" Margin="10,0" Click="PlayPause_Click"
+                                                        <Button x:Name="PlayPauseButton" Style="{StaticResource IconButton}"
+                                                                Width="46" Height="40" Margin="12,0" Click="PlayPause_Click"
                                                                 ToolTip="{local:T 'Tocar/Pausar'}">
                                                             <local:Glyph x:Name="PlayPauseGlyph" Data="{StaticResource IcoPlay}"
-                                                                         Filled="True" Size="18"/>
+                                                                         Filled="True" Size="25"/>
                                                         </Button>
-                                                        <Button Style="{StaticResource IconButton}" Width="40" Height="34"
+                                                        <Button Style="{StaticResource IconButton}" Width="40" Height="36"
+                                                                Foreground="{DynamicResource Ink_D9}"
                                                                 Click="Next_Click" ToolTip="{local:T 'Próxima'}">
-                                                            <local:Glyph Data="{StaticResource IcoNext}" Filled="True" Size="17"/>
+                                                            <local:Glyph Data="{StaticResource IcoNext}" Filled="True" Size="18"/>
                                                         </Button>
                                                     </StackPanel>
                                                 </Grid>
@@ -692,10 +695,10 @@
                                         <Grid x:Name="StatsCard" Grid.Column="2">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="*"/>
-                                                <RowDefinition Height="8"/>
+                                                <RowDefinition Height="12"/>
                                                 <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
-                                            <Border Style="{StaticResource Card}" Padding="10,8,10,0" ClipToBounds="True">
+                                            <Border Style="{StaticResource Card}" Padding="13,11,13,0" ClipToBounds="True">
                                                 <DockPanel>
                                                     <DockPanel DockPanel.Dock="Top">
                                                         <TextBlock Text="{local:T 'CPU'}" Style="{StaticResource Label}"
@@ -703,7 +706,7 @@
                                                         <TextBlock x:Name="CpuValue" FontSize="13" FontWeight="SemiBold"
                                                                    HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular"/>
                                                     </DockPanel>
-                                                    <Grid x:Name="CpuGraph" Margin="-10,4,-10,0">
+                                                    <Grid x:Name="CpuGraph" Margin="-13,6,-13,0">
                                                         <Path x:Name="CpuArea" Opacity="0.35" Fill="{DynamicResource Accent}"
                                                               OpacityMask="{StaticResource GraphFade}"/>
                                                         <Path x:Name="CpuLine" StrokeThickness="1.5" Stroke="{DynamicResource Accent}"
@@ -711,7 +714,7 @@
                                                     </Grid>
                                                 </DockPanel>
                                             </Border>
-                                            <Border Grid.Row="2" Style="{StaticResource Card}" Padding="10,8,10,0" ClipToBounds="True">
+                                            <Border Grid.Row="2" Style="{StaticResource Card}" Padding="13,11,13,0" ClipToBounds="True">
                                                 <DockPanel>
                                                     <DockPanel DockPanel.Dock="Top">
                                                         <TextBlock Text="{local:T 'RAM'}" Style="{StaticResource Label}"
@@ -719,7 +722,7 @@
                                                         <TextBlock x:Name="MemValue" FontSize="13" FontWeight="SemiBold"
                                                                    HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular"/>
                                                     </DockPanel>
-                                                    <Grid x:Name="MemGraph" Margin="-10,4,-10,0">
+                                                    <Grid x:Name="MemGraph" Margin="-13,6,-13,0">
                                                         <Path x:Name="MemArea" Opacity="0.35" Fill="#FFC861"
                                                               OpacityMask="{StaticResource GraphFade}"/>
                                                         <Path x:Name="MemLine" StrokeThickness="1.5" Stroke="#FFC861"
@@ -733,16 +736,14 @@
                                         <Border Grid.Column="4" x:Name="ShelfZone" Style="{StaticResource Card}">
                                             <Grid>
                                                 <TextBlock Text="{local:T 'PRATELEIRA'}" Style="{StaticResource Label}" FontSize="10"
-                                                           Margin="11,8,0,0" IsHitTestVisible="False"/>
+                                                           Margin="14,12,0,0" IsHitTestVisible="False"/>
                                                 <StackPanel x:Name="ShelfHint" VerticalAlignment="Center"
                                                             HorizontalAlignment="Center" IsHitTestVisible="False" Margin="0,10,0,0">
-                                                    <Border Width="40" Height="40" CornerRadius="11" BorderThickness="1.5"
-                                                            BorderBrush="{DynamicResource Ink_40}" HorizontalAlignment="Center">
-                                                        <local:Glyph Data="{StaticResource IcoTray}" Size="20" Foreground="{DynamicResource Ink_99}"/>
-                                                    </Border>
+                                                    <local:Glyph Data="{StaticResource IcoTray}" Size="22" Thickness="1.6"
+                                                                 Foreground="{DynamicResource Ink_73}" HorizontalAlignment="Center"/>
                                                     <TextBlock Text="{local:T 'Solte arquivos aqui'}" FontSize="12"
-                                                               Foreground="{DynamicResource Secondary}"
-                                                               Margin="0,9,0,0" HorizontalAlignment="Center"/>
+                                                               Foreground="{DynamicResource Tertiary}"
+                                                               Margin="0,10,0,0" HorizontalAlignment="Center"/>
                                                 </StackPanel>
 
                                                 <ScrollViewer VerticalScrollBarVisibility="Hidden"
@@ -809,7 +810,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <Border x:Name="TodoPanel" Style="{StaticResource Card}" Padding="12,9,12,8"
+                                        <Border x:Name="TodoPanel" Style="{StaticResource Card}" Padding="16,13,14,12"
                                                 MouseEnter="NotesArea_MouseEnter" MouseLeave="NotesArea_MouseLeave">
                                             <DockPanel>
                                                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
@@ -818,13 +819,12 @@
                                                     <StackPanel>
                                                         <TextBlock x:Name="AgendaWeekday" Style="{StaticResource Label}"
                                                                    Foreground="{DynamicResource Accent}"/>
-                                                        <TextBlock x:Name="AgendaDate" FontSize="15" FontWeight="SemiBold" Margin="0,1,0,0"/>
+                                                        <TextBlock x:Name="AgendaDate" FontSize="15" FontWeight="Medium" Margin="0,2,0,0"/>
                                                     </StackPanel>
                                                 </DockPanel>
 
                                                 <Border DockPanel.Dock="Bottom" CornerRadius="9" Background="{DynamicResource Ink_12}"
-                                                        BorderBrush="{DynamicResource Hairline}" BorderThickness="1"
-                                                        Padding="9,0,3,0" Height="30" Margin="0,6,0,0">
+                                                        Padding="10,0,3,0" Height="30" Margin="0,6,0,0">
                                                     <DockPanel>
                                                         <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}"
                                                                 Width="24" Height="24" Click="TodoAdd_Click" ToolTip="{local:T 'Adicionar tarefa'}">
@@ -905,7 +905,7 @@
                                                         <local:Glyph Data="{StaticResource IcoChevronRight}" Size="13"/>
                                                     </Button>
                                                 </StackPanel>
-                                                <TextBlock x:Name="CalMonth" FontSize="13.5" FontWeight="SemiBold"
+                                                <TextBlock x:Name="CalMonth" FontSize="13.5" FontWeight="Medium"
                                                            VerticalAlignment="Center"/>
                                                 <TextBlock x:Name="CalWeekNumber" Style="{StaticResource Label}" Margin="8,1,0,0"
                                                            VerticalAlignment="Center"/>
@@ -937,18 +937,18 @@
                                         </Grid.ColumnDefinitions>
 
                                         <!-- Contorno quadrado de cantos suaves que se esvazia com o tempo (encolhe se faltar altura) -->
-                                        <Viewbox StretchDirection="DownOnly" Stretch="Uniform" Margin="0,0,20,0"
+                                        <Viewbox StretchDirection="DownOnly" Stretch="Uniform" Margin="0,0,28,0"
                                                  HorizontalAlignment="Left" VerticalAlignment="Center">
                                         <Grid Width="156" Height="156">
-                                            <Path x:Name="TimerTrack" Stroke="{DynamicResource Ink_1F}" StrokeThickness="6"/>
-                                            <Path x:Name="TimerRing" Stroke="{DynamicResource Accent}" StrokeThickness="6"
+                                            <Path x:Name="TimerTrack" Stroke="{DynamicResource Ink_17}" StrokeThickness="4"/>
+                                            <Path x:Name="TimerRing" Stroke="{DynamicResource Accent}" StrokeThickness="4"
                                                   StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeDashCap="Round"/>
                                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                                 <TextBlock x:Name="TimerMode" Text="{local:T 'FOCO'}" Style="{StaticResource Label}"
                                                            HorizontalAlignment="Center"/>
-                                                <TextBlock x:Name="TimerDisplay" Text="5:00" FontSize="34" FontWeight="Light"
+                                                <TextBlock x:Name="TimerDisplay" Text="5:00" FontSize="38" FontWeight="Light"
                                                            HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"
-                                                           Margin="0,-1,0,0"/>
+                                                           Margin="0,1,0,1"/>
                                                 <TextBlock x:Name="TimerStatus" Text="{local:T 'Pronto'}" FontSize="11.5"
                                                            Foreground="{DynamicResource Secondary}" HorizontalAlignment="Center"/>
                                             </StackPanel>
@@ -956,14 +956,14 @@
                                         </Viewbox>
 
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                                 <Button x:Name="TimerStartButton" Style="{StaticResource ChipButton}"
-                                                        Padding="14,6" Margin="0,0,8,0" Click="TimerStartPause_Click"
-                                                        Background="{DynamicResource Accent}" Foreground="#111111">
+                                                        Padding="16,8" Margin="0,0,8,0" Click="TimerStartPause_Click"
+                                                        Background="{DynamicResource Ink_F2}" Foreground="{DynamicResource InkInverse}">
                                                     <StackPanel Orientation="Horizontal">
                                                         <local:Glyph x:Name="TimerStartGlyph" Data="{StaticResource IcoPlay}"
                                                                      Filled="True" Size="12" Margin="0,0,7,0"/>
-                                                        <TextBlock x:Name="TimerStartText" Text="{local:T 'Iniciar'}" FontSize="13" FontWeight="SemiBold"/>
+                                                        <TextBlock x:Name="TimerStartText" Text="{local:T 'Iniciar'}" FontSize="13" FontWeight="Medium"/>
                                                     </StackPanel>
                                                 </Button>
                                                 <Button Style="{StaticResource ChipButton}" Padding="14,8" Margin="0"
@@ -976,7 +976,7 @@
                                             </StackPanel>
 
                                             <!-- Modos (pomodoro): compactos para caber mesmo com a ilha pequena -->
-                                            <StackPanel x:Name="TimerModes" Orientation="Horizontal" Margin="0,0,0,8">
+                                            <StackPanel x:Name="TimerModes" Orientation="Horizontal" Margin="0,0,0,12">
                                                 <Button Style="{StaticResource ChipButton}" Tag="25|FOCO" Click="TimerMode_Click" Padding="10,5">
                                                     <TextBlock><Run Text="{local:T 'Foco'}" FontWeight="SemiBold"/><Run Text=" 25" Foreground="{DynamicResource Tertiary}"/></TextBlock>
                                                 </Button>
@@ -1029,9 +1029,8 @@
                                             <ItemsControl x:Name="ClipboardItems">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Border x:Name="Row" CornerRadius="10" Background="{DynamicResource Ink_0F}"
-                                                                BorderBrush="{DynamicResource Hairline}" BorderThickness="1"
-                                                                Padding="12,7" Margin="0,0,0,5" Cursor="Hand"
+                                                        <Border x:Name="Row" CornerRadius="10" Background="{DynamicResource Ink_0D}"
+                                                                Padding="13,8" Margin="0,0,0,5" Cursor="Hand"
                                                                 ToolTip="{Binding Text}"
                                                                 MouseLeftButtonUp="ClipItem_Click">
                                                             <DockPanel>
@@ -1103,7 +1102,7 @@
                                                 <StackPanel x:Name="PrompterIntro" VerticalAlignment="Center" HorizontalAlignment="Center"
                                                             IsHitTestVisible="False">
                                                     <local:Glyph Data="{StaticResource IcoPlay}" Filled="True" Size="20" Foreground="{DynamicResource Ink_99}"/>
-                                                    <TextBlock Text="{local:T 'Aperte Iniciar e leia junto'}" FontSize="13.5" FontWeight="SemiBold"
+                                                    <TextBlock Text="{local:T 'Aperte Iniciar e leia junto'}" FontSize="13.5" FontWeight="Medium"
                                                                HorizontalAlignment="Center" Margin="0,6,0,0"/>
                                                     <TextBlock Text="{local:T 'Uma contagem de 3 segundos te dá tempo de se preparar'}" FontSize="11.5"
                                                                Foreground="{DynamicResource Tertiary}" HorizontalAlignment="Center" TextAlignment="Center"
@@ -1125,10 +1124,10 @@
                                                 <local:Glyph Data="{StaticResource IcoReset}" Size="13"/>
                                             </Button>
                                             <Button x:Name="PrompterStart" DockPanel.Dock="Left" Style="{StaticResource ChipButton}" Margin="6,0,0,0"
-                                                    Padding="12,4" Background="{DynamicResource Accent}" Foreground="#111111" Click="PrompterStart_Click">
+                                                    Padding="13,5" Background="{DynamicResource Ink_F2}" Foreground="{DynamicResource InkInverse}" Click="PrompterStart_Click">
                                                 <StackPanel Orientation="Horizontal">
                                                     <local:Glyph x:Name="PrompterStartGlyph" Data="{StaticResource IcoPlay}" Filled="True" Size="10" Margin="0,0,6,0"/>
-                                                    <TextBlock x:Name="PrompterStartText" Text="{local:T 'Iniciar'}" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="PrompterStartText" Text="{local:T 'Iniciar'}" FontWeight="Medium"/>
                                                 </StackPanel>
                                             </Button>
                                             <TextBlock x:Name="PrompterLeft" DockPanel.Dock="Left" FontSize="11.5" Foreground="{DynamicResource Tertiary}"

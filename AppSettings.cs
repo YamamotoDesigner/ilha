@@ -9,6 +9,8 @@ namespace Ilha
     public sealed class AppSettings
     {
         // Primeira execução, idioma e tema
+        /// <summary>Versão do desenho da ilha; ao subir, tamanhos antigos são trocados pelos novos padrões.</summary>
+        public int LayoutVersion { get; set; }
         /// <summary>A tela de apresentação já foi vista.</summary>
         public bool OnboardingDone { get; set; }
         /// <summary>"pt" (Português do Brasil) ou "en" (English US); null = idioma do Windows.</summary>
@@ -46,8 +48,8 @@ namespace Ilha
         public int? FloatCenterX { get; set; }
         public int? FloatTop { get; set; }
         /// <summary>Tamanho da ilha aberta (pixels lógicos, antes do "Tamanho geral"), em todos os estilos.</summary>
-        public double OpenWidth { get; set; } = 560;
-        public double OpenHeight { get; set; } = 200;
+        public double OpenWidth { get; set; } = 640;
+        public double OpenHeight { get; set; } = 236;
         /// <summary>"Side" (trilho lateral) ou "Top" (barra no topo).</summary>
         public string TabPosition { get; set; } = "Side";
 
@@ -158,13 +160,31 @@ namespace Ilha
             try
             {
                 if (File.Exists(FilePath))
-                    return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new AppSettings();
+                    return Migrate(JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new AppSettings());
             }
             catch
             {
                 // Arquivo corrompido: começa com padrões.
             }
-            return new AppSettings();
+            return Migrate(new AppSettings());
+        }
+
+        private const int CurrentLayout = 2;
+
+        /// <summary>
+        /// Layout 2 (1.9): a ilha aberta ganhou margens e espaços maiores; quem ainda está no
+        /// tamanho antigo passa para o novo padrão, senão o conteúdo ficaria apertado.
+        /// </summary>
+        private static AppSettings Migrate(AppSettings s)
+        {
+            if (s.LayoutVersion < CurrentLayout)
+            {
+                var d = new AppSettings { LayoutVersion = CurrentLayout };
+                if (s.OpenWidth < d.OpenWidth) s.OpenWidth = d.OpenWidth;
+                if (s.OpenHeight < d.OpenHeight) s.OpenHeight = d.OpenHeight;
+                s.LayoutVersion = CurrentLayout;
+            }
+            return s;
         }
 
         /// <summary>

@@ -291,6 +291,35 @@
             <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
         </Style>
 
+        <!-- Caixa do código da cor (#RRGGBB): discreta, no mesmo tom dos outros controles -->
+        <Style x:Key="HexBox" TargetType="TextBox">
+            <Setter Property="Foreground" Value="{DynamicResource WinFg}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource WinFg}"/>
+            <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="CharacterCasing" Value="Upper"/>
+            <Setter Property="MaxLength" Value="9"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bg" CornerRadius="8" Background="{DynamicResource Control}"
+                                BorderBrush="Transparent" BorderThickness="1" Padding="9,0">
+                            <ScrollViewer x:Name="PART_ContentHost" Background="Transparent" Focusable="False"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bg" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="Swatch" TargetType="Button">
             <Setter Property="Width" Value="24"/>
             <Setter Property="Height" Value="24"/>
@@ -528,7 +557,7 @@
                                 </StackPanel>
                             </RadioButton>
                         </StackPanel>
-                        <Border Style="{StaticResource Group}" Margin="0,12,0,0">
+                        <Border x:Name="TintGroup" Style="{StaticResource Group}" Margin="0,12,0,0">
                             <Grid Style="{StaticResource SliderRow}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="180"/><ColumnDefinition Width="*"/><ColumnDefinition Width="64"/>
@@ -547,14 +576,14 @@
                             <StackPanel>
                                 <DockPanel Margin="16,10">
                                     <TextBlock Text="{local:T 'Ilha'}" Width="110" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="IslandColorBox" DockPanel.Dock="Right" Width="92"
+                                    <TextBox x:Name="IslandColorBox" Style="{StaticResource HexBox}" DockPanel.Dock="Right" Width="92"
                                              Text="{Binding IslandColor, UpdateSourceTrigger=PropertyChanged}"/>
                                     <StackPanel x:Name="IslandSwatches" Orientation="Horizontal" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <Border Style="{StaticResource Divider}"/>
                                 <DockPanel Margin="16,10">
                                     <TextBlock Text="{local:T 'Destaque'}" Width="110" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="AccentColorBox" DockPanel.Dock="Right" Width="92"
+                                    <TextBox x:Name="AccentColorBox" Style="{StaticResource HexBox}" DockPanel.Dock="Right" Width="92"
                                              Text="{Binding AccentColor, UpdateSourceTrigger=PropertyChanged}"/>
                                     <StackPanel x:Name="AccentSwatches" Orientation="Horizontal" VerticalAlignment="Center"/>
                                 </DockPanel>
@@ -564,7 +593,7 @@
                         <TextBlock Text="{local:T 'DETALHES'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
-                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Luz ambiente da capa da música'}" IsChecked="{Binding AmbientArt}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Luz ambiente da capa da música (modo vidro)'}" IsChecked="{Binding AmbientArt}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Sombra (modo sólido e ilha flutuante)'}" IsChecked="{Binding ShowShadow}"/>
                                 <Border Style="{StaticResource Divider}"/>

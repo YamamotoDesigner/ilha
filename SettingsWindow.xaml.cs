@@ -328,9 +328,14 @@ namespace Ilha
             UpdateMaterialHint();
         }
 
-        private void UpdateMaterialHint() => MaterialHint.Text = IsGlass
-            ? L.T("Vidro: o que está atrás da ilha aparece desfocado, tingido pela cor escolhida.")
-            : L.T("Sólido: a ilha usa a cor escolhida, sem transparência.");
+        private void UpdateMaterialHint()
+        {
+            MaterialHint.Text = IsGlass
+                ? L.T("Vidro: o que está atrás da ilha aparece desfocado, tingido pela cor escolhida.")
+                : L.T("Sólido: a ilha usa a cor escolhida, sem transparência.");
+            // A intensidade só vale para o vidro; no sólido a cor já é cheia.
+            TintGroup.Visibility = IsGlass ? Visibility.Visible : Visibility.Collapsed;
+        }
 
         private void Material_Checked(object sender, RoutedEventArgs e)
         {

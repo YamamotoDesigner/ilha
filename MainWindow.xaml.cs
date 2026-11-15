@@ -20,7 +20,7 @@ namespace Ilha
 {
     public partial class MainWindow : Window
     {
-        private const double DefaultOpenWidth = 560, DefaultOpenHeight = 200;
+        private const double DefaultOpenWidth = 640, DefaultOpenHeight = 236;
         // Ilha flutuante redimensionável: limites do tamanho aberto.
         private const double MinFloatWidth = 340, MaxFloatWidth = 1040, MinFloatHeight = 130, MaxFloatHeight = 460;
         private double _expW = DefaultOpenWidth, _expH = DefaultOpenHeight;
@@ -114,6 +114,12 @@ namespace Ilha
                 restart.Start();
             }
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TABSTOP") == "1") _settings.TabPosition = "Top";
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_TABSTOP") == "0") _settings.TabPosition = "Side";
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_MATERIAL") is { Length: > 0 } testMaterial)
+            {
+                _settings.Material = testMaterial;
+                if (testMaterial == "Glass") _settings.GlassTint = 42;
+            }
             if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FW"), out double tfw)) _settings.OpenWidth = tfw;
             if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FH"), out double tfh)) _settings.OpenHeight = tfh;
 #endif
@@ -507,12 +513,12 @@ namespace Ilha
             {
                 tab.Width = top ? 34 : 36;
                 tab.Height = top ? 24 : 30; // na lateral, UpdateResponsiveLayout ajusta à altura disponível
-                tab.Margin = top ? new Thickness(1, 0, 1, 0) : new Thickness(0, 0, 0, 3);
+                tab.Margin = top ? new Thickness(2, 0, 2, 0) : new Thickness(0, 0, 0, 6);
             }
-            HeaderRow.Height = new GridLength(top ? 30 : 26); // a barra de abas tem 30 de altura
+            HeaderRow.Height = new GridLength(top ? HeaderTop : HeaderSide);
             RailCol.Width = new GridLength(top ? 0 : 36);
-            RailGapCol.Width = new GridLength(top ? 0 : 14);
-            RailLine.Visibility = top ? Visibility.Collapsed : Visibility.Visible;
+            RailGapCol.Width = new GridLength(top ? 0 : RailGap);
+            RailLine.Visibility = Visibility.Collapsed; // sem linha divisória: o espaço já separa
             TopTabsHost.Visibility = top && TabBar.Visibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
             TabStrip.Visibility = TabBar.Visibility;
             Dispatcher.BeginInvoke(() => MoveTabIndicator(animate: false), DispatcherPriority.Loaded);
@@ -542,13 +548,16 @@ namespace Ilha
 
         // Abaixo deste tamanho de conteúdo, tudo encolhe por igual em vez de cortar.
         private const double ContentMinWidth = 420, ContentMinHeight = 150;
-        private const double ContentPadX = 34, ContentPadY = 30;
+        // Respiro: margens largas em volta do conteúdo (ver Margin de ContentRoot no XAML).
+        private const double ContentPadX = 52, ContentPadY = 44;
+        private const double RailWidth = 36, RailGap = 22, HeaderSide = 30, HeaderTop = 34, PageGap = 16;
 
         private bool TabsOnTop => string.Equals(_settings.TabPosition, "Top", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Encaixa o conteúdo no tamanho atual da ilha aberta: escala quando fica pequeno demais e
         /// esconde o que não cabe (sistema, prateleira, tarefas, modos do timer, data...).
+        /// Poucos blocos por tela, com espaço entre eles, em vez de tudo espremido.
         /// </summary>
         private void UpdateResponsiveLayout()
         {
@@ -561,57 +570,66 @@ namespace Ilha
             ContentRoot.Height = vh;
 
             bool top = TabsOnTop;
-            double pageW = vw - (top ? 0 : 50);
-            double pageH = vh - (top ? 30 : 26) - 10;
+            double pageW = vw - (top ? 0 : RailWidth + RailGap);
+            double pageH = vh - (top ? HeaderTop : HeaderSide) - PageGap;
             var visible = Visibility.Visible;
             var hidden = Visibility.Collapsed;
 
-            // Trilho lateral: as abas dividem a altura disponível, sem cortar a última.
+            // Trilho lateral: as abas dividem a altura disponível, com folga entre elas, sem cortar a última.
             if (!top)
             {
                 var tabs = TabBar.Children.OfType<RadioButton>().Where(t => t.Visibility == visible).ToList();
-                // O botão "+" também precisa caber no fim do trilho.
-                double addH = Math.Clamp(vh * 0.11, 18, 26);
-                double tabH = tabs.Count == 0 ? 30 : Math.Clamp((vh - addH) / tabs.Count - 3, 18, 30);
-                foreach (var t in tabs) t.Height = tabH;
+                double addH = Math.Clamp(vh * 0.11, 18, 26); // o botão "+" também precisa caber
+                double slot = tabs.Count == 0 ? 36 : (vh - addH) / tabs.Count;
+                double gap = Math.Clamp(slot - 28, 2, 7);
+                double tabH = Math.Clamp(slot - gap, 18, 30);
+                foreach (var t in tabs)
+                {
+                    t.Height = tabH;
+                    t.Margin = new Thickness(0, 0, 0, gap);
+                }
                 AddTabButton.Height = addH;
             }
 
             // Cabeçalho
-            DateText.Visibility = (top ? vw >= 640 : pageW >= 330) ? visible : hidden;
-            BatteryText.Visibility = !top || vw >= 560 ? visible : hidden;
+            DateText.Visibility = (top ? vw >= 660 : pageW >= 330) ? visible : hidden;
+            BatteryText.Visibility = !top || vw >= 580 ? visible : hidden;
 
-            // Início: a mídia ocupa o espaço livre; sistema e prateleira só aparecem se couberem
+            // Início: no tamanho normal, só a música e a prateleira, com um bom espaço entre elas.
+            // O monitor do sistema entra quando a ilha é mais larga.
+            const double gap1 = 24, gap2 = 16, statsW = 124;
             bool media = s.ShowMedia;
-            double used = media ? 210 : 0;
-            bool shelf = s.ShowShelf && pageW >= used + (media ? 14 : 0) + 140;
-            if (shelf) used += (media ? 14 : 0) + 150;
-            bool stats = s.ShowStats && pageH >= 116 && pageW >= used + 12 + 118;
+            double used = media ? 230 : 0;
+            double shelfW = 168;
+            bool shelf = s.ShowShelf && pageW >= used + (media ? gap1 : 0) + 150;
+            if (shelf) used += (media ? gap1 : 0) + shelfW;
+            bool stats = s.ShowStats && pageH >= 120 && pageW >= used + gap2 + statsW + (media ? 60 : 0);
+            if (shelf && !stats && media) shelfW = Math.Min(200, pageW * 0.36);
             MediaArea.Visibility = media ? visible : hidden;
             ShelfZone.Visibility = shelf ? visible : hidden;
             StatsCard.Visibility = stats ? visible : hidden;
             var star = new GridLength(1, GridUnitType.Star);
             HomeMediaCol.Width = media ? star : new GridLength(0);
-            HomeStatsCol.Width = !stats ? new GridLength(0) : media || shelf ? new GridLength(118) : star;
-            HomeShelfCol.Width = !shelf ? new GridLength(0) : media ? new GridLength(stats ? 150 : 190) : star;
-            HomeGap1.Width = new GridLength(media && (stats || shelf) ? 14 : 0);
-            HomeGap2.Width = new GridLength(stats && shelf ? 12 : 0);
+            HomeStatsCol.Width = !stats ? new GridLength(0) : media || shelf ? new GridLength(statsW) : star;
+            HomeShelfCol.Width = !shelf ? new GridLength(0) : media ? new GridLength(shelfW) : star;
+            HomeGap1.Width = new GridLength(media && (stats || shelf) ? gap1 : 0);
+            HomeGap2.Width = new GridLength(stats && shelf ? gap2 : 0);
             // Capa: o maior quadrado que cabe na altura, deixando espaço para os controles ao lado
-            double mediaW = pageW - (shelf ? (stats ? 150 : 190) + 14 : 0) - (stats ? 118 + (shelf ? 12 : 14) : 0);
-            double artSize = Math.Round(Math.Clamp(Math.Min(pageH - 22, mediaW - 172), 40, 124));
+            double mediaW = pageW - (shelf ? shelfW + gap1 : 0) - (stats ? statsW + (shelf ? gap2 : gap1) : 0);
+            double artSize = Math.Round(Math.Clamp(Math.Min(pageH - 16, mediaW - 184), 40, 132));
             ArtBox.Width = ArtBox.Height = artSize;
             ArtBox.CornerRadius = new CornerRadius(Math.Round(artSize * 0.17));
             SourceText.Visibility = pageH >= 118 ? visible : hidden;
 
             // Agenda: a lista de tarefas sai primeiro; o mês fica
-            bool todo = pageW >= 500 && pageH >= 118;
+            bool todo = pageW >= 520 && pageH >= 118;
             TodoPanel.Visibility = todo ? visible : hidden;
-            AgendaTodoCol.Width = new GridLength(todo ? 230 : 0);
-            AgendaGapCol.Width = new GridLength(todo ? 14 : 0);
+            AgendaTodoCol.Width = new GridLength(todo ? 232 : 0);
+            AgendaGapCol.Width = new GridLength(todo ? 26 : 0);
 
             // Foco: o quadrado encolhe com a altura; modos e atalhos só se couber
             TimerModes.Visibility = pageW >= 300 && pageH >= 96 ? visible : hidden;
-            TimerChips.Visibility = pageH >= 118 && pageW >= 300 ? visible : hidden;
+            TimerChips.Visibility = pageH >= 126 && pageW >= 300 ? visible : hidden;
 
             // Espelho
             MirrorFrame.Width = Math.Min(300, pageW);
@@ -681,9 +699,6 @@ namespace Ilha
                 new Point(0, 0), new Point(1, 1));
             UpdateAmbient(force: true);
 
-            // Anel do timer com brilho da cor de destaque
-            var accentColor = ((SolidColorBrush)Resources["Accent"]).Color;
-            TimerRing.Effect = new DropShadowEffect { Color = accentColor, BlurRadius = 14, ShadowDepth = 0, Opacity = 0.55 };
             UpdateGlassRegion();
         }
 
@@ -1425,8 +1440,8 @@ namespace Ilha
                 CalHeader.Children.Add(new TextBlock
                 {
                     Text = culture.DateTimeFormat.GetAbbreviatedDayName(dow).TrimEnd('.').Substring(0, 1).ToUpper(culture),
-                    FontSize = 10.5,
-                    FontWeight = FontWeights.SemiBold,
+                    FontSize = 10,
+                    FontWeight = FontWeights.Medium,
                     Foreground = (Brush)FindResource("Tertiary"),
                     HorizontalAlignment = HorizontalAlignment.Center,
                 });
@@ -1457,7 +1472,7 @@ namespace Ilha
                     {
                         Text = day.Day.ToString(culture),
                         FontSize = 11.5,
-                        FontWeight = isToday ? FontWeights.Bold : FontWeights.Medium,
+                        FontWeight = isToday ? FontWeights.SemiBold : FontWeights.Normal,
                         Foreground = isToday ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11))
                             : !inMonth ? Ink(0x40)
                             : weekend ? (Brush)FindResource("Tertiary") : Ink(0xFF),
@@ -1548,15 +1563,15 @@ namespace Ilha
             UpdateProgress();
         }
 
-        private void Progress_MouseEnter(object sender, MouseEventArgs e) => SetProgressThickness(7);
-        private void Progress_MouseLeave(object sender, MouseEventArgs e) => SetProgressThickness(4);
+        private void Progress_MouseEnter(object sender, MouseEventArgs e) => SetProgressThickness(6);
+        private void Progress_MouseLeave(object sender, MouseEventArgs e) => SetProgressThickness(3);
 
         private void SetProgressThickness(double h)
         {
             var anim = new DoubleAnimation(h, TimeSpan.FromMilliseconds(140));
             ProgressTrack.BeginAnimation(HeightProperty, anim);
             ProgressFill.BeginAnimation(HeightProperty, anim);
-            ProgressTrack.CornerRadius = ProgressFill.CornerRadius = new CornerRadius(Math.Min(2.5, h / 2));
+            ProgressTrack.CornerRadius = ProgressFill.CornerRadius = new CornerRadius(Math.Min(2, h / 2));
         }
 
         private static string FormatTime(TimeSpan t) =>
@@ -1942,7 +1957,7 @@ namespace Ilha
         }
 
         // Contorno do timer: quadrado de cantos suaves, começando no meio do topo, sentido horário.
-        private const double TimerSize = 156, TimerStroke = 6, TimerCorner = 38;
+        private const double TimerSize = 156, TimerStroke = 4, TimerCorner = 40;
         private static readonly double TimerPerimeter =
             4 * (TimerSize - TimerStroke - 2 * TimerCorner) + 2 * Math.PI * TimerCorner;
 

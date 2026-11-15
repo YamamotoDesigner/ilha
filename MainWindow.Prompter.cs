@@ -71,7 +71,7 @@ namespace Ilha
                 var block = new TextBlock
                 {
                     FontSize = 18,
-                    FontWeight = FontWeights.Medium,
+                    FontWeight = FontWeights.Normal,
                     TextWrapping = TextWrapping.Wrap,
                     Margin = new Thickness(0, 0, 0, 10),
                     LineHeight = 25,
@@ -115,7 +115,7 @@ namespace Ilha
         {
             PrompterShift.Y = PrompterReadLine - _prompterOffset;
             // Antes de começar o texto fica escondido atrás da mensagem de início.
-            PrompterLines.Opacity = PrompterIntro.Visibility == Visibility.Visible ? 0.12 : _prompterCounting ? 0.18 : 1;
+            PrompterLines.Opacity = PrompterIntro.Visibility == Visibility.Visible ? 0 : _prompterCounting ? 0.18 : 1;
         }
 
         /// <summary>Lida = apagada, atual = forte, próximas = médias.</summary>
