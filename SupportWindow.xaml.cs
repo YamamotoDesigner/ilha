@@ -1,19 +1,20 @@
 using System;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Navigation;
+using System.Windows.Controls;
 using System.Windows.Threading;
 
 namespace Ilha
 {
+    /// <summary>Janela "Apoie o Ilha": doação via Pix e outras formas de ajudar o projeto.</summary>
     public partial class SupportWindow : Window
     {
+        private const string SiteUrl = "https://yamamotodesigner.github.io/ilha/";
         private static SupportWindow? _open;
 
-        /// <summary>Abre a janela de apoio (ou traz para frente se já estiver aberta).</summary>
+        /// <summary>Abre a janela (ou traz para frente se já estiver aberta).</summary>
         public static void ShowSingle()
         {
-            if (!Support.IsConfigured) return;
             if (_open != null)
             {
                 _open.Activate();
@@ -28,39 +29,82 @@ namespace Ilha
         private SupportWindow()
         {
             InitializeComponent();
-            string code = Support.PixCode;
-            QrImage.Source = Support.CreateQr(code);
-            CodeBox.Text = code;
-            string? name = Support.ReceiverName(code);
-            ReceiverText.Text = name != null ? $"Para: {name}" : "";
+            if (Support.IsConfigured)
+            {
+                string code = Support.PixCode;
+                QrImage.Source = Support.CreateQr(code);
+                CodeBox.Text = code;
+                string? name = Support.ReceiverName(code);
+                ReceiverText.Text = name != null ? $"Para: {name}" : "";
+            }
+            else
+            {
+                // Sem Pix configurado: só as outras formas de ajudar.
+                PixCard.Visibility = Visibility.Collapsed;
+                PixCol.Width = new GridLength(0);
+                PixGap.Width = new GridLength(0);
+            }
         }
 
         private void Copy_Click(object sender, RoutedEventArgs e)
         {
+            if (TryCopy(Support.PixCode))
+            {
+                CopyText.Text = "Copiado! Cole no app do seu banco ✓";
+            }
+            else
+            {
+                CodeBox.Visibility = Visibility.Visible;
+                CodeBox.Focus();
+                CodeBox.SelectAll();
+                CopyText.Text = "Não deu para copiar — selecione o código abaixo";
+            }
+            After(3, () => CopyText.Text = "Copiar código Pix (copia e cola)");
+        }
+
+        private void Share_Click(object sender, RoutedEventArgs e)
+        {
+            ShareText.Text = TryCopy(SiteUrl) ? "Link copiado! Agora é só colar na conversa ✓" : SiteUrl;
+            After(3, () => ShareText.Text = "Copia o link do site para você mandar.");
+        }
+
+        private void Link_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string url }) return;
             try
             {
-                Clipboard.SetText(Support.PixCode);
-                CopyButton.Content = "Copiado! Cole no app do seu banco ✓";
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             }
             catch
             {
-                CodeBox.Focus();
-                CodeBox.SelectAll();
-                CopyButton.Content = "Não deu para copiar — selecione o código acima";
+                // Sem navegador padrão.
             }
-            var reset = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-            reset.Tick += (_, _) =>
-            {
-                reset.Stop();
-                CopyButton.Content = "Copiar código Pix";
-            };
-            reset.Start();
         }
 
-        private void Link_Navigate(object sender, RequestNavigateEventArgs e)
+        private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+        private static bool TryCopy(string text)
         {
-            try { Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); } catch { }
-            e.Handled = true;
+            try
+            {
+                Clipboard.SetText(text);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static void After(double seconds, Action action)
+        {
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seconds) };
+            timer.Tick += (_, _) =>
+            {
+                timer.Stop();
+                action();
+            };
+            timer.Start();
         }
     }
 }

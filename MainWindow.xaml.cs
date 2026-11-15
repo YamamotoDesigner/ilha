@@ -23,7 +23,7 @@ namespace Ilha
         private const double BaseWindowWidth = 720, BaseWindowHeight = 300;
         private const double ExpandedWidth = 660, ExpandedHeight = 244;
         // Ilha flutuante redimensionável: limites do tamanho aberto.
-        private const double MinFloatWidth = 580, MaxFloatWidth = 1040, MinFloatHeight = 214, MaxFloatHeight = 460;
+        private const double MinFloatWidth = 340, MaxFloatWidth = 1040, MinFloatHeight = 130, MaxFloatHeight = 460;
         private double _expW = ExpandedWidth, _expH = ExpandedHeight;
         private const double CollapsedExtraWidth = 64;
         private const double PeekExtraWidth = 170;
@@ -99,6 +99,8 @@ namespace Ilha
             // Testes visuais: muda só na memória (as configurações reais não são tocadas).
             if (Environment.GetEnvironmentVariable("ILHA_TEST_FLOAT") == "1") _settings.IslandStyle = "Floating";
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TABSTOP") == "1") _settings.TabPosition = "Top";
+            if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FW"), out double tfw)) _settings.FloatWidth = tfw;
+            if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FH"), out double tfh)) _settings.FloatHeight = tfh;
 #endif
             _glassWindow = glass;
             Owner = glass;
@@ -161,6 +163,7 @@ namespace Ilha
                 UpdateGlassRegion();
             };
             LocationChanged += (_, _) => _glassWindow?.Follow(_hwnd); // inclusive enquanto arrasta
+            CalGrid.SizeChanged += (_, _) => SizeCalendarCells();
             CpuGraph.SizeChanged += (_, _) => UpdateStats();
             MemGraph.SizeChanged += (_, _) => UpdateStats();
             DrawTimerTrack();
@@ -208,11 +211,20 @@ namespace Ilha
                 t.Tick += (_, _) =>
                 {
                     t.Stop();
-                    if (testTab == "settings")
+                    if (testTab is "settings" or "support")
                     {
-                        OpenSettings();
-                        var w = _settingsWindow!;
-                        w.Height = 900;
+                        Window w;
+                        if (testTab == "support")
+                        {
+                            SupportWindow.ShowSingle();
+                            w = Application.Current.Windows.OfType<SupportWindow>().First();
+                        }
+                        else
+                        {
+                            OpenSettings();
+                            w = _settingsWindow!;
+                            w.Height = 900;
+                        }
                         if (Environment.GetEnvironmentVariable("ILHA_TEST_PAGE") is { Length: > 0 } navName &&
                             w.FindName(navName) is RadioButton nav)
                             nav.IsChecked = true;
@@ -424,6 +436,7 @@ namespace Ilha
             _expH = Math.Clamp(_resizeH0 + dy, MinFloatHeight, MaxFloatHeight);
             ExpandedView.Width = _expW;
             ExpandedView.Height = _expH;
+            UpdateResponsiveLayout();
             Island.BeginAnimation(WidthProperty, null);
             Island.BeginAnimation(HeightProperty, null);
             Island.Width = _expW;
@@ -462,7 +475,7 @@ namespace Ilha
             foreach (var tab in TabBar.Children.OfType<RadioButton>())
             {
                 tab.Width = top ? 34 : 36;
-                tab.Height = top ? 24 : 30;
+                tab.Height = top ? 24 : 30; // na lateral, UpdateResponsiveLayout ajusta à altura disponível
                 tab.Margin = top ? new Thickness(1, 0, 1, 0) : new Thickness(0, 0, 0, 3);
             }
             HeaderRow.Height = new GridLength(top ? 30 : 26); // a barra de abas tem 30 de altura
@@ -470,6 +483,81 @@ namespace Ilha
             RailGapCol.Width = new GridLength(top ? 0 : 14);
             RailLine.Visibility = top ? Visibility.Collapsed : Visibility.Visible;
             TopTabsHost.Visibility = top && TabBar.Visibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // Abaixo deste tamanho de conteúdo, tudo encolhe por igual em vez de cortar.
+        private const double ContentMinWidth = 420, ContentMinHeight = 150;
+        private const double ContentPadX = 34, ContentPadY = 30;
+
+        private bool TabsOnTop => string.Equals(_settings.TabPosition, "Top", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Encaixa o conteúdo no tamanho atual da ilha aberta: escala quando fica pequeno demais e
+        /// esconde o que não cabe (sistema, prateleira, tarefas, modos do timer, data...).
+        /// </summary>
+        private void UpdateResponsiveLayout()
+        {
+            var s = _settings;
+            double cw = _expW - ContentPadX, ch = _expH - ContentPadY;
+            double k = Math.Min(1, Math.Min(cw / ContentMinWidth, ch / ContentMinHeight));
+            ContentScale.ScaleX = ContentScale.ScaleY = k;
+            double vw = cw / k, vh = ch / k; // tamanho "virtual" em que o layout é montado
+            ContentRoot.Width = vw;
+            ContentRoot.Height = vh;
+
+            bool top = TabsOnTop;
+            double pageW = vw - (top ? 0 : 50);
+            double pageH = vh - (top ? 30 : 26) - 10;
+            var visible = Visibility.Visible;
+            var hidden = Visibility.Collapsed;
+
+            // Trilho lateral: as abas dividem a altura disponível, sem cortar a última.
+            if (!top)
+            {
+                var tabs = TabBar.Children.OfType<RadioButton>().Where(t => t.Visibility == visible).ToList();
+                double tabH = tabs.Count == 0 ? 30 : Math.Clamp(vh / tabs.Count - 3, 20, 30);
+                foreach (var t in tabs) t.Height = tabH;
+            }
+
+            // Cabeçalho
+            DateText.Visibility = (top ? vw >= 520 : pageW >= 330) ? visible : hidden;
+            BatteryText.Visibility = !top || vw >= 480 ? visible : hidden;
+
+            // Início: a mídia ocupa o espaço livre; sistema e prateleira só aparecem se couberem
+            bool media = s.ShowMedia;
+            double used = media ? 210 : 0;
+            bool shelf = s.ShowShelf && pageW >= used + (media ? 14 : 0) + 140;
+            if (shelf) used += (media ? 14 : 0) + 150;
+            bool stats = s.ShowStats && pageH >= 116 && pageW >= used + 12 + 118;
+            MediaArea.Visibility = media ? visible : hidden;
+            ShelfZone.Visibility = shelf ? visible : hidden;
+            StatsCard.Visibility = stats ? visible : hidden;
+            var star = new GridLength(1, GridUnitType.Star);
+            HomeMediaCol.Width = media ? star : new GridLength(0);
+            HomeStatsCol.Width = !stats ? new GridLength(0) : media || shelf ? new GridLength(118) : star;
+            HomeShelfCol.Width = !shelf ? new GridLength(0) : media ? new GridLength(stats ? 150 : 190) : star;
+            HomeGap1.Width = new GridLength(media && (stats || shelf) ? 14 : 0);
+            HomeGap2.Width = new GridLength(stats && shelf ? 12 : 0);
+            // Pouca altura: capa menor e sem a linha do app de origem
+            bool compactMedia = pageH < 136;
+            ArtBox.Width = ArtBox.Height = compactMedia ? 42 : 64;
+            ArtBox.CornerRadius = new CornerRadius(compactMedia ? 10 : 13);
+            SourceText.Visibility = compactMedia ? hidden : visible;
+
+            // Agenda: a lista de tarefas sai primeiro; o mês fica
+            bool todo = pageW >= 500 && pageH >= 118;
+            TodoPanel.Visibility = todo ? visible : hidden;
+            AgendaTodoCol.Width = new GridLength(todo ? 230 : 0);
+            AgendaGapCol.Width = new GridLength(todo ? 14 : 0);
+
+            // Foco: o quadrado encolhe com a altura; modos e atalhos só se couber
+            TimerModes.Visibility = pageW >= 480 ? visible : hidden;
+            TimerChips.Visibility = pageH >= 140 && pageW >= 380 ? visible : hidden;
+
+            // Espelho
+            MirrorFrame.Width = Math.Min(300, pageW);
+
+            UpdateStats();
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -702,20 +790,8 @@ namespace Ilha
             _expandTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, s.HoverDelayMs));
             _collapseTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(50, s.CollapseDelayMs));
 
-            // Página inicial: mídia ocupa o espaço livre; sistema e prateleira têm largura fixa
-            bool media = s.ShowMedia, shelf = s.ShowShelf, stats = s.ShowStats;
-            MediaArea.Visibility = media ? Visibility.Visible : Visibility.Collapsed;
-            ShelfZone.Visibility = shelf ? Visibility.Visible : Visibility.Collapsed;
-            StatsCard.Visibility = stats ? Visibility.Visible : Visibility.Collapsed;
-            var star = new GridLength(1, GridUnitType.Star);
-            HomeMediaCol.Width = media ? star : new GridLength(0);
-            HomeStatsCol.Width = !stats ? new GridLength(0) : media || shelf ? new GridLength(118) : star;
-            HomeShelfCol.Width = !shelf ? new GridLength(0) : media ? new GridLength(stats ? 150 : 200) : star;
-            HomeGap1.Width = new GridLength(media && (stats || shelf) ? 14 : 0);
-            HomeGap2.Width = new GridLength(stats && shelf ? 12 : 0);
-
             // Abas
-            TabHome.Visibility = media || shelf || stats ? Visibility.Visible : Visibility.Collapsed;
+            TabHome.Visibility = s.ShowMedia || s.ShowShelf || s.ShowStats ? Visibility.Visible : Visibility.Collapsed;
             TabAgenda.Visibility = s.ShowCalendar ? Visibility.Visible : Visibility.Collapsed;
             TabNotes.Visibility = s.ShowNotes ? Visibility.Visible : Visibility.Collapsed;
             TabTimer.Visibility = s.ShowTimer ? Visibility.Visible : Visibility.Collapsed;
@@ -725,6 +801,7 @@ namespace Ilha
                 .Where(t => t.Visibility == Visibility.Visible).ToList();
             TabBar.Visibility = visibleTabs.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
             ApplyTabPosition();
+            UpdateResponsiveLayout();
             if (visibleTabs.Count == 0)
                 SelectTab("home");
             else if (!visibleTabs.Any(t => t.IsChecked == true))
@@ -1187,7 +1264,13 @@ namespace Ilha
                     Margin = new Thickness(3, 1, 3, 1),
                     CornerRadius = new CornerRadius(6),
                     Background = isToday ? accent : Brushes.Transparent,
-                    Child = new TextBlock
+                    // Com pouca altura, o número encolhe junto com a célula em vez de ser cortado.
+                    Child = new Viewbox
+                    {
+                        StretchDirection = StretchDirection.DownOnly,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Child = new TextBlock
                     {
                         Text = day.Day.ToString(culture),
                         FontSize = 11.5,
@@ -1198,9 +1281,24 @@ namespace Ilha
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center,
                         Typography = { NumeralAlignment = FontNumeralAlignment.Tabular },
-                    },
+                    } },
                 };
                 CalGrid.Children.Add(cell);
+            }
+            SizeCalendarCells();
+        }
+
+        /// <summary>Células do mês com largura proporcional à altura: o destaque de hoje nunca vira pílula.</summary>
+        private void SizeCalendarCells()
+        {
+            double rowH = CalGrid.ActualHeight / 6, colW = CalGrid.ActualWidth / 7;
+            if (rowH <= 0 || colW <= 0) return;
+            double width = Math.Max(10, Math.Min(colW - 6, Math.Max(rowH - 2, 12) * 1.6));
+            foreach (var cell in CalGrid.Children.OfType<Border>())
+            {
+                cell.Width = width;
+                cell.HorizontalAlignment = HorizontalAlignment.Center;
+                cell.CornerRadius = new CornerRadius(Math.Min(6, (rowH - 2) / 3));
             }
         }
 

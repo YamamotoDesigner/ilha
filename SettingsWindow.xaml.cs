@@ -48,7 +48,6 @@ namespace Ilha
             SyncChoices();
             ApplyAccent();
             ShowPage(PageGeneral);
-            SupportButton.Visibility = Support.IsConfigured ? Visibility.Visible : Visibility.Collapsed;
             DataContext = _settings;
 
             _apply.Tick += (_, _) =>

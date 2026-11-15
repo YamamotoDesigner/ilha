@@ -16,10 +16,6 @@
 
     <Window.Resources>
         <SolidColorBrush x:Key="Accent" Color="#7CE3A1"/>
-        <SolidColorBrush x:Key="Text2" Color="#A1A1A8"/>
-        <SolidColorBrush x:Key="Text3" Color="#6E6E76"/>
-        <SolidColorBrush x:Key="CardBg" Color="#1C1C20"/>
-        <SolidColorBrush x:Key="Line" Color="#2A2A30"/>
 
         <!-- Título de grupo -->
         <Style x:Key="Section" TargetType="TextBlock">
@@ -209,67 +205,6 @@
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
 
-        <!-- Botões -->
-        <Style x:Key="SoftButton" TargetType="Button">
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#F5F5F7"/>
-            <Setter Property="Background" Value="#2A2A30"/>
-            <Setter Property="Padding" Value="14,7"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Grid>
-                            <Border x:Name="Bg" CornerRadius="9" Background="{TemplateBinding Background}"
-                                    Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <Border x:Name="Hover" CornerRadius="9" Background="White" Opacity="0" IsHitTestVisible="False"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Hover" Property="Opacity" Value="0.07"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Hover" Property="Opacity" Value="0.14"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource SoftButton}">
-            <Setter Property="Background" Value="{DynamicResource Accent}"/>
-            <Setter Property="Foreground" Value="#111111"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-        </Style>
-
-        <Style x:Key="CloseButton" TargetType="Button">
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="28"/>
-            <Setter Property="Foreground" Value="{StaticResource Text2}"/>
-            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bg" CornerRadius="8" Background="Transparent">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bg" Property="Background" Value="#E5484D"/>
-                                <Setter Property="Foreground" Value="White"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- Controle deslizante: trilho fino e puxador quadrado de cantos suaves -->
         <Style x:Key="SliderFill" TargetType="RepeatButton">
             <Setter Property="Focusable" Value="False"/>
@@ -378,6 +313,15 @@
 
                 <TextBlock DockPanel.Dock="Bottom" Text="Feito com carinho no Brasil" FontSize="11"
                            Foreground="{StaticResource Text3}" Margin="8,0,0,0"/>
+                <Button DockPanel.Dock="Bottom" Style="{StaticResource SoftButton}" Margin="0,0,0,12"
+                        HorizontalContentAlignment="Left" Padding="10,9" Click="Support_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="22" Height="22" CornerRadius="6" Background="#33FF5C7C">
+                            <local:Glyph Data="{StaticResource IcoHeart}" Filled="True" Size="13" Foreground="#FF5C7C"/>
+                        </Border>
+                        <TextBlock Text="Apoie o Ilha" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
 
                 <StackPanel>
                     <RadioButton Style="{StaticResource NavItem}" Content="Geral" Tag="{StaticResource IcoSettings}"
