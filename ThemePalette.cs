@@ -24,6 +24,15 @@ namespace Ilha
             r["Tertiary"] = Frozen(Color.FromArgb(dark ? (byte)0x80 : (byte)0x80, ink.R, ink.G, ink.B));
             r["Hairline"] = Frozen(Color.FromArgb(dark ? (byte)0x1A : (byte)0x17, ink.R, ink.G, ink.B));
 
+            // Cartões da ilha: mais claros em cima (como se a luz viesse do topo) e com um fio de luz na borda
+            Color InkA(byte a) => Color.FromArgb(a, ink.R, ink.G, ink.B);
+            var cardFill = new LinearGradientBrush(InkA(dark ? (byte)0x1C : (byte)0x12), InkA(dark ? (byte)0x0A : (byte)0x08), 90);
+            cardFill.Freeze();
+            r["CardFill"] = cardFill;
+            var cardStroke = new LinearGradientBrush(InkA(dark ? (byte)0x33 : (byte)0x24), InkA(dark ? (byte)0x0D : (byte)0x10), 90);
+            cardStroke.Freeze();
+            r["CardStroke"] = cardStroke;
+
             // Janelas (configurações, apoio, apresentação)
             r["WinBg"] = Frozen(dark ? Hex(0x121214) : Hex(0xF4F4F6));
             r["WinFg"] = Frozen(dark ? Hex(0xF5F5F7) : Hex(0x1C1C1E));

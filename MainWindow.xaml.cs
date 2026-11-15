@@ -47,6 +47,7 @@ namespace Ilha
         private double _cornerRadius = 22;
         private readonly SystemStats _stats = new();
         private readonly DownloadWatcher _downloads = new();
+        private double _artScaleTarget = 1;
         private readonly ObservableCollection<TodoItem> _todos = new();
         private string _currentTab = "home";
         private readonly ObservableCollection<ShelfItem> _shelf = new();
@@ -375,6 +376,7 @@ namespace Ilha
             // O canto de redimensionar fica dentro da curva (o ponto a 45° do arco fica a ~0,29·r da borda).
             double inset = Math.Min(_cornerRadius, ExpandedView.Height * 0.4) * 0.29 + 3;
             ResizeGrip.Margin = new Thickness(0, 0, inset, inset);
+            UpdateAmbientClip();
         }
 
         // ───────────── Ilha flutuante: arrastar e fixar ─────────────
@@ -576,8 +578,8 @@ namespace Ilha
             }
 
             // Cabeçalho
-            DateText.Visibility = (top ? vw >= 520 : pageW >= 330) ? visible : hidden;
-            BatteryText.Visibility = !top || vw >= 480 ? visible : hidden;
+            DateText.Visibility = (top ? vw >= 640 : pageW >= 330) ? visible : hidden;
+            BatteryText.Visibility = !top || vw >= 560 ? visible : hidden;
 
             // Início: a mídia ocupa o espaço livre; sistema e prateleira só aparecem se couberem
             bool media = s.ShowMedia;
@@ -594,11 +596,12 @@ namespace Ilha
             HomeShelfCol.Width = !shelf ? new GridLength(0) : media ? new GridLength(stats ? 150 : 190) : star;
             HomeGap1.Width = new GridLength(media && (stats || shelf) ? 14 : 0);
             HomeGap2.Width = new GridLength(stats && shelf ? 12 : 0);
-            // Pouca altura: capa menor e sem a linha do app de origem
-            bool compactMedia = pageH < 136;
-            ArtBox.Width = ArtBox.Height = compactMedia ? 42 : 64;
-            ArtBox.CornerRadius = new CornerRadius(compactMedia ? 10 : 13);
-            SourceText.Visibility = compactMedia ? hidden : visible;
+            // Capa: o maior quadrado que cabe na altura, deixando espaço para os controles ao lado
+            double mediaW = pageW - (shelf ? (stats ? 150 : 190) + 14 : 0) - (stats ? 118 + (shelf ? 12 : 14) : 0);
+            double artSize = Math.Round(Math.Clamp(Math.Min(pageH - 22, mediaW - 172), 40, 124));
+            ArtBox.Width = ArtBox.Height = artSize;
+            ArtBox.CornerRadius = new CornerRadius(Math.Round(artSize * 0.17));
+            SourceText.Visibility = pageH >= 118 ? visible : hidden;
 
             // Agenda: a lista de tarefas sai primeiro; o mês fica
             bool todo = pageW >= 500 && pageH >= 118;
@@ -668,6 +671,19 @@ namespace Ilha
                 IslandRim.Visibility = baseColor.R + baseColor.G + baseColor.B < 60 ? Visibility.Collapsed : Visibility.Visible;
                 Island.Effect = s.ShowShadow ? new DropShadowEffect { BlurRadius = 18, ShadowDepth = 2, Direction = 270, Opacity = 0.45 } : null;
             }
+
+            // Luz ambiente: um véu da cor da ilha por cima do brilho mantém o texto legível
+            // (mais forte embaixo e à direita, onde ficam os textos menores).
+            byte veil = ThemePalette.IsDark ? (byte)0x52 : (byte)0x70;
+            AmbientShade.Background = new LinearGradientBrush(
+                Color.FromArgb((byte)(veil * 0.55), baseColor.R, baseColor.G, baseColor.B),
+                Color.FromArgb((byte)Math.Min(255, veil * 1.7), baseColor.R, baseColor.G, baseColor.B),
+                new Point(0, 0), new Point(1, 1));
+            UpdateAmbient(force: true);
+
+            // Anel do timer com brilho da cor de destaque
+            var accentColor = ((SolidColorBrush)Resources["Accent"]).Color;
+            TimerRing.Effect = new DropShadowEffect { Color = accentColor, BlurRadius = 14, ShadowDepth = 0, Opacity = 0.55 };
             UpdateGlassRegion();
         }
 
@@ -1007,6 +1023,8 @@ namespace Ilha
             UpdateBattery();
             UpdateProgress();
             UpdateStats();
+            UpdateAmbientVisibility(animate: true);
+            if (CurrentPage is { } current) StaggerIn(current);
             if (_currentTab == "mirror") StartMirror();
         }
 
@@ -1017,6 +1035,8 @@ namespace Ilha
             _pinned = false;
             ExpandedView.IsHitTestVisible = false;
             Fade(ExpandedView, 0, 110);
+            UpdateAmbientVisibility(animate: true);
+            SetDropGlow(false);
             ReleaseKeyboard();
             StopMirror();
             if (_prompterRunning || _prompterCounting) PrompterStop(resetToStart: false);
@@ -1277,6 +1297,7 @@ namespace Ilha
                 }
             }
             MoveTabIndicator(animate: changed);
+            if (changed && _expanded && CurrentPage is { } entering) StaggerIn(entering);
             if (tab != "prompter" && previous == "prompter" && _prompterRunning) PrompterStop(resetToStart: false);
             if (tab != "notes" && tab != "agenda" && tab != "prompter") ReleaseKeyboard();
             if (tab == "agenda" && changed)
@@ -1551,12 +1572,25 @@ namespace Ilha
 
             TitleText.Text = string.IsNullOrEmpty(_media.Title) ? L.T("Sem título") : _media.Title;
             ArtistText.Text = _media.Artist;
-            SourceText.Text = _media.SourceApp;
+            SourceText.Text = _media.SourceApp.ToUpperInvariant();
             ArtBrush.ImageSource = _media.Art;
             MiniArtBrush.ImageSource = _media.Art;
             ArtFallback.Visibility = _media.Art == null ? Visibility.Visible : Visibility.Collapsed;
+            ArtGlow.Visibility = _media.Art == null ? Visibility.Hidden : Visibility.Visible;
             PlayPauseGlyph.Data = _media.IsPlaying ? GlyphPause : GlyphPlay;
             UpdateLikeUi();
+            UpdateAmbient();
+
+            // Pausado, a capa encolhe um pouco; tocando, volta com mola (como num toca-discos que "respira").
+            double artTo = _media.IsPlaying || !has ? 1 : 0.9;
+            if (Math.Abs(artTo - _artScaleTarget) > 0.001)
+            {
+                _artScaleTarget = artTo;
+                var spring = new DoubleAnimation(artTo, TimeSpan.FromMilliseconds(ReduceMotion ? 0 : 520)) { EasingFunction = new SpringEase() };
+                ArtScale.BeginAnimation(ScaleTransform.ScaleXProperty, spring);
+                ArtScale.BeginAnimation(ScaleTransform.ScaleYProperty, spring);
+                ArtGlow.BeginAnimation(OpacityProperty, new DoubleAnimation(artTo >= 1 ? 0.5 : 0.2, TimeSpan.FromMilliseconds(400)));
+            }
 
             WatchTrack();
             UpdateCollapsedState();
@@ -1612,16 +1646,19 @@ namespace Ilha
             _collapseTimer.Stop();
             TabHome.IsChecked = true;
             Expand();
+            SetDropGlow(true);
         }
 
         private void Island_DragLeave(object sender, DragEventArgs e)
         {
+            SetDropGlow(false);
             if (!_draggingOut) RestartCollapseTimer();
         }
 
         private void Island_Drop(object sender, DragEventArgs e)
         {
             e.Handled = true;
+            SetDropGlow(false);
             if (_draggingOut || !_settings.ShowShelf || e.Data.GetData(DataFormats.FileDrop) is not string[] paths) return;
             foreach (var path in paths)
             {

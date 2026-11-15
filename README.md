@@ -42,6 +42,7 @@ timer e área de transferência, sempre à mão e nunca no caminho.
 | ⬇️ **Downloads** | Quando um download termina, a ilha avisa e o arquivo já vai para a prateleira. |
 | 📈 **Monitor do sistema** | Uso de processador e memória com gráfico dos últimos segundos. |
 | 📋 **Área de transferência** | Histórico do que você copiou; clique para copiar de novo. Fica só na memória. |
+| ✨ **Luz ambiente** | A capa da música vira um brilho colorido atrás da ilha, e a cor dela pinta o progresso e as barrinhas. |
 | 🫧 **Vidro ou sólido** | Efeito de vidro com desfoque real do que está atrás (o mesmo do Windows 11), tingido pela sua cor — ou cor sólida, se preferir. |
 | 🪞 **Espelho** | Confira o cabelo antes da call: a câmera aparece na ilha e só fica ligada enquanto a aba está aberta. |
 | 🔔 **Avisos rápidos** | A ilha recolhida cresce por um instante para mostrar volume, carregador conectado e música nova. |

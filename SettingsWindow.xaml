@@ -564,6 +564,8 @@
                         <TextBlock Text="{local:T 'DETALHES'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Luz ambiente da capa da música'}" IsChecked="{Binding AmbientArt}"/>
+                                <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Sombra (modo sólido e ilha flutuante)'}" IsChecked="{Binding ShowShadow}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Animação com efeito de mola'}" IsChecked="{Binding SpringAnimation}"/>

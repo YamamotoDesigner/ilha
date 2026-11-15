@@ -11,7 +11,9 @@
 
     <Window.Resources>
         <SolidColorBrush x:Key="Accent" Color="#7CE3A1"/>
-        <!-- Secondary, Tertiary, Hairline e Ink_XX vêm do tema (ThemePalette) -->
+        <!-- Cor tirada da capa da música (progresso, barrinhas, brilho); sem capa, é a cor de destaque -->
+        <SolidColorBrush x:Key="MediaAccent" Color="#7CE3A1"/>
+        <!-- Secondary, Tertiary, Hairline, CardFill, CardStroke e Ink_XX vêm do tema (ThemePalette) -->
         <!-- Gráficos: preenchimento que some suavemente para baixo -->
         <LinearGradientBrush x:Key="GraphFade" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#FF000000" Offset="0"/>
@@ -20,10 +22,10 @@
 
         <!-- Cartão: retângulo de cantos suaves, nunca pílula -->
         <Style x:Key="Card" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource Ink_0F}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Hairline}"/>
+            <Setter Property="Background" Value="{DynamicResource CardFill}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStroke}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="CornerRadius" Value="15"/>
         </Style>
 
         <Style x:Key="Label" TargetType="TextBlock">
@@ -52,13 +54,28 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <!-- O realce entra e sai com um fade curto, em vez de piscar -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Hover" Property="Opacity" Value="0.1"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity"
+                                                             To="0.11" Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.22"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Hover" Property="Opacity" Value="0.2"/>
                                 <Setter Property="RenderTransform">
-                                    <Setter.Value><ScaleTransform ScaleX="0.93" ScaleY="0.93"/></Setter.Value>
+                                    <Setter.Value><ScaleTransform ScaleX="0.9" ScaleY="0.9"/></Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
@@ -177,12 +194,41 @@
                         <Grid>
                             <Border x:Name="Sel" Background="{DynamicResource Accent}" CornerRadius="9" Opacity="0"/>
                             <Border x:Name="Hover" Background="{DynamicResource Ink_FF}" CornerRadius="9" Opacity="0"/>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter x:Name="Icon" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              RenderTransformOrigin="0.5,0.5">
+                                <ContentPresenter.RenderTransform><ScaleTransform/></ContentPresenter.RenderTransform>
+                            </ContentPresenter>
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <!-- O ícone dá um pulinho com mola ao passar o mouse -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Foreground" Value="{DynamicResource Ink_E6}"/>
-                                <Setter TargetName="Hover" Property="Opacity" Value="0.07"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="0.07" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Icon" Duration="0:0:0.32" To="1.16"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
+                                                <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.9"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="Icon" Duration="0:0:0.32" To="1.16"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
+                                                <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.9"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.22"/>
+                                            <DoubleAnimation Storyboard.TargetName="Icon" Duration="0:0:0.24" To="1"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"/>
+                                            <DoubleAnimation Storyboard.TargetName="Icon" Duration="0:0:0.24" To="1"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
@@ -267,6 +313,16 @@
             <Grid>
                 <!-- Material: cor (sólida ou translúcida sobre o desfoque), brilho e borda de luz -->
                 <Border x:Name="IslandFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="Black"/>
+                <!-- Luz ambiente: a capa da música, bem pequena e esticada, vira um brilho colorido atrás de tudo -->
+                <Grid x:Name="AmbientLayer" IsHitTestVisible="False" Opacity="0">
+                    <Border x:Name="AmbientArt" Width="1100" Height="560" HorizontalAlignment="Center" VerticalAlignment="Top"
+                            Margin="0,-150,0,0" RenderOptions.BitmapScalingMode="HighQuality">
+                        <Border.Background>
+                            <ImageBrush x:Name="AmbientBrush" Stretch="Fill"/>
+                        </Border.Background>
+                    </Border>
+                    <Border x:Name="AmbientShade"/>
+                </Grid>
                 <Border x:Name="IslandSheen" CornerRadius="{Binding CornerRadius, ElementName=Island}"
                         IsHitTestVisible="False">
                     <Border.Background>
@@ -304,19 +360,19 @@
                         </Border>
                         <StackPanel x:Name="Bars" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <Rectangle x:Name="Bar1" Width="3" Height="14" Margin="1.5,0" RadiusX="1" RadiusY="1"
-                                       Fill="{DynamicResource Accent}" RenderTransformOrigin="0.5,0.5">
+                                       Fill="{DynamicResource MediaAccent}" RenderTransformOrigin="0.5,0.5">
                                 <Rectangle.RenderTransform><ScaleTransform ScaleY="0.4"/></Rectangle.RenderTransform>
                             </Rectangle>
                             <Rectangle x:Name="Bar2" Width="3" Height="14" Margin="1.5,0" RadiusX="1" RadiusY="1"
-                                       Fill="{DynamicResource Accent}" RenderTransformOrigin="0.5,0.5">
+                                       Fill="{DynamicResource MediaAccent}" RenderTransformOrigin="0.5,0.5">
                                 <Rectangle.RenderTransform><ScaleTransform ScaleY="0.7"/></Rectangle.RenderTransform>
                             </Rectangle>
                             <Rectangle x:Name="Bar3" Width="3" Height="14" Margin="1.5,0" RadiusX="1" RadiusY="1"
-                                       Fill="{DynamicResource Accent}" RenderTransformOrigin="0.5,0.5">
+                                       Fill="{DynamicResource MediaAccent}" RenderTransformOrigin="0.5,0.5">
                                 <Rectangle.RenderTransform><ScaleTransform ScaleY="0.5"/></Rectangle.RenderTransform>
                             </Rectangle>
                             <Rectangle x:Name="Bar4" Width="3" Height="14" Margin="1.5,0" RadiusX="1" RadiusY="1"
-                                       Fill="{DynamicResource Accent}" RenderTransformOrigin="0.5,0.5">
+                                       Fill="{DynamicResource MediaAccent}" RenderTransformOrigin="0.5,0.5">
                                 <Rectangle.RenderTransform><ScaleTransform ScaleY="0.6"/></Rectangle.RenderTransform>
                             </Rectangle>
                         </StackPanel>
@@ -499,92 +555,126 @@
 
                                         <Grid x:Name="MediaArea">
                                             <Grid x:Name="MediaDetails">
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="*"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
 
-                                                <DockPanel>
-                                                    <Button x:Name="LikeButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}"
-                                                            Width="30" Height="28" VerticalAlignment="Top" Margin="6,0,0,0"
-                                                            Foreground="{DynamicResource Ink_A6}" Visibility="Collapsed" Click="Like_Click"
-                                                            ToolTip="{local:T 'Curtir no Spotify (salva em Músicas Curtidas)'}">
-                                                        <local:Glyph x:Name="LikeGlyph" Data="{StaticResource IcoHeart}" Size="16"/>
-                                                    </Button>
-                                                    <Border x:Name="ArtBox" Width="64" Height="64" CornerRadius="13" VerticalAlignment="Top">
+                                                <!-- Capa grande, com um brilho da própria cor por baixo -->
+                                                <Grid VerticalAlignment="Center" Margin="2,0,16,0">
+                                                    <Border x:Name="ArtGlow" Width="{Binding Width, ElementName=ArtBox}"
+                                                            Height="{Binding Height, ElementName=ArtBox}" CornerRadius="18" Opacity="0.5"
+                                                            Background="{DynamicResource MediaAccent}" IsHitTestVisible="False"
+                                                            RenderTransformOrigin="0.5,0.5">
+                                                        <Border.RenderTransform>
+                                                            <TransformGroup>
+                                                                <ScaleTransform ScaleX="0.86" ScaleY="0.86"/>
+                                                                <TranslateTransform Y="9"/>
+                                                            </TransformGroup>
+                                                        </Border.RenderTransform>
+                                                        <Border.Effect>
+                                                            <BlurEffect Radius="20" RenderingBias="Performance"/>
+                                                        </Border.Effect>
+                                                    </Border>
+                                                    <Border x:Name="ArtBox" Width="100" Height="100" CornerRadius="16"
+                                                            RenderTransformOrigin="0.5,0.5">
+                                                        <Border.RenderTransform><ScaleTransform x:Name="ArtScale"/></Border.RenderTransform>
                                                         <Border.Background>
                                                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                                                 <GradientStop Color="#33FFFFFF" Offset="0"/>
                                                                 <GradientStop Color="#0DFFFFFF" Offset="1"/>
                                                             </LinearGradientBrush>
                                                         </Border.Background>
-                                                        <Border.Effect>
-                                                            <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="270" Opacity="0.35"/>
-                                                        </Border.Effect>
                                                         <Grid>
-                                                            <local:Glyph x:Name="ArtFallback" Data="{StaticResource IcoMusic}" Size="24"
+                                                            <local:Glyph x:Name="ArtFallback" Data="{StaticResource IcoMusic}" Size="26"
                                                                          Foreground="{DynamicResource Ink_66}"/>
-                                                            <Border CornerRadius="13">
+                                                            <Border CornerRadius="{Binding CornerRadius, ElementName=ArtBox}">
                                                                 <Border.Background>
                                                                     <ImageBrush x:Name="ArtBrush" Stretch="UniformToFill"/>
                                                                 </Border.Background>
                                                             </Border>
+                                                            <!-- Fio de luz na borda da capa -->
+                                                            <Border CornerRadius="{Binding CornerRadius, ElementName=ArtBox}" BorderThickness="1"
+                                                                    IsHitTestVisible="False">
+                                                                <Border.BorderBrush>
+                                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                        <GradientStop Color="#59FFFFFF" Offset="0"/>
+                                                                        <GradientStop Color="#0DFFFFFF" Offset="0.5"/>
+                                                                        <GradientStop Color="#1AFFFFFF" Offset="1"/>
+                                                                    </LinearGradientBrush>
+                                                                </Border.BorderBrush>
+                                                            </Border>
                                                         </Grid>
                                                     </Border>
-                                                    <StackPanel Margin="13,3,0,0" VerticalAlignment="Top">
-                                                        <TextBlock x:Name="TitleText" FontSize="14.5" FontWeight="SemiBold"
-                                                                   TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock x:Name="ArtistText" FontSize="12.5"
-                                                                   Foreground="{DynamicResource Secondary}"
-                                                                   TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                                                        <TextBlock x:Name="SourceText" FontSize="11"
-                                                                   Foreground="{DynamicResource Tertiary}"
-                                                                   TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
-                                                    </StackPanel>
-                                                </DockPanel>
-
-                                                <Grid x:Name="ProgressRow" Grid.Row="2" Margin="0,0,0,6">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto" MinWidth="34"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto" MinWidth="34"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock x:Name="PositionText" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"
-                                                               Foreground="{DynamicResource Tertiary}"
-                                                               Typography.NumeralAlignment="Tabular"/>
-                                                    <Grid x:Name="ProgressHit" Grid.Column="1" Height="14" Background="Transparent"
-                                                          Cursor="Hand" MouseLeftButtonDown="Progress_MouseDown"
-                                                          MouseEnter="Progress_MouseEnter" MouseLeave="Progress_MouseLeave">
-                                                        <Border x:Name="ProgressTrack" Height="4" CornerRadius="1.5"
-                                                                Background="{DynamicResource Ink_2E}" VerticalAlignment="Center"/>
-                                                        <Border x:Name="ProgressFill" Height="4" CornerRadius="1.5"
-                                                                Background="{DynamicResource Ink_E6}" VerticalAlignment="Center"
-                                                                HorizontalAlignment="Left" Width="0"/>
-                                                    </Grid>
-                                                    <TextBlock x:Name="DurationText" Grid.Column="2" FontSize="11" Margin="8,0,0,0"
-                                                               VerticalAlignment="Center" HorizontalAlignment="Right"
-                                                               Foreground="{DynamicResource Tertiary}"
-                                                               Typography.NumeralAlignment="Tabular"/>
                                                 </Grid>
 
-                                                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
-                                                    <Button Style="{StaticResource IconButton}" Width="40" Height="36"
-                                                            Click="Previous_Click" ToolTip="{local:T 'Anterior'}">
-                                                        <local:Glyph Data="{StaticResource IcoPrev}" Filled="True" Size="17"/>
-                                                    </Button>
-                                                    <Button x:Name="PlayPauseButton" Style="{StaticResource PrimaryButton}"
-                                                            Width="52" Height="38" Margin="12,0" Click="PlayPause_Click"
-                                                            ToolTip="{local:T 'Tocar/Pausar'}">
-                                                        <local:Glyph x:Name="PlayPauseGlyph" Data="{StaticResource IcoPlay}"
-                                                                     Filled="True" Size="19"/>
-                                                    </Button>
-                                                    <Button Style="{StaticResource IconButton}" Width="40" Height="36"
-                                                            Click="Next_Click" ToolTip="{local:T 'Próxima'}">
-                                                        <local:Glyph Data="{StaticResource IcoNext}" Filled="True" Size="17"/>
-                                                    </Button>
-                                                </StackPanel>
+                                                <Grid Grid.Column="1" VerticalAlignment="Center">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <DockPanel>
+                                                        <Button x:Name="LikeButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}"
+                                                                Width="30" Height="28" VerticalAlignment="Top" Margin="6,-2,0,0"
+                                                                Foreground="{DynamicResource Ink_A6}" Visibility="Collapsed" Click="Like_Click"
+                                                                ToolTip="{local:T 'Curtir no Spotify (salva em Músicas Curtidas)'}">
+                                                            <local:Glyph x:Name="LikeGlyph" Data="{StaticResource IcoHeart}" Size="16"/>
+                                                        </Button>
+                                                        <StackPanel VerticalAlignment="Top">
+                                                            <TextBlock x:Name="TitleText" FontSize="15.5" FontWeight="SemiBold"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock x:Name="ArtistText" FontSize="12.5"
+                                                                       Foreground="{DynamicResource Secondary}"
+                                                                       TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                                            <TextBlock x:Name="SourceText" FontSize="10.5" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource Tertiary}"
+                                                                       TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
+                                                        </StackPanel>
+                                                    </DockPanel>
+
+                                                    <Grid x:Name="ProgressRow" Grid.Row="1" Margin="0,8,0,4">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" MinWidth="30"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto" MinWidth="30"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock x:Name="PositionText" FontSize="10.5" VerticalAlignment="Center" Margin="0,0,8,0"
+                                                                   Foreground="{DynamicResource Tertiary}"
+                                                                   Typography.NumeralAlignment="Tabular"/>
+                                                        <Grid x:Name="ProgressHit" Grid.Column="1" Height="14" Background="Transparent"
+                                                              Cursor="Hand" MouseLeftButtonDown="Progress_MouseDown"
+                                                              MouseEnter="Progress_MouseEnter" MouseLeave="Progress_MouseLeave">
+                                                            <Border x:Name="ProgressTrack" Height="4" CornerRadius="1.5"
+                                                                    Background="{DynamicResource Ink_24}" VerticalAlignment="Center"/>
+                                                            <Border x:Name="ProgressFill" Height="4" CornerRadius="1.5"
+                                                                    Background="{DynamicResource MediaAccent}" VerticalAlignment="Center"
+                                                                    HorizontalAlignment="Left" Width="0"/>
+                                                        </Grid>
+                                                        <TextBlock x:Name="DurationText" Grid.Column="2" FontSize="10.5" Margin="8,0,0,0"
+                                                                   VerticalAlignment="Center" HorizontalAlignment="Right"
+                                                                   Foreground="{DynamicResource Tertiary}"
+                                                                   Typography.NumeralAlignment="Tabular"/>
+                                                    </Grid>
+
+                                                    <StackPanel x:Name="MediaButtons" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <Button Style="{StaticResource IconButton}" Width="40" Height="34"
+                                                                Click="Previous_Click" ToolTip="{local:T 'Anterior'}">
+                                                            <local:Glyph Data="{StaticResource IcoPrev}" Filled="True" Size="17"/>
+                                                        </Button>
+                                                        <Button x:Name="PlayPauseButton" Style="{StaticResource PrimaryButton}"
+                                                                Width="50" Height="36" Margin="10,0" Click="PlayPause_Click"
+                                                                ToolTip="{local:T 'Tocar/Pausar'}">
+                                                            <local:Glyph x:Name="PlayPauseGlyph" Data="{StaticResource IcoPlay}"
+                                                                         Filled="True" Size="18"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource IconButton}" Width="40" Height="34"
+                                                                Click="Next_Click" ToolTip="{local:T 'Próxima'}">
+                                                            <local:Glyph Data="{StaticResource IcoNext}" Filled="True" Size="17"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
                                             </Grid>
 
                                             <StackPanel x:Name="NoMediaPanel" VerticalAlignment="Center"
@@ -899,18 +989,18 @@
                                             </StackPanel>
 
                                             <WrapPanel x:Name="TimerChips">
-                                                <Button Style="{StaticResource ChipButton}" Content="1" Tag="1" Click="TimerPreset_Click" Padding="9,4" ToolTip="1 min"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="5" Tag="5" Click="TimerPreset_Click" Padding="9,4" ToolTip="5 min"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="10" Tag="10" Click="TimerPreset_Click" Padding="9,4" ToolTip="10 min"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="15" Tag="15" Click="TimerPreset_Click" Padding="9,4" ToolTip="15 min"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="25" Tag="25" Click="TimerPreset_Click" Padding="9,4" ToolTip="25 min"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="45" Tag="45" Click="TimerPreset_Click" Padding="9,4" ToolTip="45 min"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="1 h" Tag="60" Click="TimerPreset_Click" Padding="9,4"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="+1" Tag="1" Click="TimerAdd_Click" Padding="9,4"
+                                                <Button Style="{StaticResource ChipButton}" Content="1" Tag="1" Click="TimerPreset_Click" Padding="7,4" ToolTip="1 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="5" Tag="5" Click="TimerPreset_Click" Padding="7,4" ToolTip="5 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="10" Tag="10" Click="TimerPreset_Click" Padding="7,4" ToolTip="10 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="15" Tag="15" Click="TimerPreset_Click" Padding="7,4" ToolTip="15 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="25" Tag="25" Click="TimerPreset_Click" Padding="7,4" ToolTip="25 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="45" Tag="45" Click="TimerPreset_Click" Padding="7,4" ToolTip="45 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="1 h" Tag="60" Click="TimerPreset_Click" Padding="7,4"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="+1" Tag="1" Click="TimerAdd_Click" Padding="7,4"
                                                         ToolTip="{local:T 'Mais 1 minuto'}"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="+5" Tag="5" Click="TimerAdd_Click" Padding="9,4"
+                                                <Button Style="{StaticResource ChipButton}" Content="+5" Tag="5" Click="TimerAdd_Click" Padding="7,4"
                                                         ToolTip="{local:T 'Mais 5 minutos'}"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="−1" Tag="-1" Click="TimerAdd_Click" Padding="9,4"
+                                                <Button Style="{StaticResource ChipButton}" Content="−1" Tag="-1" Click="TimerAdd_Click" Padding="7,4"
                                                         ToolTip="{local:T 'Menos 1 minuto'}"/>
                                             </WrapPanel>
                                         </StackPanel>

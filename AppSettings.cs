@@ -32,6 +32,8 @@ namespace Ilha
         public double CollapsedWidth { get; set; } = 160;
         public double CollapsedHeight { get; set; } = 32;
         public bool ShowShadow { get; set; } = true;
+        /// <summary>A capa da música vira um brilho colorido atrás da ilha aberta.</summary>
+        public bool AmbientArt { get; set; } = true;
         public bool SpringAnimation { get; set; } = true;
         /// <summary>
         /// "Attached" (colada no topo), "TopFloating" (solta, centralizada no topo, sem arrastar)
@@ -110,6 +112,7 @@ namespace Ilha
             CollapsedWidth = d.CollapsedWidth;
             CollapsedHeight = d.CollapsedHeight;
             ShowShadow = d.ShowShadow;
+            AmbientArt = d.AmbientArt;
             SpringAnimation = d.SpringAnimation;
             IslandStyle = d.IslandStyle;
             FloatLocked = d.FloatLocked;
@@ -164,8 +167,15 @@ namespace Ilha
             return new AppSettings();
         }
 
+        /// <summary>
+        /// Instâncias de teste (desenvolvimento) leem as configurações reais mas nunca gravam:
+        /// os ajustes temporários de um teste não podem vazar para o arquivo do usuário.
+        /// </summary>
+        public static bool ReadOnly { get; set; }
+
         public void Save()
         {
+            if (ReadOnly) return;
             try
             {
                 Directory.CreateDirectory(Folder);

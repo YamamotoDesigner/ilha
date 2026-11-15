@@ -23,8 +23,13 @@ namespace Ilha
         {
             string mutexName = "Ilha.SingleInstance";
 #if DEBUG
-            // Build de desenvolvimento pode rodar ao lado do Ilha instalado.
-            if (Environment.GetEnvironmentVariable("ILHA_TEST") == "1") mutexName += ".Test";
+            // Build de desenvolvimento pode rodar ao lado do Ilha instalado — e nunca grava as
+            // configurações reais (ver AppSettings.ReadOnly).
+            if (Environment.GetEnvironmentVariable("ILHA_TEST") == "1")
+            {
+                mutexName += ".Test";
+                AppSettings.ReadOnly = true;
+            }
 #endif
             // Ao reiniciar (troca de idioma), espera a instância anterior terminar de fechar.
             bool restarting = e.Args.Contains("--restart");
