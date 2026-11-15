@@ -24,5 +24,12 @@
     <Geometry x:Key="IcoHeart">M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.5 2.4C19.5 15.4 12 20 12 20z</Geometry>
     <Geometry x:Key="IcoCameraOff">M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.5-2h4.4l1.5 2h1.8A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z M4 4l16 16</Geometry>
     <Geometry x:Key="IcoPlus">M12 5v14 M5 12h14</Geometry>
+    <Geometry x:Key="IcoCalendar">M7 5h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z M4 10h16 M8.5 3v4 M15.5 3v4 M8 14h2 M14 14h2</Geometry>
+    <Geometry x:Key="IcoCheck">M6.5 12.5l3.5 3.5 7.5-8</Geometry>
+    <Geometry x:Key="IcoCpu">M8.5 6h7A2.5 2.5 0 0 1 18 8.5v7a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 6 15.5v-7A2.5 2.5 0 0 1 8.5 6z M10 10h4v4h-4z M10 3v3 M14 3v3 M10 18v3 M14 18v3 M3 10h3 M3 14h3 M18 10h3 M18 14h3</Geometry>
+    <Geometry x:Key="IcoMemory">M5.5 7h13A1.5 1.5 0 0 1 20 8.5v7a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 15.5v-7A1.5 1.5 0 0 1 5.5 7z M7.5 17v3 M12 17v3 M16.5 17v3 M7.5 10.5v3 M10.5 10.5v3 M13.5 10.5v3 M16.5 10.5v3</Geometry>
+    <Geometry x:Key="IcoChevronLeft">M14.5 6.5 9 12l5.5 5.5</Geometry>
+    <Geometry x:Key="IcoChevronRight">M9.5 6.5 15 12l-5.5 5.5</Geometry>
+    <Geometry x:Key="IcoFocus">M12 4.5a7.5 7.5 0 1 0 7.5 7.5 M12 8.5a3.5 3.5 0 1 0 3.5 3.5 M12 12l7-7 M16 5h3v3</Geometry>
 
 </ResourceDictionary>

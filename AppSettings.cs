@@ -48,6 +48,7 @@ namespace Ilha
         public int ClipboardMax { get; set; } = 25;
         public bool ShowCalendar { get; set; } = true;
         public bool ShowMirror { get; set; } = true;
+        public bool ShowStats { get; set; } = true;
 
         // Avisos rápidos na ilha recolhida
         public bool LiveVolume { get; set; } = true;
@@ -57,6 +58,7 @@ namespace Ilha
         // Dados
         public List<string> Shelf { get; set; } = new();
         public string Notes { get; set; } = "";
+        public List<TodoItem> Todos { get; set; } = new();
 
         /// <summary>Restaura aparência e comportamento, preservando dados (prateleira, notas, monitor).</summary>
         public void ResetPreferences()
@@ -89,6 +91,7 @@ namespace Ilha
             ClipboardMax = d.ClipboardMax;
             ShowCalendar = d.ShowCalendar;
             ShowMirror = d.ShowMirror;
+            ShowStats = d.ShowStats;
             LiveVolume = d.LiveVolume;
             LiveCharging = d.LiveCharging;
             LiveTrack = d.LiveTrack;

@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Ilha"
-        Title="Ilha" Width="700" Height="300"
+        Title="Ilha" Width="720" Height="300"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="NoResize" Topmost="True" ShowInTaskbar="False" ShowActivated="False"
         FontFamily="{DynamicResource UiFont}" FontSize="13" Foreground="White"
@@ -13,13 +13,20 @@
         <SolidColorBrush x:Key="Accent" Color="#7CE3A1"/>
         <SolidColorBrush x:Key="Secondary" Color="#B8FFFFFF"/>
         <SolidColorBrush x:Key="Tertiary" Color="#80FFFFFF"/>
+        <SolidColorBrush x:Key="Hairline" Color="#1AFFFFFF"/>
 
-        <!-- Cartão de vidro dentro da ilha -->
+        <!-- Cartão: retângulo de cantos suaves, nunca pílula -->
         <Style x:Key="Card" TargetType="Border">
-            <Setter Property="Background" Value="#12FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#1FFFFFFF"/>
+            <Setter Property="Background" Value="#0FFFFFFF"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Hairline}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="CornerRadius" Value="14"/>
+        </Style>
+
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource Tertiary}"/>
         </Style>
 
         <Style x:Key="IconButton" TargetType="Button">
@@ -36,21 +43,50 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="999">
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}" CornerRadius="9"/>
+                            <Border x:Name="Hover" Background="White" Opacity="0" CornerRadius="9"/>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bg" Property="Background" Value="#1FFFFFFF"/>
+                                <Setter TargetName="Hover" Property="Opacity" Value="0.1"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bg" Property="Background" Value="#38FFFFFF"/>
+                                <Setter TargetName="Hover" Property="Opacity" Value="0.2"/>
                                 <Setter Property="RenderTransform">
-                                    <Setter.Value><ScaleTransform ScaleX="0.92" ScaleY="0.92"/></Setter.Value>
+                                    <Setter.Value><ScaleTransform ScaleX="0.93" ScaleY="0.93"/></Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Botão principal (tocar/pausar): bloco claro de cantos suaves -->
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource IconButton}">
+            <Setter Property="Foreground" Value="#111111"/>
+            <Setter Property="Background" Value="#F2FFFFFF"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="12"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.8"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value><ScaleTransform ScaleX="0.93" ScaleY="0.93"/></Setter.Value>
+                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -65,17 +101,17 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Margin" Value="0,0,6,6"/>
-            <Setter Property="Background" Value="#1AFFFFFF"/>
-            <Setter Property="Padding" Value="12,5"/>
+            <Setter Property="Background" Value="#17FFFFFF"/>
+            <Setter Property="Padding" Value="11,5"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid>
-                            <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="999"
-                                    Padding="{TemplateBinding Padding}" BorderBrush="#14FFFFFF" BorderThickness="1">
+                            <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="8"
+                                    Padding="{TemplateBinding Padding}" BorderBrush="#12FFFFFF" BorderThickness="1">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <Border x:Name="Hover" CornerRadius="999" Background="White" Opacity="0"
+                            <Border x:Name="Hover" CornerRadius="8" Background="White" Opacity="0"
                                     IsHitTestVisible="False"/>
                         </Grid>
                         <ControlTemplate.Triggers>
@@ -94,29 +130,94 @@
             </Setter>
         </Style>
 
-        <!-- Abas em controle segmentado -->
+        <!-- Bloco de modo do timer (Foco / Pausa / Longa) -->
+        <Style x:Key="ModeTile" TargetType="Button" BasedOn="{StaticResource ChipButton}">
+            <Setter Property="Width" Value="96"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}" CornerRadius="11"
+                                    Padding="{TemplateBinding Padding}" BorderBrush="#12FFFFFF" BorderThickness="1">
+                                <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            </Border>
+                            <Border x:Name="Hover" CornerRadius="11" Background="White" Opacity="0"
+                                    IsHitTestVisible="False"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Hover" Property="Opacity" Value="0.08"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Hover" Property="Opacity" Value="0.18"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Abas: trilho vertical de blocos com cantos suaves -->
         <Style x:Key="TabButton" TargetType="RadioButton">
             <Setter Property="Foreground" Value="#8CFFFFFF"/>
-            <Setter Property="Width" Value="32"/>
-            <Setter Property="Height" Value="24"/>
-            <Setter Property="Margin" Value="1,0"/>
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Margin" Value="0,0,0,3"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="GroupName" Value="Tabs"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="Bg" Background="Transparent" CornerRadius="7">
+                        <Grid>
+                            <Border x:Name="Sel" Background="{DynamicResource Accent}" CornerRadius="9" Opacity="0"/>
+                            <Border x:Name="Hover" Background="White" CornerRadius="9" Opacity="0"/>
+                            <Border x:Name="Mark" Width="3" Height="12" CornerRadius="1.5" Background="{DynamicResource Accent}"
+                                    HorizontalAlignment="Left" Margin="-1,0,0,0" Opacity="0"/>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="#D9FFFFFF"/>
-                                <Setter TargetName="Bg" Property="Background" Value="#0FFFFFFF"/>
+                                <Setter Property="Foreground" Value="#E6FFFFFF"/>
+                                <Setter TargetName="Hover" Property="Opacity" Value="0.07"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bg" Property="Background" Value="#2EFFFFFF"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="Sel" Property="Opacity" Value="0.2"/>
+                                <Setter TargetName="Mark" Property="Opacity" Value="1"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Caixa de seleção das tarefas: quadradinho de cantos suaves -->
+        <Style x:Key="TodoCheck" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <DockPanel Background="Transparent">
+                            <Grid DockPanel.Dock="Left" Width="16" Height="16" VerticalAlignment="Center">
+                                <Border x:Name="Box" CornerRadius="5" BorderThickness="1.5" BorderBrush="#73FFFFFF"/>
+                                <Border x:Name="Fill" CornerRadius="5" Background="{DynamicResource Accent}" Opacity="0"/>
+                                <local:Glyph x:Name="Tick" Data="{StaticResource IcoCheck}" Size="13" Thickness="3"
+                                             Foreground="#111111" Opacity="0"/>
+                            </Grid>
+                            <ContentPresenter Margin="9,0,0,0" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="#BFFFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Fill" Property="Opacity" Value="1"/>
+                                <Setter TargetName="Tick" Property="Opacity" Value="1"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="Transparent"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -141,6 +242,13 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="LineBox" TargetType="TextBox" BasedOn="{StaticResource NotesBox}">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="AcceptsReturn" Value="False"/>
+            <Setter Property="AcceptsTab" Value="False"/>
+            <Setter Property="TextWrapping" Value="NoWrap"/>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -151,7 +259,7 @@
         <!-- A ilha: pendurada na borda superior, cresce a partir do centro -->
         <Border x:Name="Island"
                 HorizontalAlignment="Center" VerticalAlignment="Top"
-                Width="190" Height="34" Background="Transparent" CornerRadius="0,0,22,22"
+                Width="190" Height="34" Background="Transparent" CornerRadius="0,0,14,14"
                 AllowDrop="True"
                 MouseEnter="Island_MouseEnter" MouseLeave="Island_MouseLeave"
                 DragEnter="Island_DragOver" DragOver="Island_DragOver"
@@ -163,10 +271,10 @@
                         IsHitTestVisible="False">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#1AFFFFFF" Offset="0"/>
-                            <GradientStop Color="#05FFFFFF" Offset="0.45"/>
-                            <GradientStop Color="#00FFFFFF" Offset="0.7"/>
-                            <GradientStop Color="#0CFFFFFF" Offset="1"/>
+                            <GradientStop Color="#14FFFFFF" Offset="0"/>
+                            <GradientStop Color="#04FFFFFF" Offset="0.4"/>
+                            <GradientStop Color="#00FFFFFF" Offset="0.75"/>
+                            <GradientStop Color="#0AFFFFFF" Offset="1"/>
                         </LinearGradientBrush>
                     </Border.Background>
                 </Border>
@@ -175,8 +283,8 @@
                     <Border.BorderBrush>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0.3,1">
                             <GradientStop Color="#00FFFFFF" Offset="0"/>
-                            <GradientStop Color="#26FFFFFF" Offset="0.55"/>
-                            <GradientStop Color="#59FFFFFF" Offset="1"/>
+                            <GradientStop Color="#1FFFFFFF" Offset="0.55"/>
+                            <GradientStop Color="#4DFFFFFF" Offset="1"/>
                         </LinearGradientBrush>
                     </Border.BorderBrush>
                 </Border>
@@ -184,7 +292,7 @@
                 <Grid ClipToBounds="True">
 
                     <!-- Estado recolhido -->
-                    <Grid x:Name="CollapsedView" Height="34" VerticalAlignment="Top" Margin="14,0" Opacity="0"
+                    <Grid x:Name="CollapsedView" Height="34" VerticalAlignment="Top" Margin="12,0" Opacity="0"
                           IsHitTestVisible="False">
                         <Border x:Name="MiniArt" Width="22" Height="22" CornerRadius="6" HorizontalAlignment="Left"
                                 Background="#2A2A2A">
@@ -195,19 +303,19 @@
                             </Border>
                         </Border>
                         <StackPanel x:Name="Bars" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Rectangle x:Name="Bar1" Width="3" Height="14" Margin="1.5,0" RadiusX="1.5" RadiusY="1.5"
+                            <Rectangle x:Name="Bar1" Width="3" Height="14" Margin="1.5,0" RadiusX="1" RadiusY="1"
                                        Fill="{DynamicResource Accent}" RenderTransformOrigin="0.5,0.5">
                                 <Rectangle.RenderTransform><ScaleTransform ScaleY="0.4"/></Rectangle.RenderTransform>
                             </Rectangle>
-                            <Rectangle x:Name="Bar2" Width="3" Height="14" Margin="1.5,0" RadiusX="1.5" RadiusY="1.5"
+                            <Rectangle x:Name="Bar2" Width="3" Height="14" Margin="1.5,0" RadiusX="1" RadiusY="1"
                                        Fill="{DynamicResource Accent}" RenderTransformOrigin="0.5,0.5">
                                 <Rectangle.RenderTransform><ScaleTransform ScaleY="0.7"/></Rectangle.RenderTransform>
                             </Rectangle>
-                            <Rectangle x:Name="Bar3" Width="3" Height="14" Margin="1.5,0" RadiusX="1.5" RadiusY="1.5"
+                            <Rectangle x:Name="Bar3" Width="3" Height="14" Margin="1.5,0" RadiusX="1" RadiusY="1"
                                        Fill="{DynamicResource Accent}" RenderTransformOrigin="0.5,0.5">
                                 <Rectangle.RenderTransform><ScaleTransform ScaleY="0.5"/></Rectangle.RenderTransform>
                             </Rectangle>
-                            <Rectangle x:Name="Bar4" Width="3" Height="14" Margin="1.5,0" RadiusX="1.5" RadiusY="1.5"
+                            <Rectangle x:Name="Bar4" Width="3" Height="14" Margin="1.5,0" RadiusX="1" RadiusY="1"
                                        Fill="{DynamicResource Accent}" RenderTransformOrigin="0.5,0.5">
                                 <Rectangle.RenderTransform><ScaleTransform ScaleY="0.6"/></Rectangle.RenderTransform>
                             </Rectangle>
@@ -218,7 +326,7 @@
                     </Grid>
 
                     <!-- Aviso rápido (volume, carregando, nova música) -->
-                    <DockPanel x:Name="PeekView" Height="34" VerticalAlignment="Top" Margin="14,0" Opacity="0"
+                    <DockPanel x:Name="PeekView" Height="34" VerticalAlignment="Top" Margin="12,0" Opacity="0"
                                IsHitTestVisible="False" LastChildFill="True">
                         <Grid DockPanel.Dock="Left" Width="22" VerticalAlignment="Center">
                             <local:Glyph x:Name="PeekGlyph" Size="16" Filled="True"/>
@@ -231,8 +339,8 @@
                         </Grid>
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                             <Grid x:Name="PeekBar" Width="70" Height="5" VerticalAlignment="Center">
-                                <Border CornerRadius="2.5" Background="#33FFFFFF"/>
-                                <Border x:Name="PeekBarFill" CornerRadius="2.5" Background="White"
+                                <Border CornerRadius="1.5" Background="#33FFFFFF"/>
+                                <Border x:Name="PeekBarFill" CornerRadius="1.5" Background="White"
                                         HorizontalAlignment="Left" Width="35"/>
                             </Grid>
                             <TextBlock x:Name="PeekValue" FontSize="12" FontWeight="SemiBold" Margin="8,0,0,0"
@@ -243,7 +351,7 @@
                     </DockPanel>
 
                     <!-- Estado expandido (tamanho fixo; a ilha revela a partir do centro) -->
-                    <Grid x:Name="ExpandedView" Width="620" Height="228"
+                    <Grid x:Name="ExpandedView" Width="660" Height="244"
                           HorizontalAlignment="Center" VerticalAlignment="Top"
                           Opacity="0" IsHitTestVisible="False" RenderTransformOrigin="0.5,0">
                         <Grid.RenderTransform>
@@ -252,60 +360,67 @@
                                 <TranslateTransform x:Name="ExpandedShift" Y="-6"/>
                             </TransformGroup>
                         </Grid.RenderTransform>
-                        <Grid Margin="22,10,22,18">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="30"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
+                        <Grid Margin="14,12,20,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36"/>
+                                <ColumnDefinition Width="14"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                            <!-- Cabeçalho -->
+                            <!-- Trilho de abas -->
                             <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                                <StackPanel x:Name="TabBar" VerticalAlignment="Top">
+                                    <RadioButton x:Name="TabHome" Style="{StaticResource TabButton}" Tag="home"
+                                                 ToolTip="Início" IsChecked="True" Checked="Tab_Checked">
+                                        <local:Glyph Data="{StaticResource IcoHome}" Size="16"/>
+                                    </RadioButton>
+                                    <RadioButton x:Name="TabAgenda" Style="{StaticResource TabButton}" Tag="agenda"
+                                                 ToolTip="Agenda e tarefas" Checked="Tab_Checked">
+                                        <local:Glyph Data="{StaticResource IcoCalendar}" Size="16"/>
+                                    </RadioButton>
+                                    <RadioButton x:Name="TabNotes" Style="{StaticResource TabButton}" Tag="notes"
+                                                 ToolTip="Notas" Checked="Tab_Checked">
+                                        <local:Glyph Data="{StaticResource IcoNotes}" Size="16"/>
+                                    </RadioButton>
+                                    <RadioButton x:Name="TabTimer" Style="{StaticResource TabButton}" Tag="timer"
+                                                 ToolTip="Foco (timer)" Checked="Tab_Checked">
+                                        <local:Glyph Data="{StaticResource IcoTimer}" Size="16"/>
+                                    </RadioButton>
+                                    <RadioButton x:Name="TabClipboard" Style="{StaticResource TabButton}" Tag="clipboard"
+                                                 ToolTip="Área de transferência" Checked="Tab_Checked">
+                                        <local:Glyph Data="{StaticResource IcoClipboard}" Size="16"/>
+                                    </RadioButton>
+                                    <RadioButton x:Name="TabMirror" Style="{StaticResource TabButton}" Tag="mirror"
+                                                 ToolTip="Espelho (câmera)" Checked="Tab_Checked">
+                                        <local:Glyph Data="{StaticResource IcoMirror}" Size="16"/>
+                                    </RadioButton>
+                                </StackPanel>
+                            </Grid>
 
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock x:Name="ClockText" FontSize="15" FontWeight="SemiBold"
+                            <!-- Linha fina separando o trilho do conteúdo -->
+                            <Border Grid.Column="1" Width="1" HorizontalAlignment="Center" Margin="0,4"
+                                    Background="{StaticResource Hairline}"/>
+
+                            <Grid Grid.Column="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="26"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Cabeçalho -->
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock x:Name="ClockText" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
                                                Typography.NumeralAlignment="Tabular"/>
                                     <TextBlock x:Name="DateText" FontSize="12" Foreground="{StaticResource Tertiary}"
-                                               Margin="8,1,0,0" VerticalAlignment="Center"/>
-                                </StackPanel>
+                                               Margin="9,1,0,0" VerticalAlignment="Center"/>
 
-                                <Border x:Name="TabBar" Grid.Column="1" CornerRadius="10" Background="#14FFFFFF"
-                                        BorderBrush="#14FFFFFF" BorderThickness="1" Padding="2" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal">
-                                        <RadioButton x:Name="TabHome" Style="{StaticResource TabButton}" Tag="home"
-                                                     ToolTip="Início" IsChecked="True" Checked="Tab_Checked">
-                                            <local:Glyph Data="{StaticResource IcoHome}" Size="15"/>
-                                        </RadioButton>
-                                        <RadioButton x:Name="TabNotes" Style="{StaticResource TabButton}" Tag="notes"
-                                                     ToolTip="Notas" Checked="Tab_Checked">
-                                            <local:Glyph Data="{StaticResource IcoNotes}" Size="15"/>
-                                        </RadioButton>
-                                        <RadioButton x:Name="TabTimer" Style="{StaticResource TabButton}" Tag="timer"
-                                                     ToolTip="Timer" Checked="Tab_Checked">
-                                            <local:Glyph Data="{StaticResource IcoTimer}" Size="15"/>
-                                        </RadioButton>
-                                        <RadioButton x:Name="TabClipboard" Style="{StaticResource TabButton}" Tag="clipboard"
-                                                     ToolTip="Área de transferência" Checked="Tab_Checked">
-                                            <local:Glyph Data="{StaticResource IcoClipboard}" Size="15"/>
-                                        </RadioButton>
-                                        <RadioButton x:Name="TabMirror" Style="{StaticResource TabButton}" Tag="mirror"
-                                                     ToolTip="Espelho (câmera)" Checked="Tab_Checked">
-                                            <local:Glyph Data="{StaticResource IcoMirror}" Size="15"/>
-                                        </RadioButton>
-                                    </StackPanel>
-                                </Border>
-
-                                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right"
-                                            VerticalAlignment="Center">
-                                    <Button x:Name="UpdateButton" Style="{StaticResource ChipButton}" Margin="0,0,10,0"
-                                            Padding="10,3" Foreground="{DynamicResource Accent}" Visibility="Collapsed"
-                                            Click="UpdateButton_Click" Content="Atualizar"/>
-                                    <StackPanel x:Name="BatteryPanel" Orientation="Horizontal" VerticalAlignment="Center"
-                                                Margin="0,0,8,0">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Width="28" Height="26"
+                                            Margin="10,0,-4,0" Foreground="#A6FFFFFF"
+                                            Click="Settings_Click" ToolTip="Configurações">
+                                        <local:Glyph Data="{StaticResource IcoSettings}" Size="16"/>
+                                    </Button>
+                                    <StackPanel x:Name="BatteryPanel" DockPanel.Dock="Right" Orientation="Horizontal"
+                                                VerticalAlignment="Center">
                                         <TextBlock x:Name="BatteryText" FontSize="12" Foreground="{StaticResource Secondary}"
                                                    VerticalAlignment="Center" Margin="0,0,6,0"
                                                    Typography.NumeralAlignment="Tabular"/>
@@ -321,346 +436,512 @@
                                                          Foreground="Black"/>
                                         </Grid>
                                     </StackPanel>
-                                    <Button Style="{StaticResource IconButton}" Width="28" Height="28"
-                                            Click="Settings_Click" ToolTip="Configurações">
-                                        <local:Glyph Data="{StaticResource IcoSettings}" Size="16"/>
-                                    </Button>
-                                </StackPanel>
-                            </Grid>
+                                    <Button x:Name="UpdateButton" DockPanel.Dock="Right" Style="{StaticResource ChipButton}"
+                                            Margin="0,0,12,0" Padding="10,3" Foreground="{DynamicResource Accent}"
+                                            Visibility="Collapsed" VerticalAlignment="Center"
+                                            Click="UpdateButton_Click" Content="Atualizar"/>
+                                </DockPanel>
 
-                            <Grid x:Name="Pages" Grid.Row="1" Margin="0,12,0,0">
+                                <Grid x:Name="Pages" Grid.Row="1" Margin="0,10,0,0">
 
-                                <!-- ── Início: mídia + calendário + prateleira ── -->
-                                <Grid x:Name="PageHome">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition x:Name="HomeMediaCol" Width="*"/>
-                                        <ColumnDefinition x:Name="HomeGap1" Width="12"/>
-                                        <ColumnDefinition x:Name="HomeCalCol" Width="112"/>
-                                        <ColumnDefinition x:Name="HomeGap2" Width="12"/>
-                                        <ColumnDefinition x:Name="HomeShelfCol" Width="168"/>
-                                    </Grid.ColumnDefinitions>
+                                    <!-- ── Início: mídia + sistema + prateleira ── -->
+                                    <Grid x:Name="PageHome">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition x:Name="HomeMediaCol" Width="*"/>
+                                            <ColumnDefinition x:Name="HomeGap1" Width="12"/>
+                                            <ColumnDefinition x:Name="HomeStatsCol" Width="118"/>
+                                            <ColumnDefinition x:Name="HomeGap2" Width="12"/>
+                                            <ColumnDefinition x:Name="HomeShelfCol" Width="150"/>
+                                        </Grid.ColumnDefinitions>
 
-                                    <Grid x:Name="MediaArea">
-                                        <Grid x:Name="MediaDetails">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
+                                        <Grid x:Name="MediaArea">
+                                            <Grid x:Name="MediaDetails">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
 
-                                            <Border Width="96" Height="96" CornerRadius="16" VerticalAlignment="Center">
-                                                <Border.Background>
-                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                        <GradientStop Color="#33FFFFFF" Offset="0"/>
-                                                        <GradientStop Color="#0DFFFFFF" Offset="1"/>
-                                                    </LinearGradientBrush>
-                                                </Border.Background>
-                                                <Border.Effect>
-                                                    <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.35"/>
-                                                </Border.Effect>
-                                                <Grid>
-                                                    <local:Glyph x:Name="ArtFallback" Data="{StaticResource IcoMusic}" Size="30"
-                                                                 Foreground="#66FFFFFF"/>
-                                                    <Border CornerRadius="16">
+                                                <DockPanel>
+                                                    <Border Width="64" Height="64" CornerRadius="13" VerticalAlignment="Top">
                                                         <Border.Background>
-                                                            <ImageBrush x:Name="ArtBrush" Stretch="UniformToFill"/>
+                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                                <GradientStop Color="#33FFFFFF" Offset="0"/>
+                                                                <GradientStop Color="#0DFFFFFF" Offset="1"/>
+                                                            </LinearGradientBrush>
                                                         </Border.Background>
+                                                        <Border.Effect>
+                                                            <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="270" Opacity="0.35"/>
+                                                        </Border.Effect>
+                                                        <Grid>
+                                                            <local:Glyph x:Name="ArtFallback" Data="{StaticResource IcoMusic}" Size="24"
+                                                                         Foreground="#66FFFFFF"/>
+                                                            <Border CornerRadius="13">
+                                                                <Border.Background>
+                                                                    <ImageBrush x:Name="ArtBrush" Stretch="UniformToFill"/>
+                                                                </Border.Background>
+                                                            </Border>
+                                                        </Grid>
                                                     </Border>
-                                                </Grid>
-                                            </Border>
+                                                    <StackPanel Margin="13,3,0,0" VerticalAlignment="Top">
+                                                        <TextBlock x:Name="TitleText" FontSize="14.5" FontWeight="SemiBold"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock x:Name="ArtistText" FontSize="12.5"
+                                                                   Foreground="{StaticResource Secondary}"
+                                                                   TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                                        <TextBlock x:Name="SourceText" FontSize="11"
+                                                                   Foreground="{StaticResource Tertiary}"
+                                                                   TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
+                                                    </StackPanel>
+                                                </DockPanel>
 
-                                            <DockPanel Grid.Column="1" Margin="16,2,0,0" LastChildFill="False">
-                                                <TextBlock x:Name="TitleText" DockPanel.Dock="Top" FontSize="14.5"
-                                                           FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock x:Name="ArtistText" DockPanel.Dock="Top" FontSize="12.5"
-                                                           Foreground="{StaticResource Secondary}"
-                                                           TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                                                <TextBlock x:Name="SourceText" DockPanel.Dock="Top" FontSize="11"
-                                                           Foreground="{StaticResource Tertiary}"
-                                                           TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-
-                                                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
-                                                            HorizontalAlignment="Center">
-                                                    <Button Style="{StaticResource IconButton}" Click="Previous_Click"
-                                                            ToolTip="Anterior">
-                                                        <local:Glyph Data="{StaticResource IcoPrev}" Filled="True" Size="17"/>
-                                                    </Button>
-                                                    <Button x:Name="PlayPauseButton" Style="{StaticResource IconButton}"
-                                                            Width="42" Height="42" Margin="10,0" Click="PlayPause_Click"
-                                                            ToolTip="Tocar/Pausar">
-                                                        <local:Glyph x:Name="PlayPauseGlyph" Data="{StaticResource IcoPlay}"
-                                                                     Filled="True" Size="22"/>
-                                                    </Button>
-                                                    <Button Style="{StaticResource IconButton}" Click="Next_Click"
-                                                            ToolTip="Próxima">
-                                                        <local:Glyph Data="{StaticResource IcoNext}" Filled="True" Size="17"/>
-                                                    </Button>
-                                                </StackPanel>
-
-                                                <Grid x:Name="ProgressRow" DockPanel.Dock="Bottom" Margin="0,0,0,4">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Grid x:Name="ProgressHit" Height="12" Background="Transparent" Cursor="Hand"
-                                                          MouseLeftButtonDown="Progress_MouseDown"
+                                                <Grid x:Name="ProgressRow" Grid.Row="2" Margin="0,0,0,6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="38"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="38"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="PositionText" FontSize="11" VerticalAlignment="Center"
+                                                               Foreground="{StaticResource Tertiary}"
+                                                               Typography.NumeralAlignment="Tabular"/>
+                                                    <Grid x:Name="ProgressHit" Grid.Column="1" Height="14" Background="Transparent"
+                                                          Cursor="Hand" MouseLeftButtonDown="Progress_MouseDown"
                                                           MouseEnter="Progress_MouseEnter" MouseLeave="Progress_MouseLeave">
-                                                        <Border x:Name="ProgressTrack" Height="4" CornerRadius="2"
+                                                        <Border x:Name="ProgressTrack" Height="4" CornerRadius="1.5"
                                                                 Background="#2EFFFFFF" VerticalAlignment="Center"/>
-                                                        <Border x:Name="ProgressFill" Height="4" CornerRadius="2"
+                                                        <Border x:Name="ProgressFill" Height="4" CornerRadius="1.5"
                                                                 Background="#E6FFFFFF" VerticalAlignment="Center"
                                                                 HorizontalAlignment="Left" Width="0"/>
                                                     </Grid>
-                                                    <Grid Grid.Row="1" Margin="0,1,0,0">
-                                                        <TextBlock x:Name="PositionText" FontSize="11"
-                                                                   Foreground="{StaticResource Tertiary}"
-                                                                   Typography.NumeralAlignment="Tabular"/>
-                                                        <TextBlock x:Name="DurationText" FontSize="11"
-                                                                   Foreground="{StaticResource Tertiary}"
-                                                                   Typography.NumeralAlignment="Tabular"
-                                                                   HorizontalAlignment="Right"/>
+                                                    <TextBlock x:Name="DurationText" Grid.Column="2" FontSize="11"
+                                                               VerticalAlignment="Center" HorizontalAlignment="Right"
+                                                               Foreground="{StaticResource Tertiary}"
+                                                               Typography.NumeralAlignment="Tabular"/>
+                                                </Grid>
+
+                                                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <Button Style="{StaticResource IconButton}" Width="40" Height="36"
+                                                            Click="Previous_Click" ToolTip="Anterior">
+                                                        <local:Glyph Data="{StaticResource IcoPrev}" Filled="True" Size="17"/>
+                                                    </Button>
+                                                    <Button x:Name="PlayPauseButton" Style="{StaticResource PrimaryButton}"
+                                                            Width="52" Height="38" Margin="12,0" Click="PlayPause_Click"
+                                                            ToolTip="Tocar/Pausar">
+                                                        <local:Glyph x:Name="PlayPauseGlyph" Data="{StaticResource IcoPlay}"
+                                                                     Filled="True" Size="19"/>
+                                                    </Button>
+                                                    <Button Style="{StaticResource IconButton}" Width="40" Height="36"
+                                                            Click="Next_Click" ToolTip="Próxima">
+                                                        <local:Glyph Data="{StaticResource IcoNext}" Filled="True" Size="17"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <StackPanel x:Name="NoMediaPanel" VerticalAlignment="Center"
+                                                        HorizontalAlignment="Center">
+                                                <local:Glyph Data="{StaticResource IcoMusic}" Size="28" Foreground="#4DFFFFFF"/>
+                                                <TextBlock Text="Nada tocando" FontSize="13" Foreground="{StaticResource Secondary}"
+                                                           Margin="0,10,0,0" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="Toque algo no Spotify, YouTube…" FontSize="11.5"
+                                                           Foreground="{StaticResource Tertiary}" Margin="0,2,0,0"
+                                                           HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- Sistema: processador e memória -->
+                                        <Grid x:Name="StatsCard" Grid.Column="2">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="8"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            <Border Style="{StaticResource Card}" Padding="10,8,10,0" ClipToBounds="True">
+                                                <DockPanel>
+                                                    <DockPanel DockPanel.Dock="Top">
+                                                        <local:Glyph Data="{StaticResource IcoCpu}" Size="13" Foreground="{StaticResource Tertiary}"/>
+                                                        <TextBlock Text="CPU" Style="{StaticResource Label}" Margin="5,0,0,0"
+                                                                   VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="CpuValue" FontSize="13" FontWeight="SemiBold"
+                                                                   HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular"/>
+                                                    </DockPanel>
+                                                    <Grid x:Name="CpuGraph" Margin="-10,4,-10,0">
+                                                        <Path x:Name="CpuArea" Opacity="0.22" Fill="{DynamicResource Accent}"/>
+                                                        <Path x:Name="CpuLine" StrokeThickness="1.5" Stroke="{DynamicResource Accent}"
+                                                              StrokeLineJoin="Round"/>
                                                     </Grid>
+                                                </DockPanel>
+                                            </Border>
+                                            <Border Grid.Row="2" Style="{StaticResource Card}" Padding="10,8,10,0" ClipToBounds="True">
+                                                <DockPanel>
+                                                    <DockPanel DockPanel.Dock="Top">
+                                                        <local:Glyph Data="{StaticResource IcoMemory}" Size="13" Foreground="{StaticResource Tertiary}"/>
+                                                        <TextBlock Text="RAM" Style="{StaticResource Label}" Margin="5,0,0,0"
+                                                                   VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="MemValue" FontSize="13" FontWeight="SemiBold"
+                                                                   HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular"/>
+                                                    </DockPanel>
+                                                    <Grid x:Name="MemGraph" Margin="-10,4,-10,0">
+                                                        <Path x:Name="MemArea" Opacity="0.22" Fill="#FFC861"/>
+                                                        <Path x:Name="MemLine" StrokeThickness="1.5" Stroke="#FFC861"
+                                                              StrokeLineJoin="Round"/>
+                                                    </Grid>
+                                                </DockPanel>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Prateleira -->
+                                        <Border Grid.Column="4" x:Name="ShelfZone" Style="{StaticResource Card}">
+                                            <Grid>
+                                                <TextBlock Text="PRATELEIRA" Style="{StaticResource Label}" FontSize="10"
+                                                           Margin="11,8,0,0" IsHitTestVisible="False"/>
+                                                <StackPanel x:Name="ShelfHint" VerticalAlignment="Center"
+                                                            HorizontalAlignment="Center" IsHitTestVisible="False" Margin="0,10,0,0">
+                                                    <Border Width="40" Height="40" CornerRadius="11" BorderThickness="1.5"
+                                                            BorderBrush="#40FFFFFF" HorizontalAlignment="Center">
+                                                        <local:Glyph Data="{StaticResource IcoTray}" Size="20" Foreground="#99FFFFFF"/>
+                                                    </Border>
+                                                    <TextBlock Text="Solte arquivos aqui" FontSize="12"
+                                                               Foreground="{StaticResource Secondary}"
+                                                               Margin="0,9,0,0" HorizontalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <ScrollViewer VerticalScrollBarVisibility="Hidden"
+                                                              HorizontalScrollBarVisibility="Disabled" Margin="5,24,5,24">
+                                                    <ItemsControl x:Name="ShelfItems">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border x:Name="Root" Width="46" Height="56" Margin="1"
+                                                                        CornerRadius="9" Background="Transparent" Cursor="Hand"
+                                                                        ToolTip="{Binding Path}"
+                                                                        PreviewMouseLeftButtonDown="ShelfItem_MouseDown"
+                                                                        MouseMove="ShelfItem_MouseMove">
+                                                                    <Grid>
+                                                                        <Image Source="{Binding Icon}" Width="28" Height="28"
+                                                                               VerticalAlignment="Top" Margin="0,5,0,0"/>
+                                                                        <TextBlock Text="{Binding Name}" FontSize="10.5"
+                                                                                   Foreground="{StaticResource Secondary}"
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   TextAlignment="Center"
+                                                                                   VerticalAlignment="Bottom" Margin="2,0,2,4"/>
+                                                                        <Button x:Name="RemoveButton"
+                                                                                Style="{StaticResource IconButton}"
+                                                                                Width="16" Height="16" Background="#80000000"
+                                                                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                                                Margin="0,1,1,0"
+                                                                                Visibility="Hidden" Click="ShelfRemove_Click"
+                                                                                ToolTip="Remover da prateleira">
+                                                                            <local:Glyph Data="{StaticResource IcoClose}" Size="10"
+                                                                                         Thickness="3"/>
+                                                                        </Button>
+                                                                    </Grid>
+                                                                </Border>
+                                                                <DataTemplate.Triggers>
+                                                                    <Trigger SourceName="Root" Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="RemoveButton" Property="Visibility"
+                                                                                Value="Visible"/>
+                                                                        <Setter TargetName="Root" Property="Background"
+                                                                                Value="#17FFFFFF"/>
+                                                                    </Trigger>
+                                                                </DataTemplate.Triggers>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+
+                                                <Button x:Name="ClearShelfButton" Style="{StaticResource IconButton}"
+                                                        Width="24" Height="22" Margin="0,0,5,4"
+                                                        HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                                        Click="ClearShelf_Click" ToolTip="Limpar prateleira">
+                                                    <local:Glyph Data="{StaticResource IcoTrash}" Size="13" Foreground="#A6FFFFFF"/>
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- ── Agenda: hoje + tarefas + mês ── -->
+                                    <Grid x:Name="PageAgenda" Visibility="Collapsed">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="230"/>
+                                            <ColumnDefinition Width="14"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border x:Name="TodoPanel" Style="{StaticResource Card}" Padding="12,9,12,8"
+                                                MouseEnter="NotesArea_MouseEnter" MouseLeave="NotesArea_MouseLeave">
+                                            <DockPanel>
+                                                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                                                    <TextBlock x:Name="TodoCount" DockPanel.Dock="Right" Style="{StaticResource Label}"
+                                                               VerticalAlignment="Bottom" Typography.NumeralAlignment="Tabular"/>
+                                                    <StackPanel>
+                                                        <TextBlock x:Name="AgendaWeekday" Style="{StaticResource Label}"
+                                                                   Foreground="{DynamicResource Accent}"/>
+                                                        <TextBlock x:Name="AgendaDate" FontSize="15" FontWeight="SemiBold" Margin="0,1,0,0"/>
+                                                    </StackPanel>
+                                                </DockPanel>
+
+                                                <Border DockPanel.Dock="Bottom" CornerRadius="9" Background="#12FFFFFF"
+                                                        BorderBrush="{StaticResource Hairline}" BorderThickness="1"
+                                                        Padding="9,0,3,0" Height="30" Margin="0,6,0,0">
+                                                    <DockPanel>
+                                                        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}"
+                                                                Width="24" Height="24" Click="TodoAdd_Click" ToolTip="Adicionar tarefa">
+                                                            <local:Glyph Data="{StaticResource IcoPlus}" Size="14"
+                                                                         Foreground="{DynamicResource Accent}"/>
+                                                        </Button>
+                                                        <Grid VerticalAlignment="Center">
+                                                            <TextBlock x:Name="TodoPlaceholder" Text="Nova tarefa…" FontSize="12.5"
+                                                                       Foreground="{StaticResource Tertiary}" IsHitTestVisible="False"
+                                                                       Margin="2,0,0,0"/>
+                                                            <TextBox x:Name="TodoInput" Style="{StaticResource LineBox}"
+                                                                     PreviewMouseLeftButtonDown="TextInput_PreviewMouseDown"
+                                                                     TextChanged="TodoInput_TextChanged"
+                                                                     PreviewKeyDown="TodoInput_PreviewKeyDown"/>
+                                                        </Grid>
+                                                    </DockPanel>
+                                                </Border>
+
+                                                <Grid>
+                                                    <TextBlock x:Name="TodoEmpty" Text="Nenhuma tarefa. Que tal planejar o dia?"
+                                                               FontSize="12" Foreground="{StaticResource Tertiary}"
+                                                               TextWrapping="Wrap" VerticalAlignment="Center"
+                                                               HorizontalAlignment="Center" TextAlignment="Center" Margin="10,0"/>
+                                                    <ScrollViewer VerticalScrollBarVisibility="Hidden">
+                                                        <ItemsControl x:Name="TodoItems">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Border x:Name="Row" CornerRadius="7" Padding="4,4,2,4"
+                                                                            Background="Transparent">
+                                                                        <DockPanel>
+                                                                            <Button x:Name="Remove" DockPanel.Dock="Right"
+                                                                                    Style="{StaticResource IconButton}"
+                                                                                    Width="20" Height="20" Visibility="Hidden"
+                                                                                    Click="TodoRemove_Click" ToolTip="Apagar">
+                                                                                <local:Glyph Data="{StaticResource IcoClose}" Size="10"
+                                                                                             Thickness="2.6" Foreground="#A6FFFFFF"/>
+                                                                            </Button>
+                                                                            <CheckBox Style="{StaticResource TodoCheck}"
+                                                                                      IsChecked="{Binding Done, Mode=TwoWay}"
+                                                                                      Click="TodoCheck_Click">
+                                                                                <TextBlock x:Name="Text" Text="{Binding Text}" FontSize="12.5"
+                                                                                           TextTrimming="CharacterEllipsis"/>
+                                                                            </CheckBox>
+                                                                        </DockPanel>
+                                                                    </Border>
+                                                                    <DataTemplate.Triggers>
+                                                                        <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="Row" Property="Background" Value="#0FFFFFFF"/>
+                                                                            <Setter TargetName="Remove" Property="Visibility" Value="Visible"/>
+                                                                        </Trigger>
+                                                                        <DataTrigger Binding="{Binding Done}" Value="True">
+                                                                            <Setter TargetName="Text" Property="TextDecorations" Value="Strikethrough"/>
+                                                                            <Setter TargetName="Text" Property="Foreground" Value="#73FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </DataTemplate.Triggers>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </ScrollViewer>
                                                 </Grid>
                                             </DockPanel>
-                                        </Grid>
+                                        </Border>
 
-                                        <StackPanel x:Name="NoMediaPanel" VerticalAlignment="Center"
-                                                    HorizontalAlignment="Center">
-                                            <local:Glyph Data="{StaticResource IcoMusic}" Size="28" Foreground="#4DFFFFFF"/>
-                                            <TextBlock Text="Nada tocando" FontSize="13" Foreground="{StaticResource Tertiary}"
-                                                       Margin="0,10,0,0" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="Toque algo no Spotify, YouTube…" FontSize="11"
-                                                       Foreground="#40FFFFFF" Margin="0,2,0,0"
-                                                       HorizontalAlignment="Center"/>
-                                        </StackPanel>
+                                        <!-- Mês -->
+                                        <DockPanel Grid.Column="2">
+                                            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                    <Button Style="{StaticResource IconButton}" Width="24" Height="22"
+                                                            Tag="-1" Click="CalendarMonth_Click" ToolTip="Mês anterior">
+                                                        <local:Glyph Data="{StaticResource IcoChevronLeft}" Size="13"/>
+                                                    </Button>
+                                                    <Button Style="{StaticResource IconButton}" Width="24" Height="22"
+                                                            Tag="0" Click="CalendarMonth_Click" ToolTip="Hoje">
+                                                        <Border Width="6" Height="6" CornerRadius="2" Background="{DynamicResource Accent}"/>
+                                                    </Button>
+                                                    <Button Style="{StaticResource IconButton}" Width="24" Height="22"
+                                                            Tag="1" Click="CalendarMonth_Click" ToolTip="Próximo mês">
+                                                        <local:Glyph Data="{StaticResource IcoChevronRight}" Size="13"/>
+                                                    </Button>
+                                                </StackPanel>
+                                                <TextBlock x:Name="CalMonth" FontSize="13.5" FontWeight="SemiBold"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="CalWeekNumber" Style="{StaticResource Label}" Margin="8,1,0,0"
+                                                           VerticalAlignment="Center"/>
+                                            </DockPanel>
+                                            <UniformGrid x:Name="CalHeader" DockPanel.Dock="Top" Rows="1" Columns="7" Margin="0,0,0,2"/>
+                                            <UniformGrid x:Name="CalGrid" Rows="6" Columns="7"/>
+                                        </DockPanel>
                                     </Grid>
 
-                                    <!-- Calendário -->
-                                    <Border x:Name="CalendarCard" Grid.Column="2" Style="{StaticResource Card}" Padding="8,9">
+                                    <!-- ── Notas ── -->
+                                    <Border x:Name="PageNotes" Visibility="Collapsed" Style="{StaticResource Card}" Padding="14,10"
+                                            MouseEnter="NotesArea_MouseEnter" MouseLeave="NotesArea_MouseLeave">
                                         <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="*"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-                                            <TextBlock x:Name="CalMonth" FontSize="11" FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource Accent}"/>
-                                            <TextBlock x:Name="CalDay" Grid.Row="1" FontSize="40" FontWeight="Light"
-                                                       Margin="-1,-3,0,-5"/>
-                                            <TextBlock x:Name="CalWeekday" Grid.Row="2" FontSize="11.5"
-                                                       Foreground="{StaticResource Secondary}"/>
-                                            <UniformGrid x:Name="CalWeek" Grid.Row="4" Rows="2" Columns="7"/>
+                                            <TextBlock x:Name="NotesPlaceholder" Text="Escreva uma anotação…" FontSize="13.5"
+                                                       Foreground="{StaticResource Tertiary}" IsHitTestVisible="False"
+                                                       Margin="2,0,0,0"/>
+                                            <TextBox x:Name="NotesBox" Style="{StaticResource NotesBox}"
+                                                     PreviewMouseLeftButtonDown="TextInput_PreviewMouseDown"
+                                                     TextChanged="NotesBox_TextChanged"
+                                                     PreviewKeyDown="NotesBox_PreviewKeyDown"/>
                                         </Grid>
                                     </Border>
 
-                                    <!-- Prateleira -->
-                                    <Border Grid.Column="4" x:Name="ShelfZone" Style="{StaticResource Card}">
-                                        <Grid>
-                                            <StackPanel x:Name="ShelfHint" VerticalAlignment="Center"
-                                                        HorizontalAlignment="Center" IsHitTestVisible="False">
-                                                <local:Glyph Data="{StaticResource IcoTray}" Size="24" Foreground="#73FFFFFF"/>
-                                                <TextBlock Text="Solte arquivos aqui" FontSize="12"
-                                                           Foreground="{StaticResource Tertiary}"
-                                                           Margin="0,8,0,0" HorizontalAlignment="Center"/>
-                                            </StackPanel>
+                                    <!-- ── Foco (timer) ── -->
+                                    <Grid x:Name="PageTimer" Visibility="Collapsed">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="176"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
 
-                                            <ScrollViewer VerticalScrollBarVisibility="Hidden"
-                                                          HorizontalScrollBarVisibility="Disabled" Margin="5,5,5,24">
-                                                <ItemsControl x:Name="ShelfItems">
-                                                    <ItemsControl.ItemsPanel>
-                                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                                                    </ItemsControl.ItemsPanel>
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border x:Name="Root" Width="52" Height="60" Margin="1"
-                                                                    CornerRadius="10" Background="Transparent" Cursor="Hand"
-                                                                    ToolTip="{Binding Path}"
-                                                                    PreviewMouseLeftButtonDown="ShelfItem_MouseDown"
-                                                                    MouseMove="ShelfItem_MouseMove">
-                                                                <Grid>
-                                                                    <Image Source="{Binding Icon}" Width="30" Height="30"
-                                                                           VerticalAlignment="Top" Margin="0,6,0,0"/>
-                                                                    <TextBlock Text="{Binding Name}" FontSize="10"
-                                                                               Foreground="{StaticResource Secondary}"
-                                                                               TextTrimming="CharacterEllipsis"
-                                                                               TextAlignment="Center"
-                                                                               VerticalAlignment="Bottom" Margin="3,0,3,4"/>
-                                                                    <Button x:Name="RemoveButton"
-                                                                            Style="{StaticResource IconButton}"
-                                                                            Width="16" Height="16" Background="#59000000"
-                                                                            HorizontalAlignment="Right" VerticalAlignment="Top"
-                                                                            Margin="0,1,1,0"
-                                                                            Visibility="Hidden" Click="ShelfRemove_Click"
-                                                                            ToolTip="Remover da prateleira">
-                                                                        <local:Glyph Data="{StaticResource IcoClose}" Size="10"
-                                                                                     Thickness="3"/>
-                                                                    </Button>
-                                                                </Grid>
-                                                            </Border>
-                                                            <DataTemplate.Triggers>
-                                                                <Trigger SourceName="Root" Property="IsMouseOver" Value="True">
-                                                                    <Setter TargetName="RemoveButton" Property="Visibility"
-                                                                            Value="Visible"/>
-                                                                    <Setter TargetName="Root" Property="Background"
-                                                                            Value="#17FFFFFF"/>
-                                                                </Trigger>
-                                                            </DataTemplate.Triggers>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </ScrollViewer>
-
-                                            <Button x:Name="ClearShelfButton" Style="{StaticResource IconButton}"
-                                                    Width="22" Height="22" Margin="0,0,5,3"
-                                                    HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                                    Click="ClearShelf_Click" ToolTip="Limpar prateleira">
-                                                <local:Glyph Data="{StaticResource IcoTrash}" Size="13" Foreground="#A6FFFFFF"/>
-                                            </Button>
-                                        </Grid>
-                                    </Border>
-                                </Grid>
-
-                                <!-- ── Notas ── -->
-                                <Border x:Name="PageNotes" Visibility="Collapsed" Style="{StaticResource Card}" Padding="14,10"
-                                        MouseEnter="NotesArea_MouseEnter" MouseLeave="NotesArea_MouseLeave">
-                                    <Grid>
-                                        <TextBlock x:Name="NotesPlaceholder" Text="Escreva uma anotação…" FontSize="13.5"
-                                                   Foreground="{StaticResource Tertiary}" IsHitTestVisible="False"
-                                                   Margin="2,0,0,0"/>
-                                        <TextBox x:Name="NotesBox" Style="{StaticResource NotesBox}"
-                                                 PreviewMouseLeftButtonDown="NotesBox_PreviewMouseDown"
-                                                 TextChanged="NotesBox_TextChanged"
-                                                 PreviewKeyDown="NotesBox_PreviewKeyDown"/>
-                                    </Grid>
-                                </Border>
-
-                                <!-- ── Timer ── -->
-                                <Grid x:Name="PageTimer" Visibility="Collapsed">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <Grid Width="148" Height="148" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <Ellipse Stroke="#1FFFFFFF" StrokeThickness="6" Margin="3"/>
-                                        <Path x:Name="TimerRing" Stroke="{DynamicResource Accent}" StrokeThickness="6"
-                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
-                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <TextBlock x:Name="TimerDisplay" Text="5:00" FontSize="32" FontWeight="Light"
-                                                       HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
-                                            <TextBlock x:Name="TimerStatus" Text="Pronto" FontSize="11.5"
-                                                       Foreground="{StaticResource Secondary}" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                                            <Button x:Name="TimerStartButton" Style="{StaticResource ChipButton}"
-                                                    Padding="16,7" Margin="0,0,8,0" Click="TimerStartPause_Click">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <local:Glyph x:Name="TimerStartGlyph" Data="{StaticResource IcoPlay}"
-                                                                 Filled="True" Size="12" Margin="0,0,7,0"/>
-                                                    <TextBlock x:Name="TimerStartText" Text="Iniciar" FontSize="13"/>
-                                                </StackPanel>
-                                            </Button>
-                                            <Button Style="{StaticResource ChipButton}" Padding="14,7" Margin="0"
-                                                    Click="TimerReset_Click">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <local:Glyph Data="{StaticResource IcoReset}" Size="13" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="Zerar" FontSize="13"/>
-                                                </StackPanel>
-                                            </Button>
-                                        </StackPanel>
-                                        <TextBlock Text="Início rápido" FontSize="11" Foreground="{StaticResource Tertiary}"
-                                                   Margin="0,0,0,8"/>
-                                        <WrapPanel>
-                                            <Button Style="{StaticResource ChipButton}" Content="1 min" Tag="1" Click="TimerPreset_Click"/>
-                                            <Button Style="{StaticResource ChipButton}" Content="5 min" Tag="5" Click="TimerPreset_Click"/>
-                                            <Button Style="{StaticResource ChipButton}" Content="10 min" Tag="10" Click="TimerPreset_Click"/>
-                                            <Button Style="{StaticResource ChipButton}" Content="15 min" Tag="15" Click="TimerPreset_Click"/>
-                                            <Button Style="{StaticResource ChipButton}" Content="25 min" Tag="25" Click="TimerPreset_Click"/>
-                                            <Button Style="{StaticResource ChipButton}" Content="45 min" Tag="45" Click="TimerPreset_Click"/>
-                                            <Button Style="{StaticResource ChipButton}" Content="1 h" Tag="60" Click="TimerPreset_Click"/>
-                                            <Button Style="{StaticResource ChipButton}" Content="+1 min" Tag="1" Click="TimerAdd_Click"/>
-                                            <Button Style="{StaticResource ChipButton}" Content="+5 min" Tag="5" Click="TimerAdd_Click"/>
-                                            <Button Style="{StaticResource ChipButton}" Content="−1 min" Tag="-1" Click="TimerAdd_Click"/>
-                                        </WrapPanel>
-                                    </StackPanel>
-                                </Grid>
-
-                                <!-- ── Área de transferência ── -->
-                                <Grid x:Name="PageClipboard" Visibility="Collapsed">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-                                    <Grid Margin="0,0,0,8">
-                                        <TextBlock x:Name="ClipboardStatus" Text="Clique em um item para copiar de novo"
-                                                   FontSize="11.5" Foreground="{StaticResource Tertiary}"
-                                                   VerticalAlignment="Center"/>
-                                        <Button Style="{StaticResource ChipButton}" Content="Limpar" Margin="0" Padding="11,3"
-                                                HorizontalAlignment="Right" Click="ClipboardClear_Click"/>
-                                    </Grid>
-                                    <StackPanel x:Name="ClipboardEmpty" Grid.Row="1" HorizontalAlignment="Center"
-                                                VerticalAlignment="Center">
-                                        <local:Glyph Data="{StaticResource IcoClipboard}" Size="26" Foreground="#4DFFFFFF"/>
-                                        <TextBlock Text="Nada copiado ainda" FontSize="13" Foreground="{StaticResource Tertiary}"
-                                                   Margin="0,8,0,0"/>
-                                    </StackPanel>
-                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden">
-                                        <ItemsControl x:Name="ClipboardItems">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border x:Name="Row" CornerRadius="10" Background="#10FFFFFF"
-                                                            BorderBrush="#14FFFFFF" BorderThickness="1"
-                                                            Padding="12,6" Margin="0,0,0,5" Cursor="Hand"
-                                                            ToolTip="{Binding Text}"
-                                                            MouseLeftButtonUp="ClipItem_Click">
-                                                        <DockPanel>
-                                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Time}"
-                                                                       FontSize="11" Foreground="{StaticResource Tertiary}"
-                                                                       Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                                            <TextBlock Text="{Binding Preview}" FontSize="12.5"
-                                                                       TextTrimming="CharacterEllipsis"/>
-                                                        </DockPanel>
-                                                    </Border>
-                                                    <DataTemplate.Triggers>
-                                                        <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Row" Property="Background" Value="#24FFFFFF"/>
-                                                        </Trigger>
-                                                    </DataTemplate.Triggers>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </ScrollViewer>
-                                </Grid>
-
-                                <!-- ── Espelho (câmera) ── -->
-                                <Grid x:Name="PageMirror" Visibility="Collapsed">
-                                    <Border x:Name="MirrorFrame" Width="300" Style="{StaticResource Card}"
-                                            HorizontalAlignment="Center" ClipToBounds="True">
-                                        <Grid>
-                                            <Border x:Name="MirrorImage" CornerRadius="15" RenderTransformOrigin="0.5,0.5">
-                                                <Border.RenderTransform>
-                                                    <ScaleTransform ScaleX="-1"/>
-                                                </Border.RenderTransform>
-                                                <Border.Background>
-                                                    <ImageBrush x:Name="MirrorBrush" Stretch="UniformToFill"/>
-                                                </Border.Background>
-                                            </Border>
-                                            <StackPanel x:Name="MirrorPlaceholder" VerticalAlignment="Center"
-                                                        HorizontalAlignment="Center" Margin="16,0">
-                                                <local:Glyph Data="{StaticResource IcoMirror}" Size="26" Foreground="#73FFFFFF"/>
-                                                <TextBlock x:Name="MirrorStatus" Text="Ligando a câmera…" FontSize="12"
-                                                           Foreground="{StaticResource Secondary}" TextWrapping="Wrap"
-                                                           TextAlignment="Center" Margin="0,8,0,0"/>
-                                                <Button x:Name="MirrorRetry" Style="{StaticResource ChipButton}" Content="Tentar de novo"
-                                                        HorizontalAlignment="Center" Margin="0,10,0,0"
-                                                        Visibility="Collapsed" Click="MirrorRetry_Click"/>
+                                        <!-- Contorno quadrado de cantos suaves que se esvazia com o tempo -->
+                                        <Grid Width="156" Height="156" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <Path x:Name="TimerTrack" Stroke="#1FFFFFFF" StrokeThickness="6"/>
+                                            <Path x:Name="TimerRing" Stroke="{DynamicResource Accent}" StrokeThickness="6"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeDashCap="Round"/>
+                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <TextBlock x:Name="TimerMode" Text="FOCO" Style="{StaticResource Label}"
+                                                           HorizontalAlignment="Center"/>
+                                                <TextBlock x:Name="TimerDisplay" Text="5:00" FontSize="34" FontWeight="Light"
+                                                           HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"
+                                                           Margin="0,-1,0,0"/>
+                                                <TextBlock x:Name="TimerStatus" Text="Pronto" FontSize="11.5"
+                                                           Foreground="{StaticResource Secondary}" HorizontalAlignment="Center"/>
                                             </StackPanel>
                                         </Grid>
-                                    </Border>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                                <Button x:Name="TimerStartButton" Style="{StaticResource ChipButton}"
+                                                        Padding="16,8" Margin="0,0,8,0" Click="TimerStartPause_Click"
+                                                        Background="{DynamicResource Accent}" Foreground="#111111">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <local:Glyph x:Name="TimerStartGlyph" Data="{StaticResource IcoPlay}"
+                                                                     Filled="True" Size="12" Margin="0,0,7,0"/>
+                                                        <TextBlock x:Name="TimerStartText" Text="Iniciar" FontSize="13" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Style="{StaticResource ChipButton}" Padding="14,8" Margin="0"
+                                                        Click="TimerReset_Click">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <local:Glyph Data="{StaticResource IcoReset}" Size="13" Margin="0,0,6,0"/>
+                                                        <TextBlock Text="Zerar" FontSize="13"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                                <Button Style="{StaticResource ModeTile}" Tag="25|FOCO" Click="TimerMode_Click">
+                                                    <StackPanel>
+                                                        <TextBlock Text="Foco" FontSize="12.5" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="25 min" FontSize="11" Foreground="{StaticResource Tertiary}"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Style="{StaticResource ModeTile}" Tag="5|PAUSA" Click="TimerMode_Click">
+                                                    <StackPanel>
+                                                        <TextBlock Text="Pausa" FontSize="12.5" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="5 min" FontSize="11" Foreground="{StaticResource Tertiary}"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Style="{StaticResource ModeTile}" Tag="15|PAUSA LONGA" Click="TimerMode_Click">
+                                                    <StackPanel>
+                                                        <TextBlock Text="Pausa longa" FontSize="12.5" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="15 min" FontSize="11" Foreground="{StaticResource Tertiary}"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+
+                                            <WrapPanel>
+                                                <Button Style="{StaticResource ChipButton}" Content="1 min" Tag="1" Click="TimerPreset_Click"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="10 min" Tag="10" Click="TimerPreset_Click"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="45 min" Tag="45" Click="TimerPreset_Click"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="1 h" Tag="60" Click="TimerPreset_Click"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="+1" Tag="1" Click="TimerAdd_Click"
+                                                        ToolTip="Mais 1 minuto"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="+5" Tag="5" Click="TimerAdd_Click"
+                                                        ToolTip="Mais 5 minutos"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="−1" Tag="-1" Click="TimerAdd_Click"
+                                                        ToolTip="Menos 1 minuto"/>
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- ── Área de transferência ── -->
+                                    <Grid x:Name="PageClipboard" Visibility="Collapsed">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid Margin="0,0,0,8">
+                                            <TextBlock x:Name="ClipboardStatus" Text="Clique em um item para copiar de novo"
+                                                       FontSize="12" Foreground="{StaticResource Tertiary}"
+                                                       VerticalAlignment="Center"/>
+                                            <Button Style="{StaticResource ChipButton}" Content="Limpar" Margin="0" Padding="11,3"
+                                                    HorizontalAlignment="Right" Click="ClipboardClear_Click"/>
+                                        </Grid>
+                                        <StackPanel x:Name="ClipboardEmpty" Grid.Row="1" HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                            <local:Glyph Data="{StaticResource IcoClipboard}" Size="26" Foreground="#4DFFFFFF"/>
+                                            <TextBlock Text="Nada copiado ainda" FontSize="13" Foreground="{StaticResource Secondary}"
+                                                       Margin="0,8,0,0"/>
+                                        </StackPanel>
+                                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden">
+                                            <ItemsControl x:Name="ClipboardItems">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border x:Name="Row" CornerRadius="10" Background="#0FFFFFFF"
+                                                                BorderBrush="{StaticResource Hairline}" BorderThickness="1"
+                                                                Padding="12,7" Margin="0,0,0,5" Cursor="Hand"
+                                                                ToolTip="{Binding Text}"
+                                                                MouseLeftButtonUp="ClipItem_Click">
+                                                            <DockPanel>
+                                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Time}"
+                                                                           FontSize="11" Foreground="{StaticResource Tertiary}"
+                                                                           Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding Preview}" FontSize="12.5"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                            </DockPanel>
+                                                        </Border>
+                                                        <DataTemplate.Triggers>
+                                                            <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Row" Property="Background" Value="#22FFFFFF"/>
+                                                            </Trigger>
+                                                        </DataTemplate.Triggers>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Grid>
+
+                                    <!-- ── Espelho (câmera) ── -->
+                                    <Grid x:Name="PageMirror" Visibility="Collapsed">
+                                        <Border x:Name="MirrorFrame" Width="300" Style="{StaticResource Card}"
+                                                HorizontalAlignment="Center" ClipToBounds="True">
+                                            <Grid>
+                                                <Border x:Name="MirrorImage" CornerRadius="13" RenderTransformOrigin="0.5,0.5">
+                                                    <Border.RenderTransform>
+                                                        <ScaleTransform ScaleX="-1"/>
+                                                    </Border.RenderTransform>
+                                                    <Border.Background>
+                                                        <ImageBrush x:Name="MirrorBrush" Stretch="UniformToFill"/>
+                                                    </Border.Background>
+                                                </Border>
+                                                <StackPanel x:Name="MirrorPlaceholder" VerticalAlignment="Center"
+                                                            HorizontalAlignment="Center" Margin="16,0">
+                                                    <local:Glyph Data="{StaticResource IcoMirror}" Size="26" Foreground="#73FFFFFF"/>
+                                                    <TextBlock x:Name="MirrorStatus" Text="Ligando a câmera…" FontSize="12"
+                                                               Foreground="{StaticResource Secondary}" TextWrapping="Wrap"
+                                                               TextAlignment="Center" Margin="0,8,0,0"/>
+                                                    <Button x:Name="MirrorRetry" Style="{StaticResource ChipButton}" Content="Tentar de novo"
+                                                            HorizontalAlignment="Center" Margin="0,10,0,0"
+                                                            Visibility="Collapsed" Click="MirrorRetry_Click"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
                                 </Grid>
                             </Grid>
                         </Grid>

@@ -46,17 +46,17 @@
                     <ControlTemplate TargetType="CheckBox">
                         <Border Background="Transparent" Padding="{TemplateBinding Padding}">
                             <DockPanel>
-                                <Border x:Name="Track" DockPanel.Dock="Right" Width="42" Height="25" CornerRadius="12.5"
+                                <Border x:Name="Track" DockPanel.Dock="Right" Width="42" Height="24" CornerRadius="7"
                                         Background="#3A808080" Margin="12,0,0,0">
-                                    <Ellipse x:Name="Knob" Width="21" Height="21" Fill="White"
-                                             HorizontalAlignment="Left" Margin="2,0,0,0">
-                                        <Ellipse.Effect>
+                                    <Border x:Name="Knob" Width="20" Height="20" CornerRadius="5" Background="White"
+                                            HorizontalAlignment="Left" Margin="2,0,0,0">
+                                        <Border.Effect>
                                             <DropShadowEffect BlurRadius="5" ShadowDepth="1" Direction="270" Opacity="0.3"/>
-                                        </Ellipse.Effect>
-                                        <Ellipse.RenderTransform>
+                                        </Border.Effect>
+                                        <Border.RenderTransform>
                                             <TranslateTransform/>
-                                        </Ellipse.RenderTransform>
-                                    </Ellipse>
+                                        </Border.RenderTransform>
+                                    </Border>
                                 </Border>
                                 <ContentPresenter VerticalAlignment="Center"/>
                             </DockPanel>
@@ -69,7 +69,7 @@
                                         <Storyboard>
                                             <DoubleAnimation Storyboard.TargetName="Knob" Duration="0:0:0.22"
                                                              Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                                                             To="17">
+                                                             To="18">
                                                 <DoubleAnimation.EasingFunction>
                                                     <BackEase EasingMode="EaseOut" Amplitude="0.25"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -127,6 +127,59 @@
             </Setter>
         </Style>
 
+        <!-- Controle deslizante: trilho fino e puxador quadrado de cantos suaves -->
+        <Style x:Key="SliderFill" TargetType="RepeatButton">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent">
+                            <Border Height="4" CornerRadius="2" Background="{TemplateBinding Background}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="Slider">
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Track x:Name="PART_Track">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource SliderFill}" Command="Slider.DecreaseLarge"
+                                              Background="{DynamicResource AccentFillColorDefaultBrush}"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource SliderFill}" Command="Slider.IncreaseLarge"
+                                              Background="#40808080"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Border x:Name="Knob" Width="18" Height="18" CornerRadius="5" Background="White"
+                                                    BorderBrush="#26000000" BorderThickness="0.5">
+                                                <Border.Effect>
+                                                    <DropShadowEffect BlurRadius="5" ShadowDepth="1" Direction="270" Opacity="0.3"/>
+                                                </Border.Effect>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsDragging" Value="True">
+                                                    <Setter TargetName="Knob" Property="Width" Value="22"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="SliderRow" TargetType="Grid">
             <Setter Property="Margin" Value="14,8"/>
         </Style>
@@ -149,8 +202,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid>
-                            <Ellipse x:Name="Ring" Stroke="#66808080" StrokeThickness="1"
-                                     Fill="{TemplateBinding Background}"/>
+                            <Rectangle x:Name="Ring" Stroke="#66808080" StrokeThickness="1" RadiusX="8" RadiusY="8"
+                                       Fill="{TemplateBinding Background}"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -291,7 +344,9 @@
                 <StackPanel>
                     <CheckBox Style="{StaticResource Switch}" Content="Controles de mídia" IsChecked="{Binding ShowMedia}"/>
                     <Border Style="{StaticResource Divider}"/>
-                    <CheckBox Style="{StaticResource Switch}" Content="Calendário" IsChecked="{Binding ShowCalendar}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Monitor do sistema (CPU e memória)" IsChecked="{Binding ShowStats}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Agenda e tarefas" IsChecked="{Binding ShowCalendar}"/>
                     <Border Style="{StaticResource Divider}"/>
                     <CheckBox Style="{StaticResource Switch}" Content="Prateleira de arquivos" IsChecked="{Binding ShowShelf}"/>
                     <Border Style="{StaticResource Divider}"/>

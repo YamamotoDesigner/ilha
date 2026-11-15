@@ -34,17 +34,19 @@ timer e área de transferência, sempre à mão e nunca no caminho.
 | 🎵 **Controle de mídia** | Capa, título, progresso e controles do que estiver tocando — Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows. |
 | 📂 **Prateleira de arquivos** | Arraste arquivos para a ilha e solte onde quiser depois. Leve coisas entre pastas, e-mails e apps sem perder nada. |
 | 📝 **Notas rápidas** | Um bloco sempre à mão, salvo automaticamente. |
-| ⏱️ **Timer** | Pomodoro em um clique. A contagem aparece na pílula e a ilha avisa quando acabar. |
+| ⏱️ **Foco** | Modos Foco, Pausa e Pausa longa em um clique. A contagem aparece na ilha recolhida e ela avisa quando acabar. |
+| ✅ **Agenda e tarefas** | Calendário do mês inteiro e uma lista de tarefas para o dia, salva automaticamente. |
+| 📈 **Monitor do sistema** | Uso de processador e memória com gráfico dos últimos segundos. |
 | 📋 **Área de transferência** | Histórico do que você copiou; clique para copiar de novo. Fica só na memória. |
 | 🫧 **Vidro ou sólido** | Efeito de vidro com desfoque real do que está atrás (o mesmo do Windows 11), tingido pela sua cor — ou cor sólida, se preferir. |
-| 📅 **Calendário** | Dia, mês e a semana de relance, ao lado da música. |
 | 🪞 **Espelho** | Confira o cabelo antes da call: a câmera aparece na ilha e só fica ligada enquanto a aba está aberta. |
 | 🔔 **Avisos rápidos** | A ilha recolhida cresce por um instante para mostrar volume, carregador conectado e música nova. |
 | ⌨️ **Atalho global** | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd> abre e fecha de qualquer lugar. |
 
 ## 🎨 Do seu jeito
 
-Visual inspirado no capricho da Apple: fonte fina, ícones desenhados à mão, animações com mola.
+Visual próprio, com o capricho da Apple: abas num trilho lateral, cantos suaves (nada de pílulas),
+fonte fácil de ler, ícones desenhados à mão e animações com mola.
 Material vidro ou sólido, intensidade da cor, cor da ilha e de destaque, tamanho, arredondamento, largura e altura da pílula, sombra,
 animação com mola, atrasos de abertura e fechamento, monitor, relógio 24 h, quais recursos
 aparecem — tudo muda ao vivo. E ela **some sozinha em jogos e vídeos em tela cheia**.

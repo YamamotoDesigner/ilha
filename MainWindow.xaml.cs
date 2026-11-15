@@ -19,8 +19,8 @@ namespace Ilha
 {
     public partial class MainWindow : Window
     {
-        private const double BaseWindowWidth = 700, BaseWindowHeight = 300;
-        private const double ExpandedWidth = 620, ExpandedHeight = 228;
+        private const double BaseWindowWidth = 720, BaseWindowHeight = 300;
+        private const double ExpandedWidth = 660, ExpandedHeight = 244;
         private const double CollapsedExtraWidth = 64;
         private const double PeekExtraWidth = 170;
         private const int HotkeyId = 0x4948;
@@ -40,6 +40,10 @@ namespace Ilha
         private string _lastTrackKey = "";
         private DateTime _ignoreTrackUntil = DateTime.Now.AddSeconds(4);
         private DateTime _calendarDate;
+        private int _monthOffset;
+        private double _cornerRadius = 22;
+        private readonly SystemStats _stats = new();
+        private readonly ObservableCollection<TodoItem> _todos = new();
         private string _currentTab = "home";
         private readonly ObservableCollection<ShelfItem> _shelf = new();
         private readonly ObservableCollection<ClipItem> _clips = new();
@@ -111,6 +115,12 @@ namespace Ilha
             NotesBox.Text = _settings.Notes;
             UpdateNotesPlaceholder();
 
+            foreach (var todo in _settings.Todos) _todos.Add(todo);
+            TodoItems.ItemsSource = _todos;
+            _todos.CollectionChanged += (_, _) => SaveTodos();
+            UpdateTodoSummary();
+            _stats.Sample();
+
             _expandTimer.Tick += (_, _) =>
             {
                 _expandTimer.Stop();
@@ -136,7 +146,16 @@ namespace Ilha
                 MirrorBrush.ImageSource = image;
                 MirrorPlaceholder.Visibility = Visibility.Collapsed;
             };
-            Island.SizeChanged += (_, _) => UpdateGlassRegion();
+            Island.SizeChanged += (_, _) =>
+            {
+                // Cantos proporcionais à altura: a ilha recolhida nunca vira uma pílula.
+                double r = Math.Min(_cornerRadius, Island.ActualHeight * 0.4);
+                Island.CornerRadius = new CornerRadius(0, 0, r, r);
+                UpdateGlassRegion();
+            };
+            CpuGraph.SizeChanged += (_, _) => UpdateStats();
+            MemGraph.SizeChanged += (_, _) => UpdateStats();
+            DrawTimerTrack();
 
             SourceInitialized += OnSourceInitialized;
             Loaded += OnLoaded;
@@ -219,7 +238,7 @@ namespace Ilha
                     }
                     _pinned = true;
                     Expand();
-                    foreach (var tabButton in new[] { TabHome, TabNotes, TabTimer, TabClipboard, TabMirror })
+                    foreach (var tabButton in TabBar.Children.OfType<RadioButton>())
                         if ((string)tabButton.Tag == testTab) tabButton.IsChecked = true;
                 };
                 t.Start();
@@ -466,7 +485,8 @@ namespace Ilha
             Resources["Accent"] = new SolidColorBrush(ParseColor(s.AccentColor, Color.FromRgb(0x7C, 0xE3, 0xA1)));
 
             // Forma
-            double r = Math.Clamp(s.CornerRadius, 0, 40);
+            _cornerRadius = Math.Clamp(s.CornerRadius, 0, 40);
+            double r = Math.Min(_cornerRadius, Island.ActualHeight * 0.4);
             Island.CornerRadius = new CornerRadius(0, 0, r, r);
             CollapsedView.Height = s.CollapsedHeight;
             PeekView.Height = s.CollapsedHeight;
@@ -483,25 +503,26 @@ namespace Ilha
             _expandTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, s.HoverDelayMs));
             _collapseTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(50, s.CollapseDelayMs));
 
-            // Página inicial: mídia ocupa o espaço livre; calendário e prateleira têm largura fixa
-            bool media = s.ShowMedia, shelf = s.ShowShelf, calendar = s.ShowCalendar;
+            // Página inicial: mídia ocupa o espaço livre; sistema e prateleira têm largura fixa
+            bool media = s.ShowMedia, shelf = s.ShowShelf, stats = s.ShowStats;
             MediaArea.Visibility = media ? Visibility.Visible : Visibility.Collapsed;
             ShelfZone.Visibility = shelf ? Visibility.Visible : Visibility.Collapsed;
-            CalendarCard.Visibility = calendar ? Visibility.Visible : Visibility.Collapsed;
+            StatsCard.Visibility = stats ? Visibility.Visible : Visibility.Collapsed;
             var star = new GridLength(1, GridUnitType.Star);
             HomeMediaCol.Width = media ? star : new GridLength(0);
-            HomeCalCol.Width = !calendar ? new GridLength(0) : media || shelf ? new GridLength(128) : star;
-            HomeShelfCol.Width = !shelf ? new GridLength(0) : media ? new GridLength(calendar ? 156 : 210) : star;
-            HomeGap1.Width = new GridLength(media && (calendar || shelf) ? 14 : 0);
-            HomeGap2.Width = new GridLength(calendar && shelf ? 12 : 0);
+            HomeStatsCol.Width = !stats ? new GridLength(0) : media || shelf ? new GridLength(118) : star;
+            HomeShelfCol.Width = !shelf ? new GridLength(0) : media ? new GridLength(stats ? 150 : 200) : star;
+            HomeGap1.Width = new GridLength(media && (stats || shelf) ? 14 : 0);
+            HomeGap2.Width = new GridLength(stats && shelf ? 12 : 0);
 
             // Abas
-            TabHome.Visibility = media || shelf || calendar ? Visibility.Visible : Visibility.Collapsed;
+            TabHome.Visibility = media || shelf || stats ? Visibility.Visible : Visibility.Collapsed;
+            TabAgenda.Visibility = s.ShowCalendar ? Visibility.Visible : Visibility.Collapsed;
             TabNotes.Visibility = s.ShowNotes ? Visibility.Visible : Visibility.Collapsed;
             TabTimer.Visibility = s.ShowTimer ? Visibility.Visible : Visibility.Collapsed;
             TabClipboard.Visibility = s.ShowClipboard ? Visibility.Visible : Visibility.Collapsed;
             TabMirror.Visibility = s.ShowMirror ? Visibility.Visible : Visibility.Collapsed;
-            var visibleTabs = new[] { TabHome, TabNotes, TabTimer, TabClipboard, TabMirror }
+            var visibleTabs = TabBar.Children.OfType<RadioButton>()
                 .Where(t => t.Visibility == Visibility.Visible).ToList();
             TabBar.Visibility = visibleTabs.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
             if (visibleTabs.Count == 0)
@@ -552,7 +573,7 @@ namespace Ilha
 
         private bool ShouldStayOpen() =>
             _draggingOut || _pinned || _timerAlerting || Island.IsMouseOver ||
-            (IsForeground && NotesBox.IsKeyboardFocused);
+            (IsForeground && Keyboard.FocusedElement is TextBox);
 
         /// <summary>
         /// Se a ilha é de fato a janela em primeiro plano. Window.IsActive do WPF não serve aqui:
@@ -616,6 +637,7 @@ namespace Ilha
             UpdateCalendar();
             UpdateBattery();
             UpdateProgress();
+            UpdateStats();
             if (_currentTab == "mirror") StartMirror();
         }
 
@@ -800,7 +822,7 @@ namespace Ilha
             _currentTab = tab;
             var pages = new (string Tab, FrameworkElement Page)[]
             {
-                ("home", PageHome), ("notes", PageNotes), ("timer", PageTimer),
+                ("home", PageHome), ("agenda", PageAgenda), ("notes", PageNotes), ("timer", PageTimer),
                 ("clipboard", PageClipboard), ("mirror", PageMirror),
             };
             foreach (var (name, page) in pages)
@@ -817,7 +839,12 @@ namespace Ilha
                         new DoubleAnimation(6, 0, TimeSpan.FromMilliseconds(260)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
                 }
             }
-            if (tab != "notes") ReleaseKeyboard();
+            if (tab != "notes" && tab != "agenda") ReleaseKeyboard();
+            if (tab == "agenda" && changed)
+            {
+                _monthOffset = 0;
+                UpdateCalendar(force: true);
+            }
             if (tab == "mirror" && _expanded) StartMirror();
             else StopMirror();
         }
@@ -860,12 +887,57 @@ namespace Ilha
         {
             UpdateTimer();
             WatchVolume();
-            if (++_tickCount % 4 == 0) WatchCharging();
+            bool everySecond = ++_tickCount % 4 == 0;
+            if (everySecond)
+            {
+                WatchCharging();
+                _stats.Sample();
+            }
             if (!_expanded) return;
             UpdateClock();
             UpdateCalendar();
             UpdateBattery();
             UpdateProgress();
+            if (everySecond) UpdateStats();
+        }
+
+        /// <summary>Valores e gráficos de processador e memória.</summary>
+        private void UpdateStats()
+        {
+            if (StatsCard.Visibility != Visibility.Visible) return;
+            CpuValue.Text = $"{Math.Round(_stats.CpuNow * 100)}%";
+            MemValue.Text = $"{Math.Round(_stats.MemoryNow * 100)}%";
+            MemValue.ToolTip = $"{_stats.MemoryUsedGb:0.0} GB em uso";
+            DrawSparkline(_stats.Cpu, CpuGraph, CpuLine, CpuArea);
+            DrawSparkline(_stats.Memory, MemGraph, MemLine, MemArea);
+        }
+
+        private static void DrawSparkline(double[] values, FrameworkElement host, Path line, Path area)
+        {
+            double w = host.ActualWidth, h = host.ActualHeight;
+            if (w <= 0 || h <= 0) return;
+            double step = w / (values.Length - 1);
+            var points = new Point[values.Length];
+            for (int i = 0; i < values.Length; i++)
+                points[i] = new Point(i * step, 2 + (h - 3) * (1 - values[i]));
+
+            var stroke = new StreamGeometry();
+            using (var ctx = stroke.Open())
+            {
+                ctx.BeginFigure(points[0], false, false);
+                ctx.PolyLineTo(points.Skip(1).ToList(), true, true);
+            }
+            stroke.Freeze();
+            line.Data = stroke;
+
+            var fill = new StreamGeometry();
+            using (var ctx = fill.Open())
+            {
+                ctx.BeginFigure(new Point(0, h), true, true);
+                ctx.PolyLineTo(points.Append(new Point(w, h)).ToList(), false, false);
+            }
+            fill.Freeze();
+            area.Data = fill;
         }
 
         private void UpdateCalendar(bool force = false)
@@ -874,43 +946,69 @@ namespace Ilha
             if (!force && today == _calendarDate) return;
             _calendarDate = today;
             var culture = CultureInfo.CurrentCulture;
-            CalMonth.Text = today.ToString("MMMM", culture).ToUpper(culture);
-            CalDay.Text = today.Day.ToString(culture);
-            CalWeekday.Text = culture.TextInfo.ToTitleCase(today.ToString("dddd", culture));
 
-            CalWeek.Children.Clear();
-            var first = today.AddDays(-(int)today.DayOfWeek); // semana de domingo a sábado
+            // Hoje (painel das tarefas)
+            AgendaWeekday.Text = today.ToString("dddd", culture).ToUpper(culture);
+            AgendaDate.Text = today.ToString("d 'de' MMMM", culture);
+
+            // Mês exibido
+            var month = new DateTime(today.Year, today.Month, 1).AddMonths(_monthOffset);
+            CalMonth.Text = culture.TextInfo.ToTitleCase(month.ToString("MMMM yyyy", culture));
+            int week = ISOWeek.GetWeekOfYear(_monthOffset == 0 ? today : month);
+            CalWeekNumber.Text = $"SEMANA {week}";
+
+            var firstDay = culture.DateTimeFormat.FirstDayOfWeek;
+            CalHeader.Children.Clear();
             for (int i = 0; i < 7; i++)
             {
-                string name = culture.DateTimeFormat.GetShortestDayName(first.AddDays(i).DayOfWeek);
-                CalWeek.Children.Add(new TextBlock
+                var dow = (DayOfWeek)(((int)firstDay + i) % 7);
+                CalHeader.Children.Add(new TextBlock
                 {
-                    Text = name.Substring(0, 1).ToUpper(culture),
-                    FontSize = 9,
+                    Text = culture.DateTimeFormat.GetAbbreviatedDayName(dow).TrimEnd('.').Substring(0, 1).ToUpper(culture),
+                    FontSize = 10.5,
                     FontWeight = FontWeights.SemiBold,
                     Foreground = (Brush)Resources["Tertiary"],
                     HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 0, 0, 2),
                 });
             }
-            for (int i = 0; i < 7; i++)
+
+            CalGrid.Children.Clear();
+            int lead = ((int)month.DayOfWeek - (int)firstDay + 7) % 7;
+            var start = month.AddDays(-lead);
+            var accent = (Brush)Resources["Accent"];
+            for (int i = 0; i < 42; i++)
             {
-                var day = first.AddDays(i);
+                var day = start.AddDays(i);
+                bool inMonth = day.Month == month.Month;
                 bool isToday = day == today;
-                var cell = new Grid { Height = 16 };
-                if (isToday)
-                    cell.Children.Add(new Ellipse { Width = 15, Height = 15, Fill = (Brush)Resources["Accent"] });
-                cell.Children.Add(new TextBlock
+                bool weekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+                var cell = new Border
                 {
-                    Text = day.Day.ToString(culture),
-                    FontSize = 9,
-                    FontWeight = isToday ? FontWeights.SemiBold : FontWeights.Normal,
-                    Foreground = isToday ? Brushes.Black : (Brush)Resources["Secondary"],
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                });
-                CalWeek.Children.Add(cell);
+                    Margin = new Thickness(3, 1, 3, 1),
+                    CornerRadius = new CornerRadius(6),
+                    Background = isToday ? accent : Brushes.Transparent,
+                    Child = new TextBlock
+                    {
+                        Text = day.Day.ToString(culture),
+                        FontSize = 11.5,
+                        FontWeight = isToday ? FontWeights.Bold : FontWeights.Medium,
+                        Foreground = isToday ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11))
+                            : !inMonth ? new SolidColorBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF))
+                            : weekend ? (Brush)Resources["Tertiary"] : Brushes.White,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Typography = { NumeralAlignment = FontNumeralAlignment.Tabular },
+                    },
+                };
+                CalGrid.Children.Add(cell);
             }
+        }
+
+        private void CalendarMonth_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string tag } || !int.TryParse(tag, out int delta)) return;
+            _monthOffset = delta == 0 ? 0 : _monthOffset + delta;
+            UpdateCalendar(force: true);
         }
 
         private void UpdateClock()
@@ -977,7 +1075,7 @@ namespace Ilha
             var anim = new DoubleAnimation(h, TimeSpan.FromMilliseconds(140));
             ProgressTrack.BeginAnimation(HeightProperty, anim);
             ProgressFill.BeginAnimation(HeightProperty, anim);
-            ProgressTrack.CornerRadius = ProgressFill.CornerRadius = new CornerRadius(h / 2);
+            ProgressTrack.CornerRadius = ProgressFill.CornerRadius = new CornerRadius(Math.Min(2.5, h / 2));
         }
 
         private static string FormatTime(TimeSpan t) =>
@@ -1114,14 +1212,14 @@ namespace Ilha
 
         private void NotesArea_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (!NotesBox.IsKeyboardFocusWithin) Native.SetNoActivate(_hwnd, true);
+            if (Keyboard.FocusedElement is not TextBox) Native.SetNoActivate(_hwnd, true);
         }
 
-        private void NotesBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        private void TextInput_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            // O clique já ativou a janela (WS_EX_NOACTIVATE está desligado sobre as notas);
+            // O clique já ativou a janela (WS_EX_NOACTIVATE está desligado sobre as áreas de texto);
             // aqui só garantimos o foco do teclado na caixa.
-            if (!NotesBox.IsKeyboardFocusWithin) NotesBox.Focus();
+            if (sender is TextBox box && !box.IsKeyboardFocusWithin) box.Focus();
         }
 
         private void NotesBox_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -1146,11 +1244,63 @@ namespace Ilha
         private void ReleaseKeyboard()
         {
             if (_hwnd == IntPtr.Zero) return;
-            if (NotesBox.IsKeyboardFocusWithin) Keyboard.ClearFocus();
+            if (Keyboard.FocusedElement is TextBox) Keyboard.ClearFocus();
             if (IsForeground && _previousForeground != IntPtr.Zero && Native.IsWindow(_previousForeground))
                 Native.SetForegroundWindow(_previousForeground);
             _previousForeground = IntPtr.Zero;
-            if (!PageNotes.IsMouseOver) Native.SetNoActivate(_hwnd, true);
+            if (!PageNotes.IsMouseOver && !TodoPanel.IsMouseOver) Native.SetNoActivate(_hwnd, true);
+        }
+
+        // ───────────── Tarefas ─────────────
+
+        private void SaveTodos()
+        {
+            _settings.Todos = _todos.ToList();
+            _settings.Save();
+            UpdateTodoSummary();
+        }
+
+        private void UpdateTodoSummary()
+        {
+            int open = _todos.Count(t => !t.Done);
+            TodoCount.Text = _todos.Count == 0 ? "" : open == 0 ? "TUDO FEITO" : $"{open} A FAZER";
+            TodoEmpty.Visibility = _todos.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void AddTodo()
+        {
+            string text = TodoInput.Text.Trim();
+            if (text.Length == 0) return;
+            _todos.Add(new TodoItem { Text = text });
+            TodoInput.Clear();
+        }
+
+        private void TodoAdd_Click(object sender, RoutedEventArgs e) => AddTodo();
+
+        private void TodoInput_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                AddTodo();
+            }
+            else if (e.Key == Key.Escape)
+            {
+                e.Handled = true;
+                ReleaseKeyboard();
+                RestartCollapseTimer();
+            }
+        }
+
+        private void TodoInput_TextChanged(object sender, TextChangedEventArgs e) =>
+            TodoPlaceholder.Visibility = TodoInput.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        // O binding já atualizou "Done"; aqui só salva.
+        private void TodoCheck_Click(object sender, RoutedEventArgs e) => SaveTodos();
+
+        private void TodoRemove_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is TodoItem item) _todos.Remove(item);
         }
 
         // ───────────── Timer ─────────────
@@ -1158,6 +1308,21 @@ namespace Ilha
         private void TimerPreset_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button { Tag: string tag } || !int.TryParse(tag, out int minutes)) return;
+            TimerMode.Text = "TIMER";
+            StopAlert();
+            _timerPreset = TimeSpan.FromMinutes(minutes);
+            _timerPaused = _timerPreset;
+            _timerEndsAt = DateTime.Now + _timerPreset;
+            UpdateTimerUi();
+        }
+
+        /// <summary>Blocos Foco / Pausa / Pausa longa: Tag = "minutos|NOME".</summary>
+        private void TimerMode_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button { Tag: string tag }) return;
+            var parts = tag.Split('|');
+            if (!int.TryParse(parts[0], out int minutes)) return;
+            TimerMode.Text = parts.Length > 1 ? parts[1] : "TIMER";
             StopAlert();
             _timerPreset = TimeSpan.FromMinutes(minutes);
             _timerPaused = _timerPreset;
@@ -1251,32 +1416,45 @@ namespace Ilha
             UpdateCollapsedState();
         }
 
-        /// <summary>Anel do timer: arco que vai esvaziando no sentido anti-horário a partir do topo.</summary>
+        // Contorno do timer: quadrado de cantos suaves, começando no meio do topo, sentido horário.
+        private const double TimerSize = 156, TimerStroke = 6, TimerCorner = 38;
+        private static readonly double TimerPerimeter =
+            4 * (TimerSize - TimerStroke - 2 * TimerCorner) + 2 * Math.PI * TimerCorner;
+
+        private static Geometry TimerOutline()
+        {
+            double a = TimerStroke / 2, b = TimerSize - TimerStroke / 2, r = TimerCorner, mid = TimerSize / 2;
+            var size = new Size(r, r);
+            var f = new PathFigure { StartPoint = new Point(mid, a), IsClosed = false };
+            f.Segments.Add(new LineSegment(new Point(b - r, a), true));
+            f.Segments.Add(new ArcSegment(new Point(b, a + r), size, 0, false, SweepDirection.Clockwise, true));
+            f.Segments.Add(new LineSegment(new Point(b, b - r), true));
+            f.Segments.Add(new ArcSegment(new Point(b - r, b), size, 0, false, SweepDirection.Clockwise, true));
+            f.Segments.Add(new LineSegment(new Point(a + r, b), true));
+            f.Segments.Add(new ArcSegment(new Point(a, b - r), size, 0, false, SweepDirection.Clockwise, true));
+            f.Segments.Add(new LineSegment(new Point(a, a + r), true));
+            f.Segments.Add(new ArcSegment(new Point(a + r, a), size, 0, false, SweepDirection.Clockwise, true));
+            f.Segments.Add(new LineSegment(new Point(mid, a), true));
+            var g = new PathGeometry();
+            g.Figures.Add(f);
+            g.Freeze();
+            return g;
+        }
+
+        private void DrawTimerTrack()
+        {
+            var outline = TimerOutline();
+            TimerTrack.Data = outline;
+            TimerRing.Data = outline;
+        }
+
+        /// <summary>Mostra só a fração restante do contorno (traço tracejado com um único segmento).</summary>
         private void DrawTimerRing(double fraction)
         {
             fraction = Math.Clamp(fraction, 0, 1);
-            // Mesmo círculo da trilha de fundo: margem de 3 + metade do traço de 6.
-            const double size = 148, radius = size / 2 - 6;
-            var center = new Point(size / 2, size / 2);
-            if (fraction <= 0.0005)
-            {
-                TimerRing.Data = null;
-                return;
-            }
-            if (fraction >= 0.9995)
-            {
-                TimerRing.Data = new EllipseGeometry(center, radius, radius);
-                return;
-            }
-            double angle = fraction * 2 * Math.PI;
-            var start = new Point(center.X, center.Y - radius);
-            var end = new Point(center.X + radius * Math.Sin(angle), center.Y - radius * Math.Cos(angle));
-            var figure = new PathFigure { StartPoint = start, IsClosed = false };
-            figure.Segments.Add(new ArcSegment(end, new Size(radius, radius), 0, fraction > 0.5,
-                                               SweepDirection.Clockwise, true));
-            var geometry = new PathGeometry();
-            geometry.Figures.Add(figure);
-            TimerRing.Data = geometry;
+            TimerRing.Visibility = fraction <= 0.0005 ? Visibility.Hidden : Visibility.Visible;
+            double dash = TimerPerimeter * fraction / TimerStroke; // em múltiplos da espessura
+            TimerRing.StrokeDashArray = fraction >= 0.9995 ? null : new DoubleCollection { dash, 10000 };
         }
 
         private void StartAlert()
