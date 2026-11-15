@@ -231,6 +231,13 @@
 
 <svg width="0" height="0" style="position:absolute">
   <defs>
+    <symbol id="i-pip" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M6 5h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3zM13.5 12.5h4v3.5h-4z"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 5h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3zM4 10h16M8.5 3v4M15.5 3v4M8 14l2 2 4-4"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 17l5-6 4 3 5-7 4 4"/></symbol>
+    <symbol id="i-cam" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.5-2h4.4l1.5 2h1.8A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5zM8.8 13a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5zM10 20.5h4"/></symbol>
+    <symbol id="i-island" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5.5h16v1.5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM7 15.5h10a2 2 0 0 1 0 4H7a2 2 0 0 1 0-4z"/></symbol>
+    <symbol id="i-tabs" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM9 4v16"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></symbol>
     <symbol id="i-note" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
     <symbol id="i-timer" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></g></symbol>
@@ -327,9 +334,9 @@
 <header class="hero">
   <div class="glow"></div>
   <div class="wrap">
-    <span class="pill-tag"><b>Novo</b> Versão <span class="version">1.1</span> com atualização automática</span>
+    <span class="pill-tag"><b>Novo</b> Versão <span class="version">1.5</span> com picture in picture e ilha flutuante</span>
     <h1>O topo da sua tela,<br><em>finalmente útil.</em></h1>
-    <p class="lead">A Ilha vive no topo do Windows e se abre com um passar de mouse — música, arquivos, notas, timer e área de transferência, sempre à mão e nunca no caminho.</p>
+    <p class="lead">A Ilha vive no topo do Windows e se abre com um passar de mouse — música, vídeos em picture in picture, agenda, tarefas, foco, arquivos e notas, sempre à mão e nunca no caminho.</p>
     <div class="cta">
       <a class="btn btn-primary download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest">
         <svg><use href="#i-win"/></svg> Baixar para Windows — grátis
@@ -356,15 +363,31 @@
     </div>
     <div class="grid">
       <div class="card wide reveal"><div class="ico"><svg><use href="#i-music"/></svg></div>
-        <h3>Controle de mídia</h3><p>Capa, título, progresso e controles do que estiver tocando — Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows.</p></div>
-      <div class="card wide reveal"><div class="ico"><svg><use href="#i-tray"/></svg></div>
-        <h3>Prateleira de arquivos</h3><p>Arraste arquivos para a ilha e solte onde quiser depois. Perfeito para levar coisas entre pastas, e-mails e apps sem perder nada.</p></div>
+        <h3>Controle de mídia</h3><p>Capa, título, progresso e controles do que estiver tocando — Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows. Clique na barra para pular para qualquer ponto.</p></div>
+      <div class="card wide reveal"><div class="ico"><svg><use href="#i-pip"/></svg></div>
+        <h3>Picture in picture</h3><p>Está vendo um vídeo do YouTube no navegador? Um clique na ilha leva ele para uma janelinha flutuante, sempre por cima, continuando do mesmo ponto. Dá para ligar ou desligar nas configurações.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-cal"/></svg></div>
+        <h3>Agenda e tarefas</h3><p>Calendário do mês inteiro e uma lista de tarefas do dia. Marque o que fez, apague o que não precisa — tudo salvo.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-timer"/></svg></div>
+        <h3>Foco</h3><p>Modos Foco, Pausa e Pausa longa em um clique. A contagem aparece na ilha recolhida e ela avisa quando acabar.</p></div>
       <div class="card reveal"><div class="ico"><svg><use href="#i-note"/></svg></div>
         <h3>Notas rápidas</h3><p>Um bloco sempre aberto, salvo automaticamente. Anote e volte ao que estava fazendo.</p></div>
-      <div class="card reveal"><div class="ico"><svg><use href="#i-timer"/></svg></div>
-        <h3>Timer</h3><p>Pomodoro em um clique. A contagem aparece na pílula e a ilha avisa quando acabar.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-tray"/></svg></div>
+        <h3>Prateleira de arquivos</h3><p>Arraste arquivos para a ilha e solte onde quiser depois. Leve coisas entre pastas, e-mails e apps sem perder nada.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-cpu"/></svg></div>
+        <h3>Monitor do sistema</h3><p>Uso de processador e memória com um gráfico dos últimos segundos, de relance.</p></div>
       <div class="card reveal"><div class="ico"><svg><use href="#i-clip"/></svg></div>
         <h3>Área de transferência</h3><p>Histórico do que você copiou. Clique para copiar de novo. Fica só na memória.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-cam"/></svg></div>
+        <h3>Espelho</h3><p>Confira o visual antes da chamada. A câmera só liga com a aba aberta, e nada é gravado.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-bell"/></svg></div>
+        <h3>Avisos rápidos</h3><p>A ilha recolhida cresce por um instante para mostrar volume, carregador conectado e música nova.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-palette"/></svg></div>
+        <h3>Vidro ou sólido</h3><p>Desfoque real do que está atrás (o mesmo do Windows 11), tingido pela sua cor — ou cor cheia.</p></div>
+      <div class="card wide reveal"><div class="ico"><svg><use href="#i-island"/></svg></div>
+        <h3>Colada, solta ou livre</h3><p>Presa na borda da tela, solta no topo como um retângulo arredondado, ou livre: arraste para qualquer lugar, mude o tamanho pelo canto e fixe com o alfinete. O conteúdo se ajusta ao tamanho.</p></div>
+      <div class="card wide reveal"><div class="ico"><svg><use href="#i-tabs"/></svg></div>
+        <h3>Abas na lateral ou no topo</h3><p>Escolha onde ficam os ícones das abas: numa coluna à esquerda ou numa barra no cabeçalho.</p></div>
     </div>
   </div>
 </section>
@@ -374,8 +397,9 @@
     <div class="reveal">
       <div class="kicker">Personalize</div>
       <h2>Do seu jeito.<br>Até o último pixel.</h2>
-      <p class="sub">Cores, tamanho, arredondamento, atrasos de abertura, monitor e quais recursos aparecem. Experimente aqui ao lado — é exatamente assim no app.</p>
+      <p class="sub">Material, cores, tamanho, arredondamento, posição, atrasos de abertura e quais recursos aparecem — tudo organizado em configurações por categoria. Experimente as cores aqui ao lado.</p>
       <ul class="checks">
+        <li>Visual com o capricho da Apple: cantos suaves, fonte fácil de ler, animações com mola</li>
         <li>Some sozinha em jogos e vídeos em tela cheia</li>
         <li>Funciona em qualquer monitor, com qualquer escala</li>
         <li>Inicia junto com o Windows (se você quiser)</li>
@@ -439,7 +463,13 @@
       <details><summary>Precisa de permissão de administrador?</summary>
         <p>Não. A Ilha instala só para o seu usuário, em <code>%LOCALAPPDATA%\Programs\Ilha</code>.</p></details>
       <details><summary>Meus dados vão para algum lugar?</summary>
-        <p>Não. Notas, prateleira e configurações ficam no seu PC, em <code>%APPDATA%\Ilha</code>. O histórico da área de transferência fica só na memória e some ao fechar o app. A única conexão de internet é para verificar atualizações — e dá para desligar.</p></details>
+        <p>Não. Notas, tarefas, prateleira e configurações ficam no seu PC, em <code>%APPDATA%\Ilha</code>. O histórico da área de transferência fica só na memória e some ao fechar o app. A única conexão de internet é para verificar atualizações — e dá para desligar.</p></details>
+      <details><summary>Como funciona o picture in picture?</summary>
+        <p>Com um vídeo do YouTube tocando no navegador (Chrome, Edge, Firefox, Brave, Opera…), abra a ilha e clique no ícone de janelinha ao lado do título. A Ilha pausa o vídeo no navegador e continua do mesmo ponto numa janela flutuante, que você arrasta e redimensiona. Se não encontrar o vídeo, é só colar o link. Dá para desligar em Configurações → Recursos.</p></details>
+      <details><summary>Como deixo a ilha solta e mudo ela de lugar?</summary>
+        <p>Em Configurações → Ilha e posição, escolha <b>Solta no topo</b> (um retângulo arredondado centralizado) ou <b>Livre</b>. Na livre, segure pelo cabeçalho para arrastar, puxe o cantinho de baixo para mudar o tamanho e clique no alfinete para fixar.</p></details>
+      <details><summary>A câmera do Espelho fica ligada?</summary>
+        <p>Não. Ela só liga enquanto a aba Espelho está aberta, e a imagem nunca é gravada nem enviada. Você também pode desligar o recurso.</p></details>
       <details><summary>Atrapalha jogos ou vídeos em tela cheia?</summary>
         <p>Não. A ilha se esconde automaticamente quando um app está em tela cheia e volta quando você sai.</p></details>
       <details><summary>Como desinstalo?</summary>
@@ -460,7 +490,7 @@
 <footer>
   <div class="wrap">
     <span>Ilha — feito para Windows.</span>
-    <span><a href="https://github.com/YamamotoDesigner/ilha">GitHub</a> · <a href="https://github.com/YamamotoDesigner/ilha/releases">Versões</a> · <a href="https://github.com/YamamotoDesigner/ilha/issues">Reportar problema</a></span>
+    <span><a href="https://github.com/YamamotoDesigner/ilha">GitHub</a> · <a href="https://github.com/YamamotoDesigner/ilha/releases">Versões</a> · <a href="https://github.com/YamamotoDesigner/ilha/issues">Reportar problema</a> · Gostou? Apoie pelo app em Configurações → Apoie o Ilha</span>
   </div>
 </footer>
 

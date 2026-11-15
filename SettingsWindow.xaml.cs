@@ -149,7 +149,9 @@ namespace Ilha
         {
             _syncing = true;
             bool floating = string.Equals(_settings.IslandStyle, "Floating", StringComparison.OrdinalIgnoreCase);
-            AttachedRadio.IsChecked = !floating;
+            bool topFloat = string.Equals(_settings.IslandStyle, "TopFloating", StringComparison.OrdinalIgnoreCase);
+            AttachedRadio.IsChecked = !floating && !topFloat;
+            TopFloatRadio.IsChecked = topFloat;
             FloatingRadio.IsChecked = floating;
             bool top = string.Equals(_settings.TabPosition, "Top", StringComparison.OrdinalIgnoreCase);
             SideTabsRadio.IsChecked = !top;
@@ -168,7 +170,7 @@ namespace Ilha
         private void IslandStyle_Checked(object sender, RoutedEventArgs e)
         {
             if (!IsInitialized || _syncing) return;
-            _settings.IslandStyle = sender == FloatingRadio ? "Floating" : "Attached";
+            _settings.IslandStyle = sender == FloatingRadio ? "Floating" : sender == TopFloatRadio ? "TopFloating" : "Attached";
             UpdateFloatOptions();
         }
 

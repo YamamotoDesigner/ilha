@@ -25,7 +25,10 @@ namespace Ilha
         public double CollapsedHeight { get; set; } = 34;
         public bool ShowShadow { get; set; } = true;
         public bool SpringAnimation { get; set; } = true;
-        /// <summary>"Attached" (colada no topo) ou "Floating" (solta, pode ser arrastada).</summary>
+        /// <summary>
+        /// "Attached" (colada no topo), "TopFloating" (solta, centralizada no topo, sem arrastar)
+        /// ou "Floating" (solta, pode ser arrastada e redimensionada).
+        /// </summary>
         public string IslandStyle { get; set; } = "Attached";
         /// <summary>Ilha flutuante presa no lugar (não arrasta).</summary>
         public bool FloatLocked { get; set; } = false;
@@ -61,6 +64,8 @@ namespace Ilha
         public bool ShowCalendar { get; set; } = true;
         public bool ShowMirror { get; set; } = true;
         public bool ShowStats { get; set; } = true;
+        /// <summary>Botão de picture in picture para vídeos do YouTube tocando no navegador.</summary>
+        public bool EnablePip { get; set; } = true;
 
         // Avisos rápidos na ilha recolhida
         public bool LiveVolume { get; set; } = true;
@@ -111,6 +116,7 @@ namespace Ilha
             ShowCalendar = d.ShowCalendar;
             ShowMirror = d.ShowMirror;
             ShowStats = d.ShowStats;
+            EnablePip = d.EnablePip;
             LiveVolume = d.LiveVolume;
             LiveCharging = d.LiveCharging;
             LiveTrack = d.LiveTrack;

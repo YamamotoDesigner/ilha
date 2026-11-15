@@ -517,6 +517,21 @@
                                     <TextBlock Text="Presa na borda da tela" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
+                            <RadioButton x:Name="TopFloatRadio" Style="{StaticResource ChoiceCard}" GroupName="IslandStyle"
+                                         Checked="IslandStyle_Checked">
+                                <StackPanel>
+                                    <Border Style="{StaticResource Preview}">
+                                        <Border Width="96" Height="22" CornerRadius="8" Margin="0,8,0,0"
+                                                VerticalAlignment="Top" Background="#0A0A0C">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="10" ShadowDepth="3" Direction="270" Opacity="0.5"/>
+                                            </Border.Effect>
+                                        </Border>
+                                    </Border>
+                                    <TextBlock Text="Solta no topo" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="Centralizada, com um respiro" Style="{StaticResource ChoiceHint}"/>
+                                </StackPanel>
+                            </RadioButton>
                             <RadioButton x:Name="FloatingRadio" Style="{StaticResource ChoiceCard}" GroupName="IslandStyle"
                                          Checked="IslandStyle_Checked">
                                 <StackPanel>
@@ -528,7 +543,7 @@
                                             </Border.Effect>
                                         </Border>
                                     </Border>
-                                    <TextBlock Text="Flutuante" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="Livre" Style="{StaticResource ChoiceLabel}"/>
                                     <TextBlock Text="Solta, arraste para onde quiser" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
@@ -648,6 +663,14 @@
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
                                 <CheckBox Style="{StaticResource Switch}" Content="Controles de mídia" IsChecked="{Binding ShowMedia}"/>
+                                <Border Style="{StaticResource Divider}"/>
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding EnablePip}">
+                                    <StackPanel>
+                                        <TextBlock Text="Picture in picture para vídeos do YouTube"/>
+                                        <TextBlock Text="Botão na ilha que leva o vídeo do navegador para uma janela flutuante."
+                                                   FontSize="12" Foreground="{StaticResource Text3}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </CheckBox>
                                 <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="Monitor do sistema (CPU e memória)" IsChecked="{Binding ShowStats}"/>
                                 <Border Style="{StaticResource Divider}"/>

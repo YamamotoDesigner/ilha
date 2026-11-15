@@ -30,6 +30,19 @@ namespace Ilha
         public string Title { get; private set; } = "";
         public string Artist { get; private set; } = "";
         public string SourceApp { get; private set; } = "";
+        /// <summary>Identificador bruto do app (ex.: "chrome.exe", "MSEdge").</summary>
+        public string SourceAppId { get; private set; } = "";
+
+        /// <summary>A mídia vem de um navegador (YouTube e afins).</summary>
+        public bool FromBrowser
+        {
+            get
+            {
+                string id = SourceAppId.ToLowerInvariant();
+                return new[] { "chrome", "msedge", "firefox", "brave", "opera", "vivaldi", "arc" }.Any(id.Contains)
+                       || (id.Length > 0 && SourceApp.Length == 0); // Firefox usa um ID opaco
+            }
+        }
         public ImageSource? Art { get; private set; }
         public bool IsPlaying { get; private set; }
         public TimeSpan Duration { get; private set; }
@@ -72,7 +85,7 @@ namespace Ilha
             }
             else
             {
-                Title = Artist = SourceApp = "";
+                Title = Artist = SourceApp = SourceAppId = "";
                 Art = null;
             }
 
@@ -140,6 +153,7 @@ namespace Ilha
 
                 Title = props?.Title ?? "";
                 Artist = !string.IsNullOrEmpty(props?.Artist) ? props!.Artist : props?.AlbumArtist ?? "";
+                SourceAppId = session.SourceAppUserModelId ?? "";
                 SourceApp = PrettyAppName(session.SourceAppUserModelId);
                 Art = art;
                 Changed?.Invoke();
@@ -214,6 +228,11 @@ namespace Ilha
                 }
             }
             catch { }
+        }
+
+        public async Task PauseAsync()
+        {
+            try { if (_session != null && IsPlaying) await _session.TryPauseAsync(); } catch { }
         }
 
         public async Task NextAsync()

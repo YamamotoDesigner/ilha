@@ -98,6 +98,7 @@ namespace Ilha
 #if DEBUG
             // Testes visuais: muda só na memória (as configurações reais não são tocadas).
             if (Environment.GetEnvironmentVariable("ILHA_TEST_FLOAT") == "1") _settings.IslandStyle = "Floating";
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_STYLE") is { Length: > 0 } testStyle) _settings.IslandStyle = testStyle;
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TABSTOP") == "1") _settings.TabPosition = "Top";
             if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FW"), out double tfw)) _settings.FloatWidth = tfw;
             if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FH"), out double tfh)) _settings.FloatHeight = tfh;
@@ -253,6 +254,16 @@ namespace Ilha
                         snap.Start();
                         return;
                     }
+                    if (testTab == "pip")
+                    {
+                        // Vídeo público curto, sem som; e registra o que o localizador acha nos navegadores.
+                        PipWindow.TestMute = true;
+                        string? found = YouTubeLocator.FromBrowsers(_media.Title);
+                        System.IO.File.WriteAllText(Environment.GetEnvironmentVariable("ILHA_TEST_SHOT") ?? "pip.txt",
+                                                    $"browser={found ?? "(nenhum)"}");
+                        PipWindow.Open("jNQXAC9IVRw", 3, "Me at the zoo");
+                        return;
+                    }
                     if (testTab == "peek")
                     {
                         ShowPeek((Geometry)FindResource("IcoSpeaker"), true, (Geometry)FindResource("IcoWaves"),
@@ -291,7 +302,12 @@ namespace Ilha
             return IntPtr.Zero;
         }
 
+        /// <summary>Flutuante livre: arrasta, redimensiona e lembra a posição.</summary>
         private bool Floating => string.Equals(_settings.IslandStyle, "Floating", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>Solta da borda (flutuante ou "solta no topo"): quatro cantos arredondados, espaço e sombra.</summary>
+        private bool Detached => Floating ||
+                                 string.Equals(_settings.IslandStyle, "TopFloating", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Posição salva da ilha flutuante (centro horizontal, topo), se ainda estiver dentro de
@@ -326,7 +342,7 @@ namespace Ilha
             var dpi = VisualTreeHelper.GetDpi(this);
             int widthPx = (int)Math.Round(Width * dpi.DpiScaleX);
             int left = bounds.Left + (bounds.Width - widthPx) / 2;
-            int top = bounds.Top + (Floating ? (int)Math.Round(10 * dpi.DpiScaleY) : 0);
+            int top = bounds.Top + (Detached ? (int)Math.Round(10 * dpi.DpiScaleY) : 0);
             if (SavedFloatPosition() is { } saved)
             {
                 left = saved.X - widthPx / 2;
@@ -344,7 +360,7 @@ namespace Ilha
         private void UpdateIslandCorners()
         {
             double r = Math.Min(_cornerRadius, Island.ActualHeight * 0.4);
-            Island.CornerRadius = Floating ? new CornerRadius(r) : new CornerRadius(0, 0, r, r);
+            Island.CornerRadius = Detached ? new CornerRadius(r) : new CornerRadius(0, 0, r, r);
             // O canto de redimensionar fica dentro da curva (o ponto a 45° do arco fica a ~0,29·r da borda).
             double inset = Math.Min(_cornerRadius, ExpandedView.Height * 0.4) * 0.29 + 3;
             ResizeGrip.Margin = new Thickness(0, 0, inset, inset);
@@ -577,7 +593,7 @@ namespace Ilha
             double left = (ActualWidth - w) / 2;
             double radius = Island.CornerRadius.BottomLeft * scale;
             _glassWindow.SetShape((float)(left * dpi.DpiScaleX), (float)(w * dpi.DpiScaleX),
-                                  (float)(h * dpi.DpiScaleY), (float)(radius * dpi.DpiScaleX), Floating);
+                                  (float)(h * dpi.DpiScaleY), (float)(radius * dpi.DpiScaleX), Detached);
         }
 
         private void ApplyMaterial()
@@ -601,7 +617,7 @@ namespace Ilha
                 IslandSheen.Visibility = Visibility.Visible;
                 IslandRim.Visibility = Visibility.Visible;
                 // Solta na tela, uma sombra leve dá a sensação de estar "flutuando".
-                Island.Effect = Floating && s.ShowShadow
+                Island.Effect = Detached && s.ShowShadow
                     ? new DropShadowEffect { BlurRadius = 22, ShadowDepth = 4, Direction = 270, Opacity = 0.3 }
                     : null;
             }
@@ -651,6 +667,7 @@ namespace Ilha
             if (_hotkeyRegistered) Native.UnregisterHotKey(_hwnd, HotkeyId);
             if (_clipboardListening) Native.RemoveClipboardFormatListener(_hwnd);
             _camera.Stop();
+            PipWindow.CloseIfOpen();
             _tray?.Dispose();
             _tray = null;
             Application.Current.Shutdown();
@@ -765,7 +782,7 @@ namespace Ilha
             // Forma
             _cornerRadius = Math.Clamp(s.CornerRadius, 0, 40);
             UpdateIslandCorners();
-            IslandRim.BorderThickness = Floating ? new Thickness(1) : new Thickness(1, 0, 1, 1);
+            IslandRim.BorderThickness = Detached ? new Thickness(1) : new Thickness(1, 0, 1, 1);
             UpdatePinUi();
             CollapsedView.Height = s.CollapsedHeight;
             PeekView.Height = s.CollapsedHeight;
@@ -789,6 +806,8 @@ namespace Ilha
             // Tempos
             _expandTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, s.HoverDelayMs));
             _collapseTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(50, s.CollapseDelayMs));
+
+            PipButton.Visibility = s.EnablePip && _media.FromBrowser ? Visibility.Visible : Visibility.Collapsed;
 
             // Abas
             TabHome.Visibility = s.ShowMedia || s.ShowShelf || s.ShowStats ? Visibility.Visible : Visibility.Collapsed;
@@ -1394,6 +1413,7 @@ namespace Ilha
             MiniArtBrush.ImageSource = _media.Art;
             ArtFallback.Visibility = _media.Art == null ? Visibility.Visible : Visibility.Collapsed;
             PlayPauseGlyph.Data = _media.IsPlaying ? GlyphPause : GlyphPlay;
+            PipButton.Visibility = _settings.EnablePip && _media.FromBrowser ? Visibility.Visible : Visibility.Collapsed;
 
             WatchTrack();
             UpdateCollapsedState();
@@ -1401,6 +1421,37 @@ namespace Ilha
         }
 
         private async void PlayPause_Click(object sender, RoutedEventArgs e) => await _media.TogglePlayPauseAsync();
+
+        /// <summary>
+        /// Picture in picture: acha o vídeo do YouTube aberto no navegador, pausa lá e continua
+        /// do mesmo ponto numa janela flutuante.
+        /// </summary>
+        private async void Pip_Click(object sender, RoutedEventArgs e)
+        {
+            PipButton.IsEnabled = false;
+            string title = _media.Title;
+            double position = _media.Position.TotalSeconds;
+            try
+            {
+                string? id = await System.Threading.Tasks.Task.Run(() => YouTubeLocator.FromBrowsers(title));
+                if (id != null)
+                {
+                    await _media.PauseAsync();
+                    PipWindow.Open(id, position, title);
+                }
+                else
+                {
+                    // Não achou no navegador: tenta um link copiado; senão a janela pede o link.
+                    PipWindow.Open(YouTubeLocator.FromClipboard(), 0);
+                }
+                _pinned = false;
+                Collapse();
+            }
+            finally
+            {
+                PipButton.IsEnabled = true;
+            }
+        }
         private async void Next_Click(object sender, RoutedEventArgs e) => await _media.NextAsync();
         private async void Previous_Click(object sender, RoutedEventArgs e) => await _media.PreviousAsync();
 

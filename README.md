@@ -32,6 +32,7 @@ timer e área de transferência, sempre à mão e nunca no caminho.
 | | |
 |---|---|
 | 🎵 **Controle de mídia** | Capa, título, progresso e controles do que estiver tocando — Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows. |
+| 📺 **Picture in picture** | Vídeo do YouTube no navegador? Um clique leva ele para uma janelinha flutuante, sempre por cima, do mesmo ponto. Liga e desliga nas configurações. |
 | 📂 **Prateleira de arquivos** | Arraste arquivos para a ilha e solte onde quiser depois. Leve coisas entre pastas, e-mails e apps sem perder nada. |
 | 📝 **Notas rápidas** | Um bloco sempre à mão, salvo automaticamente. |
 | ⏱️ **Foco** | Modos Foco, Pausa e Pausa longa em um clique. A contagem aparece na ilha recolhida e ela avisa quando acabar. |
@@ -41,7 +42,7 @@ timer e área de transferência, sempre à mão e nunca no caminho.
 | 🫧 **Vidro ou sólido** | Efeito de vidro com desfoque real do que está atrás (o mesmo do Windows 11), tingido pela sua cor — ou cor sólida, se preferir. |
 | 🪞 **Espelho** | Confira o cabelo antes da call: a câmera aparece na ilha e só fica ligada enquanto a aba está aberta. |
 | 🔔 **Avisos rápidos** | A ilha recolhida cresce por um instante para mostrar volume, carregador conectado e música nova. |
-| 🏝️ **Colada ou flutuante** | Presa no topo da tela, ou solta com os quatro cantos arredondados: arraste para qualquer lugar e fixe com o alfinete. |
+| 🏝️ **Colada, solta ou livre** | Presa no topo da tela, solta no topo como um retângulo arredondado, ou livre: arraste para qualquer lugar, mude o tamanho pelo canto e fixe com o alfinete. |
 | ⌨️ **Atalho global** | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd> abre e fecha de qualquer lugar. |
 
 ## 🎨 Do seu jeito
