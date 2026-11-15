@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -7,6 +7,7 @@ using System.Media;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media.Effects;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -20,7 +21,7 @@ namespace Ilha
 {
     public partial class MainWindow : Window
     {
-        private const double DefaultOpenWidth = 640, DefaultOpenHeight = 236;
+        private const double DefaultOpenWidth = 560, DefaultOpenHeight = 220;
         // Ilha flutuante redimensionável: limites do tamanho aberto.
         private const double MinFloatWidth = 340, MaxFloatWidth = 1040, MinFloatHeight = 130, MaxFloatHeight = 460;
         private double _expW = DefaultOpenWidth, _expH = DefaultOpenHeight;
@@ -44,6 +45,9 @@ namespace Ilha
         private DateTime _ignoreTrackUntil = DateTime.Now.AddSeconds(4);
         private DateTime _calendarDate;
         private int _monthOffset;
+        /// <summary>Dia escolhido no calendário; as tarefas mostradas e as novas são desse dia.</summary>
+        private DateTime _selectedDate = DateTime.Today;
+        private bool _agendaCompact;
         private double _cornerRadius = 22;
         private readonly SystemStats _stats = new();
         private readonly DownloadWatcher _downloads = new();
@@ -150,7 +154,7 @@ namespace Ilha
             foreach (var todo in _settings.Todos) _todos.Add(todo);
             TodoItems.ItemsSource = _todos;
             _todos.CollectionChanged += (_, _) => SaveTodos();
-            UpdateTodoSummary();
+            RefreshTodoFilter();
             _stats.Sample();
 
             _expandTimer.Tick += (_, _) =>
@@ -292,6 +296,13 @@ namespace Ilha
                         if ((string)tabButton.Tag == testTab) tabButton.IsChecked = true;
                     if (testTab == "prompter" && Environment.GetEnvironmentVariable("ILHA_TEST_PROMPTER") == "start")
                         PrompterStart_Click(this, new RoutedEventArgs());
+                    // Agenda: escolhe um dia daqui a N dias e cria um lembrete nele.
+                    if (testTab == "agenda" && int.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_DAY"), out int plus))
+                    {
+                        SelectDay(DateTime.Today.AddDays(plus));
+                        TodoInput.Text = "Consulta no dentista às 15h";
+                        AddTodo();
+                    }
                 };
                 t.Start();
             }
@@ -621,11 +632,20 @@ namespace Ilha
             ArtBox.CornerRadius = new CornerRadius(Math.Round(artSize * 0.17));
             SourceText.Visibility = pageH >= 118 ? visible : hidden;
 
-            // Agenda: a lista de tarefas sai primeiro; o mês fica
-            bool todo = pageW >= 520 && pageH >= 118;
+            // Agenda: os lembretes do dia escolhido e o mês. Só numa ilha bem estreita a lista sai.
+            bool todo = pageW >= 380 && pageH >= 96;
+            // Com pouca altura, a data vai para a linha de cima e sobra espaço para os lembretes.
+            bool compact = pageH < 150;
+            if (compact != _agendaCompact)
+            {
+                _agendaCompact = compact;
+                AgendaDate.Visibility = compact ? hidden : visible;
+                UpdateCalendar(force: true);
+            }
             TodoPanel.Visibility = todo ? visible : hidden;
-            AgendaTodoCol.Width = new GridLength(todo ? 232 : 0);
-            AgendaGapCol.Width = new GridLength(todo ? 26 : 0);
+            CalWeekNumber.Visibility = !todo || pageW >= 540 ? visible : hidden;
+            AgendaTodoCol.Width = new GridLength(todo ? Math.Min(232, Math.Round(pageW * 0.46)) : 0);
+            AgendaGapCol.Width = new GridLength(todo ? 20 : 0);
 
             // Foco: o quadrado encolhe com a altura; modos e atalhos só se couber
             TimerModes.Visibility = pageW >= 300 && pageH >= 96 ? visible : hidden;
@@ -1318,7 +1338,7 @@ namespace Ilha
             if (tab == "agenda" && changed)
             {
                 _monthOffset = 0;
-                UpdateCalendar(force: true);
+                SelectDay(DateTime.Today);
             }
             if (tab == "mirror" && _expanded) StartMirror();
             else StopMirror();
@@ -1419,12 +1439,19 @@ namespace Ilha
         {
             var today = DateTime.Today;
             if (!force && today == _calendarDate) return;
+            // Virou o dia com "hoje" escolhido: acompanha o novo hoje.
+            if (_selectedDate == _calendarDate) _selectedDate = today;
             _calendarDate = today;
             var culture = CultureInfo.CurrentCulture;
 
-            // Hoje (painel das tarefas)
-            AgendaWeekday.Text = today.ToString("dddd", culture).ToUpper(culture);
-            AgendaDate.Text = today.ToString(L.English ? "MMMM d" : "d 'de' MMMM", culture);
+            // Dia escolhido (painel das tarefas)
+            var sel = _selectedDate;
+            string dayLabel = _agendaCompact
+                ? sel.ToString(L.English ? "ddd, MMM d" : "ddd, d 'de' MMM", culture)
+                : sel.ToString("dddd", culture);
+            AgendaWeekday.Text = ((sel == today ? L.T("Hoje") + " · " : "") + dayLabel).ToUpper(culture);
+            AgendaDate.Text = sel.ToString(L.English ? "MMMM d" : "d 'de' MMMM", culture);
+            RefreshTodoFilter();
 
             // Mês exibido
             var month = new DateTime(today.Year, today.Month, 1).AddMonths(_monthOffset);
@@ -1456,31 +1483,52 @@ namespace Ilha
                 var day = start.AddDays(i);
                 bool inMonth = day.Month == month.Month;
                 bool isToday = day == today;
+                bool isSelected = day == sel && !isToday;
                 bool weekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+                bool hasTasks = _todos.Any(t => !t.Done && t.Date == DayKey(day));
+                var number = new TextBlock
+                {
+                    Text = day.Day.ToString(culture),
+                    FontSize = 11.5,
+                    FontWeight = isToday || isSelected || hasTasks ? FontWeights.SemiBold : FontWeights.Normal,
+                    // Dia com lembrete pendente: número na cor de destaque.
+                    Foreground = isToday ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11))
+                        : hasTasks ? accent
+                        : !inMonth ? Ink(0x40)
+                        : weekend ? (Brush)FindResource("Tertiary") : Ink(0xFF),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Typography = { NumeralAlignment = FontNumeralAlignment.Tabular },
+                };
                 var cell = new Border
                 {
                     Margin = new Thickness(3, 1, 3, 1),
                     CornerRadius = new CornerRadius(6),
-                    Background = isToday ? accent : Brushes.Transparent,
+                    Background = isToday ? accent : isSelected ? Ink(0x2E) : Brushes.Transparent,
+                    Cursor = Cursors.Hand,
+                    Tag = day,
+                    ToolTip = hasTasks ? L.T("Tem lembretes neste dia") : null,
                     // Com pouca altura, o número encolhe junto com a célula em vez de ser cortado.
                     Child = new Viewbox
                     {
                         StretchDirection = StretchDirection.DownOnly,
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center,
-                        Child = new TextBlock
-                    {
-                        Text = day.Day.ToString(culture),
-                        FontSize = 11.5,
-                        FontWeight = isToday ? FontWeights.SemiBold : FontWeights.Normal,
-                        Foreground = isToday ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11))
-                            : !inMonth ? Ink(0x40)
-                            : weekend ? (Brush)FindResource("Tertiary") : Ink(0xFF),
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Typography = { NumeralAlignment = FontNumeralAlignment.Tabular },
-                    } },
+                        Child = number,
+                    },
                 };
+                cell.MouseLeftButtonUp += (s, _) =>
+                {
+                    if (s is not Border { Tag: DateTime d }) return;
+                    // Dia de outro mês: o calendário vai para aquele mês.
+                    if (d.Month != month.Month) _monthOffset += d < month ? -1 : 1;
+                    SelectDay(d);
+                };
+                if (!isToday && !isSelected)
+                {
+                    cell.MouseEnter += (s, _) => ((Border)s).Background = Ink(0x14);
+                    cell.MouseLeave += (s, _) => ((Border)s).Background = Brushes.Transparent;
+                }
                 CalGrid.Children.Add(cell);
             }
             SizeCalendarCells();
@@ -1504,7 +1552,29 @@ namespace Ilha
         {
             if (sender is not Button { Tag: string tag } || !int.TryParse(tag, out int delta)) return;
             _monthOffset = delta == 0 ? 0 : _monthOffset + delta;
+            if (delta == 0) SelectDay(DateTime.Today);
+            else UpdateCalendar(force: true);
+        }
+
+        private static string DayKey(DateTime d) => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        private void SelectDay(DateTime day)
+        {
+            _selectedDate = day.Date;
             UpdateCalendar(force: true);
+        }
+
+        /// <summary>Tarefas do dia escolhido; as sem dia (antigas) aparecem no dia de hoje.</summary>
+        private bool TodoVisible(object o) =>
+            o is TodoItem t && (t.Date == DayKey(_selectedDate) ||
+                                (string.IsNullOrEmpty(t.Date) && _selectedDate == DateTime.Today));
+
+        private void RefreshTodoFilter()
+        {
+            var view = CollectionViewSource.GetDefaultView(_todos);
+            if (view.Filter == null) view.Filter = TodoVisible;
+            else view.Refresh();
+            UpdateTodoSummary();
         }
 
         private void UpdateClock()
@@ -1797,21 +1867,26 @@ namespace Ilha
         {
             _settings.Todos = _todos.ToList();
             _settings.Save();
-            UpdateTodoSummary();
+            // O calendário mostra um pontinho nos dias com lembrete pendente.
+            UpdateCalendar(force: true);
         }
 
         private void UpdateTodoSummary()
         {
-            int open = _todos.Count(t => !t.Done);
-            TodoCount.Text = _todos.Count == 0 ? "" : open == 0 ? L.T("TUDO FEITO") : L.F("{0} A FAZER", open);
-            TodoEmpty.Visibility = _todos.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            var shown = _todos.Where(t => TodoVisible(t)).ToList();
+            int open = shown.Count(t => !t.Done);
+            TodoCount.Text = shown.Count == 0 ? "" : open == 0 ? L.T("TUDO FEITO") : L.F("{0} A FAZER", open);
+            TodoEmpty.Text = _selectedDate == DateTime.Today
+                ? L.T("Nenhuma tarefa. Que tal planejar o dia?")
+                : L.T("Nada marcado para este dia. Escreva abaixo para criar um lembrete.");
+            TodoEmpty.Visibility = shown.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void AddTodo()
         {
             string text = TodoInput.Text.Trim();
             if (text.Length == 0) return;
-            _todos.Add(new TodoItem { Text = text });
+            _todos.Add(new TodoItem { Text = text, Date = DayKey(_selectedDate) });
             TodoInput.Clear();
         }
 

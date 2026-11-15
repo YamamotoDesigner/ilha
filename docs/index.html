@@ -64,7 +64,13 @@
   .btn.small { padding: 9px 15px; font-size: 14.5px; border-radius: 10px; }
   .btn.alt { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
   .btn.alt:hover { background: rgba(0,0,0,.05); }
-  .actions .btns { display: flex; flex-wrap: wrap; gap: 12px; }
+  .actions .btns { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 10px; }
+  /* Selo "Beta" encostado no topo do botão do Mac */
+  .mac-link { position: relative; }
+  .mac-link::before { content: "Beta"; position: absolute; top: -9px; right: 12px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; line-height: 1;
+    padding: 4px 6px 3px; border-radius: 4px; background: #f4f3ef; color: var(--ink);
+    box-shadow: inset 0 0 0 1.5px var(--ink); }
   .link { font-weight: 500; font-size: 16px; border-bottom: 1px solid var(--line); padding-bottom: 2px;
           transition: border-color .2s; }
   .link:hover { border-bottom-color: var(--ink); }
@@ -426,10 +432,10 @@
       <h1>O topo da tela,<br>com uma função.</h1>
       <p class="lead">Ilha é uma barra discreta no topo da tela, no Windows e no Mac. Passe o mouse e ela abre com a música que está tocando, a sua agenda, um timer, notas e os arquivos que você quer ter à mão.</p>
       <div class="actions">
-        <span class="btns"><a class="btn download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-win"/></svg>Baixar para Windows</a><a class="btn alt mac-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-mac"/></svg>Baixar para Mac</a></span>
+        <span class="btns"><a class="btn download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-win"/></svg>Baixar para Windows</a><a class="btn alt mac-link" title="A versão para Mac está em beta" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-mac"/></svg>Baixar para Mac</a></span>
         <a class="link" href="https://github.com/YamamotoDesigner/ilha">Ver o código no GitHub</a>
       </div>
-      <p class="meta"><span class="dl-meta">Grátis · Windows 10 e 11 · macOS 13 ou mais novo</span></p>
+      <p class="meta"><span class="dl-meta">Grátis · Windows 10 e 11 · Mac (beta) com macOS 13 ou mais novo</span></p>
     </div>
     <div class="desk" id="hero-desk">
       <div class="stage" id="hero-stage"></div>
@@ -521,6 +527,8 @@
         <p>Sim. A Ilha é gratuita e de código aberto; o código está todo no <a href="https://github.com/YamamotoDesigner/ilha">GitHub</a>.</p></details>
       <details><summary>O Windows mostrou "O Windows protegeu o computador". E agora?</summary>
         <p>Esse aviso (SmartScreen) aparece para apps novos que ainda não têm assinatura digital paga. Clique em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</p></details>
+      <details><summary>A versão para Mac está pronta?</summary>
+        <p>Ela está em <b>beta</b>: todas as funções estão lá, mas ainda pode ter algum detalhe para ajustar. Se algo estranho acontecer, conte em <a href="https://github.com/YamamotoDesigner/ilha/issues">Reportar problema</a>.</p></details>
       <details><summary>O Mac disse que não conseguiu verificar o app. E agora?</summary>
         <p>A Ilha ainda não tem a assinatura paga da Apple. Na primeira vez, vá em <b>Ajustes do Sistema → Privacidade e Segurança</b>, role até o fim e clique em <b>Abrir mesmo assim</b>. Depois disso ela abre normalmente.</p></details>
       <details><summary>No Mac, por que ela pede para controlar o Spotify e o app Música?</summary>
@@ -545,8 +553,8 @@
   <div class="wrap rise">
     <h2>Dê uma função ao topo da sua tela.</h2>
     <div class="actions">
-      <span class="btns"><a class="btn download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-win"/></svg>Baixar para Windows</a><a class="btn alt mac-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-mac"/></svg>Baixar para Mac</a></span>
-      <span class="meta dl-meta">Grátis · Windows 10 e 11 · macOS 13 ou mais novo</span>
+      <span class="btns"><a class="btn download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-win"/></svg>Baixar para Windows</a><a class="btn alt mac-link" title="A versão para Mac está em beta" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-mac"/></svg>Baixar para Mac</a></span>
+      <span class="meta dl-meta">Grátis · Windows 10 e 11 · Mac (beta) com macOS 13 ou mais novo</span>
     </div>
   </div>
 </section>
@@ -665,7 +673,7 @@
       const ver = (rel.tag_name || '').replace(/^v/i, '');
       if (asset) document.querySelectorAll('.download-link').forEach(a => a.href = asset.browser_download_url);
       if (mac) document.querySelectorAll('.mac-link').forEach(a => a.href = mac.browser_download_url);
-      if (ver) document.querySelectorAll('.dl-meta').forEach(el => el.textContent = `Grátis · versão ${ver} · Windows 10 e 11 · macOS 13 ou mais novo`);
+      if (ver) document.querySelectorAll('.dl-meta').forEach(el => el.textContent = `Grátis · versão ${ver} · Windows 10 e 11 · Mac (beta) com macOS 13 ou mais novo`);
       // No Mac, o botão do Mac vem primeiro e em destaque
       if (/Mac/.test(navigator.platform)) {
         document.querySelectorAll('.btns').forEach(b => {

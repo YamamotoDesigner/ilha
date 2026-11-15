@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -11,15 +11,15 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Ilha</AssemblyName>
     <RootNamespace>Ilha</RootNamespace>
-    <Version>1.9.0</Version>
+    <Version>1.9.1</Version>
     <ApplicationIcon>Ilha.ico</ApplicationIcon>
-    <!-- O DPI é definido pelo manifesto (correto para WPF); WinForms só fornece o ícone da bandeja. -->
+    <!-- O DPI Ã© definido pelo manifesto (correto para WPF); WinForms sÃ³ fornece o Ã­cone da bandeja. -->
     <NoWarn>$(NoWarn);WFO0003;WPF0001</NoWarn>
   </PropertyGroup>
 
-  <!-- Empacotamento: "dotnet publish -c Release -o publish" gera um único Ilha.exe.
-       IncludeNativeLibrariesForSelfExtract é obrigatório: sem ele as DLLs nativas do WPF
-       (wpfgfx_cor3, PresentationNative_cor3...) ficam soltas e o exe instalado não abre. -->
+  <!-- Empacotamento: "dotnet publish -c Release -o publish" gera um Ãºnico Ilha.exe.
+       IncludeNativeLibrariesForSelfExtract Ã© obrigatÃ³rio: sem ele as DLLs nativas do WPF
+       (wpfgfx_cor3, PresentationNative_cor3...) ficam soltas e o exe instalado nÃ£o abre. -->
   <PropertyGroup>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>

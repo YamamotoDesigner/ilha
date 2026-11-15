@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -48,8 +48,8 @@ namespace Ilha
         public int? FloatCenterX { get; set; }
         public int? FloatTop { get; set; }
         /// <summary>Tamanho da ilha aberta (pixels lógicos, antes do "Tamanho geral"), em todos os estilos.</summary>
-        public double OpenWidth { get; set; } = 640;
-        public double OpenHeight { get; set; } = 236;
+        public double OpenWidth { get; set; } = 560;
+        public double OpenHeight { get; set; } = 220;
         /// <summary>"Side" (trilho lateral) ou "Top" (barra no topo).</summary>
         public string TabPosition { get; set; } = "Side";
 
@@ -169,19 +169,23 @@ namespace Ilha
             return Migrate(new AppSettings());
         }
 
-        private const int CurrentLayout = 2;
+        private const int CurrentLayout = 3;
 
         /// <summary>
-        /// Layout 2 (1.9): a ilha aberta ganhou margens e espaços maiores; quem ainda está no
-        /// tamanho antigo passa para o novo padrão, senão o conteúdo ficaria apertado.
+        /// Layout 3 (1.9.1): a ilha aberta ficou menor por padrão (560 × 220). Quem estava no
+        /// padrão anterior (640 × 236) passa para o novo; quem escolheu outro tamanho fica como está.
         /// </summary>
         private static AppSettings Migrate(AppSettings s)
         {
             if (s.LayoutVersion < CurrentLayout)
             {
-                var d = new AppSettings { LayoutVersion = CurrentLayout };
-                if (s.OpenWidth < d.OpenWidth) s.OpenWidth = d.OpenWidth;
-                if (s.OpenHeight < d.OpenHeight) s.OpenHeight = d.OpenHeight;
+                var d = new AppSettings();
+                bool wasDefault = s.LayoutVersion < 2 || (s.OpenWidth == 640 && s.OpenHeight == 236);
+                if (wasDefault)
+                {
+                    s.OpenWidth = d.OpenWidth;
+                    s.OpenHeight = d.OpenHeight;
+                }
                 s.LayoutVersion = CurrentLayout;
             }
             return s;

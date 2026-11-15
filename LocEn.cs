@@ -8,6 +8,8 @@ namespace Ilha
         public static readonly Dictionary<string, string> Strings = new()
         {
             ["Teleprompter"] = "Teleprompter",
+            ["Tem lembretes neste dia"] = "Has reminders on this day",
+            ["Nada marcado para este dia. Escreva abaixo para criar um lembrete."] = "Nothing planned for this day. Type below to add a reminder.",
             ["Escolher recursos"] = "Choose features",
             ["Travar: a ilha fica aberta e o texto não rola sem querer"] = "Lock: the island stays open and the text won't scroll by accident",
             ["Editar"] = "Edit",
