@@ -11,7 +11,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Ilha</AssemblyName>
     <RootNamespace>Ilha</RootNamespace>
-    <Version>1.1.2</Version>
+    <Version>1.2.0</Version>
     <ApplicationIcon>Ilha.ico</ApplicationIcon>
     <!-- O DPI é definido pelo manifesto (correto para WPF); WinForms só fornece o ícone da bandeja. -->
     <NoWarn>$(NoWarn);WFO0003;WPF0001</NoWarn>
@@ -32,6 +32,11 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Inter (SIL Open Font License, ver Fonts\Inter-LICENSE.txt) -->
+    <Resource Include="Fonts\*.ttf" />
+    <Resource Include="Ilha.ico" />
   </ItemGroup>
 
 </Project>

@@ -13,6 +13,10 @@ namespace Ilha
         public bool HideOnFullscreen { get; set; } = true;
 
         // Aparência
+        /// <summary>"Glass" (vidro com desfoque) ou "Solid" (cor sólida).</summary>
+        public string Material { get; set; } = "Glass";
+        /// <summary>Quanto da cor da ilha cobre o vidro, de 0 (transparente) a 100 (sólido).</summary>
+        public double GlassTint { get; set; } = 42;
         public string IslandColor { get; set; } = "#000000";
         public string AccentColor { get; set; } = "#7CE3A1";
         public double Scale { get; set; } = 1.0;
@@ -42,6 +46,13 @@ namespace Ilha
         public bool ShowTimer { get; set; } = true;
         public bool ShowClipboard { get; set; } = true;
         public int ClipboardMax { get; set; } = 25;
+        public bool ShowCalendar { get; set; } = true;
+        public bool ShowMirror { get; set; } = true;
+
+        // Avisos rápidos na ilha recolhida
+        public bool LiveVolume { get; set; } = true;
+        public bool LiveCharging { get; set; } = true;
+        public bool LiveTrack { get; set; } = true;
 
         // Dados
         public List<string> Shelf { get; set; } = new();
@@ -52,6 +63,8 @@ namespace Ilha
         {
             var d = new AppSettings();
             HideOnFullscreen = d.HideOnFullscreen;
+            Material = d.Material;
+            GlassTint = d.GlassTint;
             IslandColor = d.IslandColor;
             AccentColor = d.AccentColor;
             Scale = d.Scale;
@@ -74,6 +87,11 @@ namespace Ilha
             ShowTimer = d.ShowTimer;
             ShowClipboard = d.ShowClipboard;
             ClipboardMax = d.ClipboardMax;
+            ShowCalendar = d.ShowCalendar;
+            ShowMirror = d.ShowMirror;
+            LiveVolume = d.LiveVolume;
+            LiveCharging = d.LiveCharging;
+            LiveTrack = d.LiveTrack;
         }
 
         private static string Folder =>

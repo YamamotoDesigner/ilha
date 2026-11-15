@@ -1,12 +1,13 @@
 <Window x:Class="Ilha.SupportWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Ilha"
         Title="Apoiar o Ilha" Width="420" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen" ThemeMode="System"
-        FontFamily="Segoe UI Variable Text, Segoe UI">
+        FontFamily="{DynamicResource UiFont}" TextOptions.TextFormattingMode="Ideal">
     <StackPanel Margin="32,24,32,28">
-        <TextBlock Text="&#xEB51;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="30"
-                   Foreground="#F472B6" HorizontalAlignment="Center"/>
+        <local:Glyph Data="{StaticResource IcoHeart}" Filled="True" Size="34" Foreground="#FF375F"
+                     HorizontalAlignment="Center"/>
         <TextBlock Text="Ajude o Ilha a continuar" FontSize="22" FontWeight="SemiBold"
                    HorizontalAlignment="Center" Margin="0,10,0,6"/>
         <TextBlock TextWrapping="Wrap" TextAlignment="Center" Opacity="0.75" FontSize="14">

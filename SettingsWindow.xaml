@@ -1,43 +1,161 @@
 <Window x:Class="Ilha.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Configurações — Ilha" Width="560" Height="760" MinWidth="460" MinHeight="400"
+        Title="Configurações do Ilha" Width="600" Height="800" MinWidth="480" MinHeight="420"
         WindowStartupLocation="CenterScreen" ThemeMode="System"
-        FontFamily="Segoe UI Variable Text, Segoe UI">
+        FontFamily="{DynamicResource UiFont}" FontSize="13.5"
+        TextOptions.TextFormattingMode="Ideal">
 
     <Window.Resources>
+        <!-- Título de grupo, discreto, acima de cada cartão -->
         <Style x:Key="Section" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,22,0,10"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+            <Setter Property="Margin" Value="14,24,0,8"/>
         </Style>
-        <Style x:Key="Label" TargetType="TextBlock">
-            <Setter Property="Width" Value="190"/>
+
+        <!-- Cartão agrupado (como os ajustes do iPhone/Mac) -->
+        <Style x:Key="Group" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+        </Style>
+
+        <Style x:Key="Divider" TargetType="Border">
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Margin" Value="14,0,0,0"/>
+            <Setter Property="Background" Value="{DynamicResource DividerStrokeColorDefaultBrush}"/>
+        </Style>
+
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="14,6,14,0"/>
+        </Style>
+
+        <!-- Linha com interruptor à direita -->
+        <Style x:Key="Switch" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                            <DockPanel>
+                                <Border x:Name="Track" DockPanel.Dock="Right" Width="42" Height="25" CornerRadius="12.5"
+                                        Background="#3A808080" Margin="12,0,0,0">
+                                    <Ellipse x:Name="Knob" Width="21" Height="21" Fill="White"
+                                             HorizontalAlignment="Left" Margin="2,0,0,0">
+                                        <Ellipse.Effect>
+                                            <DropShadowEffect BlurRadius="5" ShadowDepth="1" Direction="270" Opacity="0.3"/>
+                                        </Ellipse.Effect>
+                                        <Ellipse.RenderTransform>
+                                            <TranslateTransform/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                </Border>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="#34C759"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Knob" Duration="0:0:0.22"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                             To="17">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.25"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Knob" Duration="0:0:0.22"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                             To="0">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.25"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Controle segmentado (Vidro | Sólido) -->
+        <Style x:Key="Segment" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bg" CornerRadius="7" Padding="14,5" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bg" Property="Background"
+                                        Value="{DynamicResource ControlFillColorDefaultBrush}"/>
+                                <Setter TargetName="Bg" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="270" Opacity="0.2"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SliderRow" TargetType="Grid">
+            <Setter Property="Margin" Value="14,8"/>
+        </Style>
+        <Style x:Key="RowLabel" TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <Style x:Key="Value" TargetType="TextBlock">
-            <Setter Property="Width" Value="60"/>
-            <Setter Property="TextAlignment" Value="Right"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Opacity" Value="0.7"/>
+            <Setter Property="TextAlignment" Value="Right"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
         </Style>
-        <Style x:Key="Row" TargetType="DockPanel">
-            <Setter Property="Margin" Value="0,4"/>
-        </Style>
+
         <Style x:Key="Swatch" TargetType="Button">
-            <Setter Property="Width" Value="28"/>
-            <Setter Property="Height" Value="28"/>
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="26"/>
             <Setter Property="Margin" Value="0,0,8,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="B" Background="{TemplateBinding Background}" CornerRadius="14"
-                                BorderBrush="#66808080" BorderThickness="1"/>
+                        <Grid>
+                            <Ellipse x:Name="Ring" Stroke="#66808080" StrokeThickness="1"
+                                     Fill="{TemplateBinding Background}"/>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="B" Property="BorderThickness" Value="2"/>
-                                <Setter TargetName="B" Property="BorderBrush" Value="#FF808080"/>
+                                <Setter TargetName="Ring" Property="StrokeThickness" Value="2.5"/>
+                                <Setter TargetName="Ring" Property="Stroke" Value="#AA808080"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -47,120 +165,252 @@
     </Window.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="28,8,28,28">
+        <StackPanel Margin="26,14,26,30" MaxWidth="620">
 
-            <!-- ── Aparência ── -->
-            <TextBlock Text="Aparência" Style="{StaticResource Section}"/>
-
-            <TextBlock Text="Cor da ilha"/>
-            <StackPanel Orientation="Horizontal" Margin="0,8,0,4">
-                <StackPanel x:Name="IslandSwatches" Orientation="Horizontal"/>
-                <TextBox x:Name="IslandColorBox" Width="110" Margin="4,0,0,0"
-                         Text="{Binding IslandColor, UpdateSourceTrigger=PropertyChanged}"/>
+            <!-- Cabeçalho -->
+            <StackPanel Orientation="Horizontal" Margin="4,6,0,0">
+                <Image Source="pack://application:,,,/Ilha.ico" Width="44" Height="44"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Ilha" FontSize="24" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="VersionText" Style="{StaticResource Hint}" Margin="0,1,0,0"/>
+                </StackPanel>
             </StackPanel>
 
-            <TextBlock Text="Cor de destaque" Margin="0,12,0,0"/>
-            <StackPanel Orientation="Horizontal" Margin="0,8,0,8">
-                <StackPanel x:Name="AccentSwatches" Orientation="Horizontal"/>
-                <TextBox x:Name="AccentColorBox" Width="110" Margin="4,0,0,0"
-                         Text="{Binding AccentColor, UpdateSourceTrigger=PropertyChanged}"/>
-            </StackPanel>
+            <!-- ── Material ── -->
+            <TextBlock Text="MATERIAL" Style="{StaticResource Section}"/>
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <DockPanel Margin="14,10">
+                        <Border DockPanel.Dock="Right" CornerRadius="9" Padding="2"
+                                Background="{DynamicResource ControlAltFillColorSecondaryBrush}">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="GlassRadio" Style="{StaticResource Segment}" GroupName="Material"
+                                             Content="Vidro" Checked="Material_Checked"/>
+                                <RadioButton x:Name="SolidRadio" Style="{StaticResource Segment}" GroupName="Material"
+                                             Content="Sólido" Checked="Material_Checked"/>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Aparência da ilha" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <Border Style="{StaticResource Divider}"/>
+                    <Grid Style="{StaticResource SliderRow}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="54"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Intensidade da cor" Style="{StaticResource RowLabel}"/>
+                        <Slider x:Name="TintSlider" Grid.Column="1" Minimum="0" Maximum="100" TickFrequency="1"
+                                IsSnapToTickEnabled="True" Value="{Binding GlassTint}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                   Text="{Binding Value, ElementName=TintSlider, StringFormat={}{0:0}%}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            <TextBlock x:Name="MaterialHint" Style="{StaticResource Hint}"
+                       Text="Vidro: o que está atrás da ilha aparece desfocado, tingido pela cor escolhida."/>
 
-            <DockPanel Style="{StaticResource Row}">
-                <TextBlock Text="Tamanho geral" Style="{StaticResource Label}"/>
-                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Value}"
-                           Text="{Binding Value, ElementName=ScaleSlider, StringFormat={}{0:P0}}"/>
-                <Slider x:Name="ScaleSlider" Minimum="0.7" Maximum="1.5" TickFrequency="0.05"
-                        IsSnapToTickEnabled="True" Value="{Binding Scale}"/>
-            </DockPanel>
-            <DockPanel Style="{StaticResource Row}">
-                <TextBlock Text="Arredondamento" Style="{StaticResource Label}"/>
-                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Value}"
-                           Text="{Binding Value, ElementName=RadiusSlider, StringFormat={}{0:0} px}"/>
-                <Slider x:Name="RadiusSlider" Minimum="0" Maximum="36" TickFrequency="1"
-                        IsSnapToTickEnabled="True" Value="{Binding CornerRadius}"/>
-            </DockPanel>
-            <DockPanel Style="{StaticResource Row}">
-                <TextBlock Text="Largura recolhida" Style="{StaticResource Label}"/>
-                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Value}"
-                           Text="{Binding Value, ElementName=CWidthSlider, StringFormat={}{0:0} px}"/>
-                <Slider x:Name="CWidthSlider" Minimum="100" Maximum="360" TickFrequency="5"
-                        IsSnapToTickEnabled="True" Value="{Binding CollapsedWidth}"/>
-            </DockPanel>
-            <DockPanel Style="{StaticResource Row}">
-                <TextBlock Text="Altura recolhida" Style="{StaticResource Label}"/>
-                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Value}"
-                           Text="{Binding Value, ElementName=CHeightSlider, StringFormat={}{0:0} px}"/>
-                <Slider x:Name="CHeightSlider" Minimum="20" Maximum="48" TickFrequency="1"
-                        IsSnapToTickEnabled="True" Value="{Binding CollapsedHeight}"/>
-            </DockPanel>
-            <CheckBox Content="Sombra" IsChecked="{Binding ShowShadow}" Margin="0,8,0,0"/>
-            <CheckBox Content="Animação com efeito de mola" IsChecked="{Binding SpringAnimation}" Margin="0,6,0,0"/>
+            <!-- ── Cores ── -->
+            <TextBlock Text="CORES" Style="{StaticResource Section}"/>
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <DockPanel Margin="14,10">
+                        <TextBlock Text="Ilha" Width="130" VerticalAlignment="Center"/>
+                        <TextBox x:Name="IslandColorBox" DockPanel.Dock="Right" Width="96"
+                                 Text="{Binding IslandColor, UpdateSourceTrigger=PropertyChanged}"/>
+                        <StackPanel x:Name="IslandSwatches" Orientation="Horizontal" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <Border Style="{StaticResource Divider}"/>
+                    <DockPanel Margin="14,10">
+                        <TextBlock Text="Destaque" Width="130" VerticalAlignment="Center"/>
+                        <TextBox x:Name="AccentColorBox" DockPanel.Dock="Right" Width="96"
+                                 Text="{Binding AccentColor, UpdateSourceTrigger=PropertyChanged}"/>
+                        <StackPanel x:Name="AccentSwatches" Orientation="Horizontal" VerticalAlignment="Center"/>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
 
-            <!-- ── Ilha recolhida ── -->
-            <TextBlock Text="Ilha recolhida" Style="{StaticResource Section}"/>
-            <CheckBox Content="Mostrar capa da música tocando" IsChecked="{Binding CollapsedShowArt}"/>
-            <CheckBox Content="Mostrar equalizador animado" IsChecked="{Binding CollapsedShowEqualizer}" Margin="0,6,0,0"/>
-            <CheckBox Content="Mostrar contagem do timer" IsChecked="{Binding CollapsedShowTimer}" Margin="0,6,0,0"/>
+            <!-- ── Forma ── -->
+            <TextBlock Text="FORMA E TAMANHO" Style="{StaticResource Section}"/>
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <Grid Style="{StaticResource SliderRow}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170"/><ColumnDefinition Width="*"/><ColumnDefinition Width="54"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Tamanho geral" Style="{StaticResource RowLabel}"/>
+                        <Slider x:Name="ScaleSlider" Grid.Column="1" Minimum="0.7" Maximum="1.5" TickFrequency="0.05"
+                                IsSnapToTickEnabled="True" Value="{Binding Scale}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                   Text="{Binding Value, ElementName=ScaleSlider, StringFormat={}{0:P0}}"/>
+                    </Grid>
+                    <Border Style="{StaticResource Divider}"/>
+                    <Grid Style="{StaticResource SliderRow}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170"/><ColumnDefinition Width="*"/><ColumnDefinition Width="54"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Arredondamento" Style="{StaticResource RowLabel}"/>
+                        <Slider x:Name="RadiusSlider" Grid.Column="1" Minimum="0" Maximum="36" TickFrequency="1"
+                                IsSnapToTickEnabled="True" Value="{Binding CornerRadius}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                   Text="{Binding Value, ElementName=RadiusSlider, StringFormat={}{0:0} px}"/>
+                    </Grid>
+                    <Border Style="{StaticResource Divider}"/>
+                    <Grid Style="{StaticResource SliderRow}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170"/><ColumnDefinition Width="*"/><ColumnDefinition Width="54"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Largura recolhida" Style="{StaticResource RowLabel}"/>
+                        <Slider x:Name="CWidthSlider" Grid.Column="1" Minimum="100" Maximum="360" TickFrequency="5"
+                                IsSnapToTickEnabled="True" Value="{Binding CollapsedWidth}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                   Text="{Binding Value, ElementName=CWidthSlider, StringFormat={}{0:0} px}"/>
+                    </Grid>
+                    <Border Style="{StaticResource Divider}"/>
+                    <Grid Style="{StaticResource SliderRow}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170"/><ColumnDefinition Width="*"/><ColumnDefinition Width="54"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Altura recolhida" Style="{StaticResource RowLabel}"/>
+                        <Slider x:Name="CHeightSlider" Grid.Column="1" Minimum="20" Maximum="48" TickFrequency="1"
+                                IsSnapToTickEnabled="True" Value="{Binding CollapsedHeight}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                   Text="{Binding Value, ElementName=CHeightSlider, StringFormat={}{0:0} px}"/>
+                    </Grid>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Sombra (modo sólido)" IsChecked="{Binding ShowShadow}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Animação com efeito de mola" IsChecked="{Binding SpringAnimation}"/>
+                </StackPanel>
+            </Border>
 
             <!-- ── Recursos ── -->
-            <TextBlock Text="Recursos" Style="{StaticResource Section}"/>
-            <CheckBox Content="Controles de mídia" IsChecked="{Binding ShowMedia}"/>
-            <CheckBox Content="Prateleira de arquivos" IsChecked="{Binding ShowShelf}" Margin="0,6,0,0"/>
-            <CheckBox Content="Notas" IsChecked="{Binding ShowNotes}" Margin="0,6,0,0"/>
-            <CheckBox Content="Timer" IsChecked="{Binding ShowTimer}" Margin="0,6,0,0"/>
-            <CheckBox Content="Histórico da área de transferência" IsChecked="{Binding ShowClipboard}" Margin="0,6,0,0"/>
-            <DockPanel Style="{StaticResource Row}" Margin="0,8,0,0">
-                <TextBlock Text="Itens no histórico" Style="{StaticResource Label}"/>
-                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Value}"
-                           Text="{Binding Value, ElementName=ClipMaxSlider, StringFormat={}{0:0}}"/>
-                <Slider x:Name="ClipMaxSlider" Minimum="5" Maximum="100" TickFrequency="5"
-                        IsSnapToTickEnabled="True" Value="{Binding ClipboardMax}"/>
-            </DockPanel>
+            <TextBlock Text="RECURSOS" Style="{StaticResource Section}"/>
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <CheckBox Style="{StaticResource Switch}" Content="Controles de mídia" IsChecked="{Binding ShowMedia}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Calendário" IsChecked="{Binding ShowCalendar}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Prateleira de arquivos" IsChecked="{Binding ShowShelf}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Notas" IsChecked="{Binding ShowNotes}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Timer" IsChecked="{Binding ShowTimer}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Histórico da área de transferência" IsChecked="{Binding ShowClipboard}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <Grid Style="{StaticResource SliderRow}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170"/><ColumnDefinition Width="*"/><ColumnDefinition Width="54"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Itens no histórico" Style="{StaticResource RowLabel}"/>
+                        <Slider x:Name="ClipMaxSlider" Grid.Column="1" Minimum="5" Maximum="100" TickFrequency="5"
+                                IsSnapToTickEnabled="True" Value="{Binding ClipboardMax}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                   Text="{Binding Value, ElementName=ClipMaxSlider, StringFormat={}{0:0}}"/>
+                    </Grid>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Espelho (câmera)" IsChecked="{Binding ShowMirror}"/>
+                </StackPanel>
+            </Border>
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="A câmera só liga enquanto a aba Espelho está aberta, e nada é gravado."/>
+
+            <!-- ── Ilha recolhida ── -->
+            <TextBlock Text="ILHA RECOLHIDA" Style="{StaticResource Section}"/>
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <CheckBox Style="{StaticResource Switch}" Content="Capa da música tocando" IsChecked="{Binding CollapsedShowArt}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Equalizador animado" IsChecked="{Binding CollapsedShowEqualizer}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Contagem do timer" IsChecked="{Binding CollapsedShowTimer}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Avisos rápidos ── -->
+            <TextBlock Text="AVISOS RÁPIDOS" Style="{StaticResource Section}"/>
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <CheckBox Style="{StaticResource Switch}" Content="Volume ao mudar" IsChecked="{Binding LiveVolume}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Carregador conectado / desconectado" IsChecked="{Binding LiveCharging}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Música nova começando" IsChecked="{Binding LiveTrack}"/>
+                </StackPanel>
+            </Border>
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="A ilha recolhida cresce por um instante para mostrar o aviso."/>
 
             <!-- ── Comportamento ── -->
-            <TextBlock Text="Comportamento" Style="{StaticResource Section}"/>
-            <DockPanel Style="{StaticResource Row}">
-                <TextBlock Text="Atraso para abrir" Style="{StaticResource Label}"/>
-                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Value}"
-                           Text="{Binding Value, ElementName=HoverSlider, StringFormat={}{0:0} ms}"/>
-                <Slider x:Name="HoverSlider" Minimum="0" Maximum="1000" TickFrequency="50"
-                        IsSnapToTickEnabled="True" Value="{Binding HoverDelayMs}"/>
-            </DockPanel>
-            <DockPanel Style="{StaticResource Row}">
-                <TextBlock Text="Atraso para fechar" Style="{StaticResource Label}"/>
-                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Value}"
-                           Text="{Binding Value, ElementName=CollapseSlider, StringFormat={}{0:0} ms}"/>
-                <Slider x:Name="CollapseSlider" Minimum="100" Maximum="2000" TickFrequency="50"
-                        IsSnapToTickEnabled="True" Value="{Binding CollapseDelayMs}"/>
-            </DockPanel>
-            <DockPanel Style="{StaticResource Row}">
-                <TextBlock Text="Monitor" Style="{StaticResource Label}"/>
-                <ComboBox x:Name="MonitorCombo" DisplayMemberPath="Label" SelectedValuePath="Device"
-                          SelectedValue="{Binding MonitorDevice}"/>
-            </DockPanel>
-            <CheckBox Content="Atalho global Ctrl+Alt+N para abrir/fechar" IsChecked="{Binding HotkeyEnabled}" Margin="0,8,0,0"/>
-            <CheckBox Content="Ocultar quando um app estiver em tela cheia" IsChecked="{Binding HideOnFullscreen}" Margin="0,6,0,0"/>
-            <CheckBox Content="Relógio de 24 horas" IsChecked="{Binding Use24h}" Margin="0,6,0,0"/>
-            <CheckBox Content="Mostrar segundos" IsChecked="{Binding ShowSeconds}" Margin="0,6,0,0"/>
-            <CheckBox x:Name="StartupCheck" Content="Iniciar com o Windows" Margin="0,6,0,0"
-                      Click="StartupCheck_Click"/>
+            <TextBlock Text="COMPORTAMENTO" Style="{StaticResource Section}"/>
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <Grid Style="{StaticResource SliderRow}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170"/><ColumnDefinition Width="*"/><ColumnDefinition Width="60"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Atraso para abrir" Style="{StaticResource RowLabel}"/>
+                        <Slider x:Name="HoverSlider" Grid.Column="1" Minimum="0" Maximum="1000" TickFrequency="50"
+                                IsSnapToTickEnabled="True" Value="{Binding HoverDelayMs}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                   Text="{Binding Value, ElementName=HoverSlider, StringFormat={}{0:0} ms}"/>
+                    </Grid>
+                    <Border Style="{StaticResource Divider}"/>
+                    <Grid Style="{StaticResource SliderRow}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170"/><ColumnDefinition Width="*"/><ColumnDefinition Width="60"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Atraso para fechar" Style="{StaticResource RowLabel}"/>
+                        <Slider x:Name="CollapseSlider" Grid.Column="1" Minimum="100" Maximum="2000" TickFrequency="50"
+                                IsSnapToTickEnabled="True" Value="{Binding CollapseDelayMs}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Style="{StaticResource Value}"
+                                   Text="{Binding Value, ElementName=CollapseSlider, StringFormat={}{0:0} ms}"/>
+                    </Grid>
+                    <Border Style="{StaticResource Divider}"/>
+                    <DockPanel Margin="14,8">
+                        <TextBlock Text="Monitor" Width="170" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="MonitorCombo" DisplayMemberPath="Label" SelectedValuePath="Device"
+                                  SelectedValue="{Binding MonitorDevice}"/>
+                    </DockPanel>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Atalho Ctrl+Alt+N para abrir/fechar" IsChecked="{Binding HotkeyEnabled}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Esconder com app em tela cheia" IsChecked="{Binding HideOnFullscreen}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Relógio de 24 horas" IsChecked="{Binding Use24h}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox Style="{StaticResource Switch}" Content="Mostrar segundos" IsChecked="{Binding ShowSeconds}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <CheckBox x:Name="StartupCheck" Style="{StaticResource Switch}" Content="Iniciar com o Windows"
+                              Click="StartupCheck_Click"/>
+                </StackPanel>
+            </Border>
 
             <!-- ── Atualizações ── -->
-            <TextBlock Text="Atualizações" Style="{StaticResource Section}"/>
-            <TextBlock x:Name="VersionText" Opacity="0.7"/>
-            <CheckBox Content="Verificar atualizações automaticamente" IsChecked="{Binding AutoCheckUpdates}" Margin="0,8,0,0"/>
-            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                <Button x:Name="CheckUpdatesButton" Content="Verificar agora" Click="CheckUpdates_Click" Padding="14,6"/>
-                <TextBlock x:Name="UpdateStatus" VerticalAlignment="Center" Margin="12,0,0,0" Opacity="0.8"
-                           TextWrapping="Wrap" MaxWidth="300"/>
-            </StackPanel>
+            <TextBlock Text="ATUALIZAÇÕES" Style="{StaticResource Section}"/>
+            <Border Style="{StaticResource Group}">
+                <StackPanel>
+                    <CheckBox Style="{StaticResource Switch}" Content="Verificar automaticamente" IsChecked="{Binding AutoCheckUpdates}"/>
+                    <Border Style="{StaticResource Divider}"/>
+                    <DockPanel Margin="14,10">
+                        <Button x:Name="CheckUpdatesButton" DockPanel.Dock="Right" Content="Verificar agora"
+                                Click="CheckUpdates_Click" Padding="14,5"/>
+                        <TextBlock x:Name="UpdateStatus" VerticalAlignment="Center" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,12,0"
+                                   Text="Novas versões são instaladas com um clique."/>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
 
-            <StackPanel Orientation="Horizontal" Margin="0,28,0,0">
-                <Button x:Name="SupportButton" Content="❤  Apoiar o projeto" Click="Support_Click" Padding="14,6"
+            <!-- ── Rodapé ── -->
+            <StackPanel Orientation="Horizontal" Margin="0,28,0,0" HorizontalAlignment="Center">
+                <Button x:Name="SupportButton" Content="♥  Apoiar o projeto" Click="Support_Click" Padding="16,7"
                         Margin="0,0,10,0" Style="{StaticResource AccentButtonStyle}"/>
-                <Button Content="Restaurar padrões" Click="Reset_Click" Padding="14,6"/>
-                <Button Content="Sair do Ilha" Click="Quit_Click" Padding="14,6" Margin="10,0,0,0"/>
+                <Button Content="Restaurar padrões" Click="Reset_Click" Padding="16,7"/>
+                <Button Content="Sair do Ilha" Click="Quit_Click" Padding="16,7" Margin="10,0,0,0"/>
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

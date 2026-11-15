@@ -19,15 +19,28 @@ namespace Ilha
 {
     public partial class MainWindow : Window
     {
-        private const double BaseWindowWidth = 640, BaseWindowHeight = 250;
-        private const double ExpandedWidth = 580, ExpandedHeight = 210;
-        private const double CollapsedExtraWidth = 60;
+        private const double BaseWindowWidth = 700, BaseWindowHeight = 300;
+        private const double ExpandedWidth = 620, ExpandedHeight = 228;
+        private const double CollapsedExtraWidth = 64;
+        private const double PeekExtraWidth = 170;
         private const int HotkeyId = 0x4948;
-        private static readonly string GlyphPlay = ((char)0xE768).ToString();
-        private static readonly string GlyphPause = ((char)0xE769).ToString();
+        private Geometry GlyphPlay => (Geometry)FindResource("IcoPlay");
+        private Geometry GlyphPause => (Geometry)FindResource("IcoPause");
 
         private readonly AppSettings _settings = AppSettings.Load();
         private readonly MediaService _media = new();
+        private readonly CameraService _camera = new();
+        private readonly VolumeMonitor _volume = new();
+        private readonly DispatcherTimer _peekTimer = new();
+        private bool _peeking;
+        private BackdropWindow? _glassWindow;
+        private float? _lastVolume;
+        private bool? _lastMuted;
+        private bool? _lastCharging;
+        private string _lastTrackKey = "";
+        private DateTime _ignoreTrackUntil = DateTime.Now.AddSeconds(4);
+        private DateTime _calendarDate;
+        private string _currentTab = "home";
         private readonly ObservableCollection<ShelfItem> _shelf = new();
         private readonly ObservableCollection<ClipItem> _clips = new();
         private readonly DispatcherTimer _expandTimer = new();
@@ -70,9 +83,12 @@ namespace Ilha
             }
         }
 
-        public MainWindow()
+        /// <param name="glass">Janela do vidro, já aberta; vira dona desta para ficar sempre logo atrás.</param>
+        public MainWindow(BackdropWindow? glass)
         {
             InitializeComponent();
+            _glassWindow = glass;
+            Owner = glass;
 
             foreach (var path in _settings.Shelf)
             {
@@ -114,6 +130,13 @@ namespace Ilha
             _tick.Tick += (_, _) => OnTick();
             _watch.Tick += (_, _) => WatchFullscreen();
             _media.Changed += UpdateMedia;
+            _peekTimer.Tick += (_, _) => EndPeek();
+            _camera.FrameSourceChanged += image =>
+            {
+                MirrorBrush.ImageSource = image;
+                MirrorPlaceholder.Visibility = Visibility.Collapsed;
+            };
+            Island.SizeChanged += (_, _) => UpdateGlassRegion();
 
             SourceInitialized += OnSourceInitialized;
             Loaded += OnLoaded;
@@ -129,6 +152,7 @@ namespace Ilha
         {
             _hwnd = new WindowInteropHelper(this).Handle;
             Native.MakeToolWindow(_hwnd);
+            SizeChanged += (_, _) => _glassWindow?.Follow(_hwnd);
             HwndSource.FromHwnd(_hwnd)?.AddHook(WndProc);
             _tray = new TrayIcon(OpenSettings, ToggleFromHotkey, ExitApp);
         }
@@ -149,6 +173,58 @@ namespace Ilha
                 AutoCheckUpdates();
             };
             firstCheck.Start();
+#if DEBUG
+            // Captura de tela de desenvolvimento: abre a ilha já fixada numa aba.
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_TAB") is { Length: > 0 } testTab)
+            {
+                var t = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+                t.Tick += (_, _) =>
+                {
+                    t.Stop();
+                    if (testTab == "settings")
+                    {
+                        OpenSettings();
+                        var w = _settingsWindow!;
+                        w.Height = 2200;
+                        var snap = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+                        snap.Tick += (_, _) =>
+                        {
+                            snap.Stop();
+                            var root = (FrameworkElement)w.Content;
+                            var dpi = VisualTreeHelper.GetDpi(w);
+                            var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                                (int)(root.ActualWidth * dpi.DpiScaleX), (int)(root.ActualHeight * dpi.DpiScaleY),
+                                dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+                            var dv = new DrawingVisual();
+                            using (var dc = dv.RenderOpen())
+                            {
+                                dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x20, 0x20, 0x20)), null,
+                                    new Rect(0, 0, root.ActualWidth, root.ActualHeight));
+                                dc.DrawRectangle(new VisualBrush(root), null, new Rect(0, 0, root.ActualWidth, root.ActualHeight));
+                            }
+                            bmp.Render(dv);
+                            var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                            enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
+                            using var fs = System.IO.File.Create(Environment.GetEnvironmentVariable("ILHA_TEST_SHOT") ?? "settings.png");
+                            enc.Save(fs);
+                        };
+                        snap.Start();
+                        return;
+                    }
+                    if (testTab == "peek")
+                    {
+                        ShowPeek((Geometry)FindResource("IcoSpeaker"), true, (Geometry)FindResource("IcoWaves"),
+                                 null, "Volume", 0.62, "62", seconds: 30);
+                        return;
+                    }
+                    _pinned = true;
+                    Expand();
+                    foreach (var tabButton in new[] { TabHome, TabNotes, TabTimer, TabClipboard, TabMirror })
+                        if ((string)tabButton.Tag == testTab) tabButton.IsChecked = true;
+                };
+                t.Start();
+            }
+#endif
             try
             {
                 await _media.InitAsync();
@@ -186,7 +262,60 @@ namespace Ilha
             Native.MoveTopmost(_hwnd, bounds.Left, bounds.Top); // aplica o DPI do monitor primeiro
             var dpi = VisualTreeHelper.GetDpi(this);
             int widthPx = (int)Math.Round(Width * dpi.DpiScaleX);
-            Native.MoveTopmost(_hwnd, bounds.Left + (bounds.Width - widthPx) / 2, bounds.Top);
+            int top = bounds.Top;
+#if DEBUG
+            if (int.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_Y"), out int testY)) top += testY;
+#endif
+            Native.MoveTopmost(_hwnd, bounds.Left + (bounds.Width - widthPx) / 2, top);
+            _glassWindow?.Follow(_hwnd);
+            UpdateGlassRegion();
+        }
+
+        /// <summary>
+        /// Acompanha o formato atual da ilha (quadro a quadro durante a animação) com o vidro de trás.
+        /// </summary>
+        private void UpdateGlassRegion()
+        {
+            if (_hwnd == IntPtr.Zero || _glassWindow == null) return;
+            var dpi = VisualTreeHelper.GetDpi(this);
+            double scale = RootScale.ScaleX;
+            double w = Island.ActualWidth * scale, h = Island.ActualHeight * scale;
+            double left = (ActualWidth - w) / 2;
+            double radius = Island.CornerRadius.BottomLeft * scale;
+            _glassWindow.SetShape((float)(left * dpi.DpiScaleX), (float)(w * dpi.DpiScaleX),
+                                  (float)(h * dpi.DpiScaleY), (float)(radius * dpi.DpiScaleX));
+        }
+
+        private void ApplyMaterial()
+        {
+            var s = _settings;
+            var baseColor = ParseColor(s.IslandColor, Colors.Black);
+            bool glass = string.Equals(s.Material, "Glass", StringComparison.OrdinalIgnoreCase);
+            if (_glassWindow != null) _glassWindow.GlassVisible = glass;
+            bool blurred = glass && _glassWindow?.Supported == true;
+
+            if (glass)
+            {
+                // Vidro: a cor escolhida tinge o desfoque; mais escura embaixo, para o texto ler bem.
+                double tint = Math.Clamp(s.GlassTint, 0, 100) / 100.0;
+                double alpha = blurred ? tint : 0.55 + tint * 0.45; // sem desfoque, fica quase sólido
+                byte top = (byte)Math.Round(255 * Math.Clamp(alpha, 0, 1));
+                byte bottom = (byte)Math.Round(255 * Math.Clamp(alpha + 0.12, 0, 1));
+                IslandFill.Background = new LinearGradientBrush(
+                    Color.FromArgb(top, baseColor.R, baseColor.G, baseColor.B),
+                    Color.FromArgb(bottom, baseColor.R, baseColor.G, baseColor.B), 90);
+                IslandSheen.Visibility = Visibility.Visible;
+                IslandRim.Visibility = Visibility.Visible;
+                Island.Effect = null;
+            }
+            else
+            {
+                IslandFill.Background = new SolidColorBrush(baseColor);
+                IslandSheen.Visibility = Visibility.Collapsed;
+                IslandRim.Visibility = baseColor.R + baseColor.G + baseColor.B < 60 ? Visibility.Collapsed : Visibility.Visible;
+                Island.Effect = s.ShowShadow ? new DropShadowEffect { BlurRadius = 18, ShadowDepth = 2, Direction = 270, Opacity = 0.45 } : null;
+            }
+            UpdateGlassRegion();
         }
 
         private void WatchFullscreen()
@@ -200,16 +329,20 @@ namespace Ilha
                 if (hide)
                 {
                     Hide();
+                    _glassWindow?.Hide();
                 }
                 else
                 {
+                    _glassWindow?.Show();
                     Show();
                     PositionOnScreen();
                 }
             }
             else if (!hide)
             {
-                Native.MakeTopmost(_hwnd); // outros apps "topmost" podem ter passado na frente
+                // Outros apps "topmost" podem ter passado na frente: vidro primeiro, ilha por cima.
+                if (_glassWindow != null) Native.MakeTopmost(new WindowInteropHelper(_glassWindow).Handle);
+                Native.MakeTopmost(_hwnd);
             }
         }
 
@@ -220,6 +353,7 @@ namespace Ilha
             _settings.Save();
             if (_hotkeyRegistered) Native.UnregisterHotKey(_hwnd, HotkeyId);
             if (_clipboardListening) Native.RemoveClipboardFormatListener(_hwnd);
+            _camera.Stop();
             _tray?.Dispose();
             _tray = null;
             Application.Current.Shutdown();
@@ -328,16 +462,16 @@ namespace Ilha
         {
             var s = _settings;
 
-            // Cores
-            Island.Background = new SolidColorBrush(ParseColor(s.IslandColor, Colors.Black));
+            // Cores e material
             Resources["Accent"] = new SolidColorBrush(ParseColor(s.AccentColor, Color.FromRgb(0x7C, 0xE3, 0xA1)));
 
             // Forma
             double r = Math.Clamp(s.CornerRadius, 0, 40);
             Island.CornerRadius = new CornerRadius(0, 0, r, r);
-            Island.Effect = s.ShowShadow ? new DropShadowEffect { BlurRadius = 14, ShadowDepth = 0, Opacity = 0.4 } : null;
             CollapsedView.Height = s.CollapsedHeight;
+            PeekView.Height = s.CollapsedHeight;
             MiniArt.Width = MiniArt.Height = Math.Max(12, Math.Min(22, s.CollapsedHeight - 10));
+            PeekArt.Width = PeekArt.Height = MiniArt.Width;
 
             // Tamanho geral
             double scale = Math.Clamp(s.Scale, 0.6, 1.6);
@@ -349,21 +483,25 @@ namespace Ilha
             _expandTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, s.HoverDelayMs));
             _collapseTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(50, s.CollapseDelayMs));
 
-            // Página inicial
-            bool media = s.ShowMedia, shelf = s.ShowShelf;
+            // Página inicial: mídia ocupa o espaço livre; calendário e prateleira têm largura fixa
+            bool media = s.ShowMedia, shelf = s.ShowShelf, calendar = s.ShowCalendar;
             MediaArea.Visibility = media ? Visibility.Visible : Visibility.Collapsed;
             ShelfZone.Visibility = shelf ? Visibility.Visible : Visibility.Collapsed;
-            HomeMediaCol.Width = media ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-            HomeGapCol.Width = new GridLength(media && shelf ? 16 : 0);
-            HomeShelfCol.Width = !shelf ? new GridLength(0)
-                : media ? new GridLength(200) : new GridLength(1, GridUnitType.Star);
+            CalendarCard.Visibility = calendar ? Visibility.Visible : Visibility.Collapsed;
+            var star = new GridLength(1, GridUnitType.Star);
+            HomeMediaCol.Width = media ? star : new GridLength(0);
+            HomeCalCol.Width = !calendar ? new GridLength(0) : media || shelf ? new GridLength(128) : star;
+            HomeShelfCol.Width = !shelf ? new GridLength(0) : media ? new GridLength(calendar ? 156 : 210) : star;
+            HomeGap1.Width = new GridLength(media && (calendar || shelf) ? 14 : 0);
+            HomeGap2.Width = new GridLength(calendar && shelf ? 12 : 0);
 
             // Abas
-            TabHome.Visibility = media || shelf ? Visibility.Visible : Visibility.Collapsed;
+            TabHome.Visibility = media || shelf || calendar ? Visibility.Visible : Visibility.Collapsed;
             TabNotes.Visibility = s.ShowNotes ? Visibility.Visible : Visibility.Collapsed;
             TabTimer.Visibility = s.ShowTimer ? Visibility.Visible : Visibility.Collapsed;
             TabClipboard.Visibility = s.ShowClipboard ? Visibility.Visible : Visibility.Collapsed;
-            var visibleTabs = new[] { TabHome, TabNotes, TabTimer, TabClipboard }
+            TabMirror.Visibility = s.ShowMirror ? Visibility.Visible : Visibility.Collapsed;
+            var visibleTabs = new[] { TabHome, TabNotes, TabTimer, TabClipboard, TabMirror }
                 .Where(t => t.Visibility == Visibility.Visible).ToList();
             TabBar.Visibility = visibleTabs.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
             if (visibleTabs.Count == 0)
@@ -390,6 +528,8 @@ namespace Ilha
             }
 
             UpdateClock();
+            UpdateCalendar(force: true);
+            ApplyMaterial();
             PositionOnScreen();
             UpdateCollapsedState(force: true);
         }
@@ -460,14 +600,23 @@ namespace Ilha
             _collapseTimer.Stop();
             if (_expanded) return;
             _expanded = true;
+            if (_peeking) EndPeek(animate: false);
 
             AnimateSize(ExpandedWidth, ExpandedHeight, _settings.SpringAnimation);
-            Fade(CollapsedView, 0, 120);
-            Fade(ExpandedView, 1, 220, delayMs: 90);
+            Fade(CollapsedView, 0, 100);
+            Fade(ExpandedView, 1, 260, delayMs: 80);
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var grow = new DoubleAnimation(0.97, 1, TimeSpan.FromMilliseconds(420)) { EasingFunction = ease, BeginTime = TimeSpan.FromMilliseconds(60) };
+            ExpandedScale.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+            ExpandedScale.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+            ExpandedShift.BeginAnimation(TranslateTransform.YProperty,
+                new DoubleAnimation(-8, 0, TimeSpan.FromMilliseconds(420)) { EasingFunction = ease, BeginTime = TimeSpan.FromMilliseconds(60) });
             ExpandedView.IsHitTestVisible = true;
             UpdateClock();
+            UpdateCalendar();
             UpdateBattery();
             UpdateProgress();
+            if (_currentTab == "mirror") StartMirror();
         }
 
         private void Collapse()
@@ -476,8 +625,9 @@ namespace Ilha
             _expanded = false;
             _pinned = false;
             ExpandedView.IsHitTestVisible = false;
-            Fade(ExpandedView, 0, 120);
+            Fade(ExpandedView, 0, 110);
             ReleaseKeyboard();
+            StopMirror();
             UpdateCollapsedState(force: true);
         }
 
@@ -493,22 +643,24 @@ namespace Ilha
             MiniArt.Visibility = showArt ? Visibility.Visible : Visibility.Collapsed;
             Bars.Visibility = showBars ? Visibility.Visible : Visibility.Collapsed;
             CollapsedTimerText.Visibility = showTimer ? Visibility.Visible : Visibility.Collapsed;
-            SetBarsAnimating(showBars);
+            SetBarsAnimating(showBars && !_expanded);
 
-            string key = $"{any}|{s.CollapsedWidth}|{s.CollapsedHeight}";
+            string key = $"{any}|{_peeking}|{s.CollapsedWidth}|{s.CollapsedHeight}";
             if (_expanded || (!force && key == _collapsedKey)) return;
             _collapsedKey = key;
 
-            AnimateSize(s.CollapsedWidth + (any ? CollapsedExtraWidth : 0), s.CollapsedHeight, spring: false);
-            Fade(CollapsedView, any ? 1 : 0, 200, delayMs: any ? 120 : 0);
+            double width = s.CollapsedWidth + (_peeking ? PeekExtraWidth : any ? CollapsedExtraWidth : 0);
+            AnimateSize(width, s.CollapsedHeight, spring: _settings.SpringAnimation && _peeking);
+            Fade(CollapsedView, any && !_peeking ? 1 : 0, 200, delayMs: any && !_peeking ? 120 : 0);
+            Fade(PeekView, _peeking ? 1 : 0, _peeking ? 220 : 140, delayMs: _peeking ? 90 : 0);
         }
 
         private void AnimateSize(double width, double height, bool spring)
         {
             IEasingFunction ease = spring
-                ? new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.3 }
+                ? new SpringEase()
                 : new CubicEase { EasingMode = EasingMode.EaseOut };
-            var duration = TimeSpan.FromMilliseconds(spring ? 380 : 260);
+            var duration = TimeSpan.FromMilliseconds(spring ? 560 : 280);
             Island.BeginAnimation(WidthProperty, new DoubleAnimation(width, duration) { EasingFunction = ease });
             Island.BeginAnimation(HeightProperty, new DoubleAnimation(height, duration) { EasingFunction = ease });
         }
@@ -519,12 +671,107 @@ namespace Ilha
                 BeginTime = TimeSpan.FromMilliseconds(delayMs),
             });
 
+        // ───────────── Avisos rápidos (volume, carregando, nova música) ─────────────
+
+        private void ShowPeek(Geometry? icon, bool filled, Geometry? icon2, ImageSource? art, string text,
+                              double? level, string value, Brush? accent = null, double seconds = 1.8)
+        {
+            if (_expanded || _hiddenForFullscreen) return;
+            PeekGlyph.Data = icon;
+            PeekGlyph.Filled = filled;
+            PeekGlyph2.Data = icon2;
+            PeekGlyph.Foreground = PeekGlyph2.Foreground = accent ?? Brushes.White;
+            PeekArtBrush.ImageSource = art;
+            PeekArt.Visibility = art != null ? Visibility.Visible : Visibility.Collapsed;
+            PeekGlyph.Visibility = PeekGlyph2.Visibility = art != null ? Visibility.Collapsed : Visibility.Visible;
+            PeekText.Text = text;
+            PeekValue.Text = value;
+            PeekValue.Visibility = value.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+            PeekBar.Visibility = level.HasValue ? Visibility.Visible : Visibility.Collapsed;
+            if (level is double l)
+            {
+                PeekBarFill.Background = accent ?? Brushes.White;
+                PeekBarFill.BeginAnimation(WidthProperty, new DoubleAnimation(Math.Clamp(l, 0, 1) * 70, TimeSpan.FromMilliseconds(140)));
+            }
+
+            _peekTimer.Stop();
+            _peekTimer.Interval = TimeSpan.FromSeconds(seconds);
+            _peekTimer.Start();
+            if (!_peeking)
+            {
+                _peeking = true;
+                UpdateCollapsedState(force: true);
+            }
+        }
+
+        private void EndPeek() => EndPeek(animate: true);
+
+        private void EndPeek(bool animate)
+        {
+            _peekTimer.Stop();
+            if (!_peeking) return;
+            _peeking = false;
+            if (animate) UpdateCollapsedState(force: true);
+            else PeekView.BeginAnimation(OpacityProperty, null);
+            if (!animate) PeekView.Opacity = 0;
+        }
+
+        private void WatchVolume()
+        {
+            var reading = _volume.Read(out bool deviceChanged);
+            if (reading is not { } r)
+            {
+                _lastVolume = null;
+                return;
+            }
+            var (level, muted) = r;
+            bool changed = _lastVolume is float last && !deviceChanged &&
+                           (Math.Abs(last - level) > 0.004 || _lastMuted != muted);
+            _lastVolume = level;
+            _lastMuted = muted;
+            if (!changed || !_settings.LiveVolume) return;
+
+            var speaker = (Geometry)FindResource("IcoSpeaker");
+            var extra = (Geometry)FindResource(muted || level < 0.005 ? "IcoMute" : "IcoWaves");
+            ShowPeek(speaker, true, extra, null, muted ? "Mudo" : "Volume", muted ? 0 : level,
+                     muted ? "" : $"{Math.Round(level * 100)}");
+        }
+
+        private void WatchCharging()
+        {
+            var power = Forms.SystemInformation.PowerStatus;
+            if (power.BatteryChargeStatus.HasFlag(Forms.BatteryChargeStatus.NoSystemBattery)) return;
+            bool charging = power.PowerLineStatus == Forms.PowerLineStatus.Online;
+            bool changed = _lastCharging is bool was && was != charging;
+            _lastCharging = charging;
+            if (!changed || !_settings.LiveCharging) return;
+
+            int percent = (int)Math.Round(power.BatteryLifePercent * 100);
+            var green = new SolidColorBrush(Color.FromRgb(0x30, 0xD1, 0x58));
+            ShowPeek((Geometry)FindResource("IcoBolt"), true, null, null,
+                     charging ? "Carregando" : "Na bateria", power.BatteryLifePercent, $"{percent}%",
+                     charging ? green : null, seconds: 2.6);
+        }
+
+        private void WatchTrack()
+        {
+            if (!_media.HasSession || string.IsNullOrEmpty(_media.Title)) return;
+            string key = _media.Title + "\n" + _media.Artist;
+            if (key == _lastTrackKey) return;
+            bool first = _lastTrackKey.Length == 0;
+            _lastTrackKey = key;
+            if (first || DateTime.Now < _ignoreTrackUntil || !_media.IsPlaying || !_settings.LiveTrack || !_settings.ShowMedia) return;
+
+            string text = string.IsNullOrEmpty(_media.Artist) ? _media.Title : $"{_media.Title} · {_media.Artist}";
+            ShowPeek((Geometry)FindResource("IcoMusic"), false, null, _media.Art, text, null, "", seconds: 3.2);
+        }
+
         private void SetBarsAnimating(bool on)
         {
             if (on == _barsAnimating) return;
             _barsAnimating = on;
-            var bars = new Rectangle[] { Bar1, Bar2, Bar3 };
-            double[] periods = { 0.42, 0.58, 0.36 };
+            var bars = new Rectangle[] { Bar1, Bar2, Bar3, Bar4 };
+            double[] periods = { 0.42, 0.58, 0.36, 0.5 };
             for (int i = 0; i < bars.Length; i++)
             {
                 var scale = (ScaleTransform)bars[i].RenderTransform;
@@ -549,22 +796,121 @@ namespace Ilha
         private void SelectTab(string tab)
         {
             if (PageHome == null) return; // durante InitializeComponent
-            PageHome.Visibility = tab == "home" ? Visibility.Visible : Visibility.Collapsed;
-            PageNotes.Visibility = tab == "notes" ? Visibility.Visible : Visibility.Collapsed;
-            PageTimer.Visibility = tab == "timer" ? Visibility.Visible : Visibility.Collapsed;
-            PageClipboard.Visibility = tab == "clipboard" ? Visibility.Visible : Visibility.Collapsed;
+            bool changed = tab != _currentTab;
+            _currentTab = tab;
+            var pages = new (string Tab, FrameworkElement Page)[]
+            {
+                ("home", PageHome), ("notes", PageNotes), ("timer", PageTimer),
+                ("clipboard", PageClipboard), ("mirror", PageMirror),
+            };
+            foreach (var (name, page) in pages)
+            {
+                bool show = name == tab;
+                page.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+                if (show && changed)
+                {
+                    // Troca suave: a página nova entra com fade e um leve deslize.
+                    page.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
+                    var shift = new TranslateTransform();
+                    page.RenderTransform = shift;
+                    shift.BeginAnimation(TranslateTransform.YProperty,
+                        new DoubleAnimation(6, 0, TimeSpan.FromMilliseconds(260)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+                }
+            }
             if (tab != "notes") ReleaseKeyboard();
+            if (tab == "mirror" && _expanded) StartMirror();
+            else StopMirror();
         }
 
-        // ───────────── Relógio, bateria, progresso ─────────────
+        // ───────────── Espelho (câmera) ─────────────
+
+        private async void StartMirror()
+        {
+            if (_camera.IsRunning) return;
+            MirrorPlaceholder.Visibility = Visibility.Visible;
+            MirrorRetry.Visibility = Visibility.Collapsed;
+            MirrorStatus.Text = "Ligando a câmera…";
+            MirrorBrush.ImageSource = null;
+            string? error = await _camera.StartAsync();
+            if (error == null)
+            {
+                if (!_expanded || _currentTab != "mirror") StopMirror(); // fechou enquanto ligava
+                return;
+            }
+            MirrorStatus.Text = error;
+            MirrorRetry.Visibility = Visibility.Visible;
+        }
+
+        private void StopMirror()
+        {
+            if (!_camera.IsRunning) return;
+            _camera.Stop();
+            MirrorBrush.ImageSource = null;
+            MirrorPlaceholder.Visibility = Visibility.Visible;
+            MirrorStatus.Text = "Ligando a câmera…";
+        }
+
+        private void MirrorRetry_Click(object sender, RoutedEventArgs e) => StartMirror();
+
+        // ───────────── Relógio, bateria, calendário, progresso ─────────────
+
+        private int _tickCount;
 
         private void OnTick()
         {
             UpdateTimer();
+            WatchVolume();
+            if (++_tickCount % 4 == 0) WatchCharging();
             if (!_expanded) return;
             UpdateClock();
+            UpdateCalendar();
             UpdateBattery();
             UpdateProgress();
+        }
+
+        private void UpdateCalendar(bool force = false)
+        {
+            var today = DateTime.Today;
+            if (!force && today == _calendarDate) return;
+            _calendarDate = today;
+            var culture = CultureInfo.CurrentCulture;
+            CalMonth.Text = today.ToString("MMMM", culture).ToUpper(culture);
+            CalDay.Text = today.Day.ToString(culture);
+            CalWeekday.Text = culture.TextInfo.ToTitleCase(today.ToString("dddd", culture));
+
+            CalWeek.Children.Clear();
+            var first = today.AddDays(-(int)today.DayOfWeek); // semana de domingo a sábado
+            for (int i = 0; i < 7; i++)
+            {
+                string name = culture.DateTimeFormat.GetShortestDayName(first.AddDays(i).DayOfWeek);
+                CalWeek.Children.Add(new TextBlock
+                {
+                    Text = name.Substring(0, 1).ToUpper(culture),
+                    FontSize = 9,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = (Brush)Resources["Tertiary"],
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 2),
+                });
+            }
+            for (int i = 0; i < 7; i++)
+            {
+                var day = first.AddDays(i);
+                bool isToday = day == today;
+                var cell = new Grid { Height = 16 };
+                if (isToday)
+                    cell.Children.Add(new Ellipse { Width = 15, Height = 15, Fill = (Brush)Resources["Accent"] });
+                cell.Children.Add(new TextBlock
+                {
+                    Text = day.Day.ToString(culture),
+                    FontSize = 9,
+                    FontWeight = isToday ? FontWeights.SemiBold : FontWeights.Normal,
+                    Foreground = isToday ? Brushes.Black : (Brush)Resources["Secondary"],
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+                CalWeek.Children.Add(cell);
+            }
         }
 
         private void UpdateClock()
@@ -591,8 +937,9 @@ namespace Ilha
             bool charging = power.PowerLineStatus == Forms.PowerLineStatus.Online;
             BatteryText.Text = $"{percent}%";
             ChargingIcon.Visibility = charging ? Visibility.Visible : Visibility.Collapsed;
-            BatteryText.Foreground = percent <= 20 && !charging
-                ? new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B))
+            BatteryFill.Width = Math.Max(1.5, 18 * Math.Clamp(power.BatteryLifePercent, 0, 1));
+            BatteryFill.Background = charging ? new SolidColorBrush(Color.FromRgb(0x30, 0xD1, 0x58))
+                : percent <= 20 ? new SolidColorBrush(Color.FromRgb(0xFF, 0x45, 0x3A))
                 : Brushes.White;
         }
 
@@ -613,6 +960,26 @@ namespace Ilha
             DurationText.Text = FormatTime(duration);
         }
 
+        private async void Progress_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (ProgressTrack.ActualWidth <= 0) return;
+            double ratio = Math.Clamp(e.GetPosition(ProgressTrack).X / ProgressTrack.ActualWidth, 0, 1);
+            e.Handled = true;
+            await _media.SeekAsync(TimeSpan.FromSeconds(_media.Duration.TotalSeconds * ratio));
+            UpdateProgress();
+        }
+
+        private void Progress_MouseEnter(object sender, MouseEventArgs e) => SetProgressThickness(7);
+        private void Progress_MouseLeave(object sender, MouseEventArgs e) => SetProgressThickness(4);
+
+        private void SetProgressThickness(double h)
+        {
+            var anim = new DoubleAnimation(h, TimeSpan.FromMilliseconds(140));
+            ProgressTrack.BeginAnimation(HeightProperty, anim);
+            ProgressFill.BeginAnimation(HeightProperty, anim);
+            ProgressTrack.CornerRadius = ProgressFill.CornerRadius = new CornerRadius(h / 2);
+        }
+
         private static string FormatTime(TimeSpan t) =>
             t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss") : t.ToString(@"m\:ss");
 
@@ -630,8 +997,9 @@ namespace Ilha
             ArtBrush.ImageSource = _media.Art;
             MiniArtBrush.ImageSource = _media.Art;
             ArtFallback.Visibility = _media.Art == null ? Visibility.Visible : Visibility.Collapsed;
-            PlayPauseButton.Content = _media.IsPlaying ? GlyphPause : GlyphPlay;
+            PlayPauseGlyph.Data = _media.IsPlaying ? GlyphPause : GlyphPlay;
 
+            WatchTrack();
             UpdateCollapsedState();
             if (_expanded) UpdateProgress();
         }
@@ -871,13 +1239,44 @@ namespace Ilha
             string text = FormatTime(remaining);
             TimerDisplay.Text = text;
             CollapsedTimerText.Text = text;
-            TimerStartButton.Content = TimerRunning ? GlyphPause : GlyphPlay;
+            TimerStartGlyph.Data = TimerRunning ? GlyphPause : GlyphPlay;
+            TimerStartText.Text = TimerRunning ? "Pausar" : remaining < _timerPreset && remaining > TimeSpan.Zero ? "Continuar" : "Iniciar";
+            double total = Math.Max(_timerPreset.TotalSeconds, TimerRemaining.TotalSeconds);
+            DrawTimerRing(total <= 0 ? 0 : TimerRemaining.TotalSeconds / total);
             TimerStatus.Text = _timerAlerting ? "Tempo esgotado!"
                 : TimerRunning ? "Em andamento"
                 : remaining < _timerPreset && remaining > TimeSpan.Zero ? "Pausado"
                 : "Pronto";
-            TimerStatus.Foreground = _timerAlerting ? (Brush)Resources["Accent"] : Brushes.White;
+            TimerStatus.Foreground = (Brush)Resources[_timerAlerting ? "Accent" : "Secondary"];
             UpdateCollapsedState();
+        }
+
+        /// <summary>Anel do timer: arco que vai esvaziando no sentido anti-horário a partir do topo.</summary>
+        private void DrawTimerRing(double fraction)
+        {
+            fraction = Math.Clamp(fraction, 0, 1);
+            // Mesmo círculo da trilha de fundo: margem de 3 + metade do traço de 6.
+            const double size = 148, radius = size / 2 - 6;
+            var center = new Point(size / 2, size / 2);
+            if (fraction <= 0.0005)
+            {
+                TimerRing.Data = null;
+                return;
+            }
+            if (fraction >= 0.9995)
+            {
+                TimerRing.Data = new EllipseGeometry(center, radius, radius);
+                return;
+            }
+            double angle = fraction * 2 * Math.PI;
+            var start = new Point(center.X, center.Y - radius);
+            var end = new Point(center.X + radius * Math.Sin(angle), center.Y - radius * Math.Cos(angle));
+            var figure = new PathFigure { StartPoint = start, IsClosed = false };
+            figure.Segments.Add(new ArcSegment(end, new Size(radius, radius), 0, fraction > 0.5,
+                                               SweepDirection.Clockwise, true));
+            var geometry = new PathGeometry();
+            geometry.Figures.Add(figure);
+            TimerRing.Data = geometry;
         }
 
         private void StartAlert()
@@ -890,6 +1289,7 @@ namespace Ilha
             if (_hiddenForFullscreen)
             {
                 _hiddenForFullscreen = false;
+                _glassWindow?.Show();
                 Show();
                 PositionOnScreen();
             }

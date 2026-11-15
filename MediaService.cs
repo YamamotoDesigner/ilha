@@ -22,6 +22,7 @@ namespace Ilha
         private int _version;
         private TimeSpan _position;
         private DateTimeOffset _positionAt;
+        private TimeSpan _start;
 
         public event Action? Changed;
 
@@ -114,6 +115,7 @@ namespace Ilha
                     _position = TimeSpan.Zero;
                     return;
                 }
+                _start = t.StartTime;
                 Duration = t.EndTime - t.StartTime;
                 _position = t.Position - t.StartTime;
                 _positionAt = t.LastUpdatedTime.Year < 2000 ? DateTimeOffset.Now : t.LastUpdatedTime;
@@ -194,6 +196,24 @@ namespace Ilha
         public async Task TogglePlayPauseAsync()
         {
             try { if (_session != null) await _session.TryTogglePlayPauseAsync(); } catch { }
+        }
+
+        /// <summary>Pula para um ponto da faixa (nem todo app aceita).</summary>
+        public async Task SeekAsync(TimeSpan position)
+        {
+            try
+            {
+                if (_session == null || Duration <= TimeSpan.Zero) return;
+                if (position < TimeSpan.Zero) position = TimeSpan.Zero;
+                if (position > Duration) position = Duration;
+                if (await _session.TryChangePlaybackPositionAsync((_start + position).Ticks))
+                {
+                    _position = position;
+                    _positionAt = DateTimeOffset.Now;
+                    Changed?.Invoke();
+                }
+            }
+            catch { }
         }
 
         public async Task NextAsync()

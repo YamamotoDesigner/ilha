@@ -42,7 +42,8 @@ namespace Ilha
             AddSwatches(AccentSwatches, AccentColorBox, AccentPresets);
 
             StartupCheck.IsChecked = Startup.IsEnabled;
-            VersionText.Text = $"Versão instalada: {UpdateService.CurrentVersion}";
+            VersionText.Text = $"Versão {UpdateService.CurrentVersion}";
+            SyncMaterial();
             SupportButton.Visibility = Support.IsConfigured ? Visibility.Visible : Visibility.Collapsed;
             DataContext = _settings;
 
@@ -98,11 +99,31 @@ namespace Ilha
         private void Reset_Click(object sender, RoutedEventArgs e)
         {
             _settings.ResetPreferences();
+            SyncMaterial();
             DataContext = null;
             DataContext = _settings;
             _apply.Stop();
             _settings.Save();
             SettingsChanged?.Invoke();
+        }
+
+        private bool IsGlass => string.Equals(_settings.Material, "Glass", StringComparison.OrdinalIgnoreCase);
+
+        private void SyncMaterial()
+        {
+            GlassRadio.IsChecked = IsGlass;
+            SolidRadio.IsChecked = !IsGlass;
+            UpdateMaterialHint();
+        }
+
+        private void UpdateMaterialHint() => MaterialHint.Text = IsGlass
+            ? "Vidro: o que está atrás da ilha aparece desfocado, tingido pela cor escolhida."
+            : "Sólido: a ilha usa a cor escolhida, sem transparência.";
+
+        private void Material_Checked(object sender, RoutedEventArgs e)
+        {
+            _settings.Material = sender == SolidRadio ? "Solid" : "Glass";
+            UpdateMaterialHint();
         }
 
         private void Quit_Click(object sender, RoutedEventArgs e) => QuitRequested?.Invoke();
