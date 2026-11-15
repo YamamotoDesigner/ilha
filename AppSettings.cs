@@ -25,6 +25,15 @@ namespace Ilha
         public double CollapsedHeight { get; set; } = 34;
         public bool ShowShadow { get; set; } = true;
         public bool SpringAnimation { get; set; } = true;
+        /// <summary>"Attached" (colada no topo) ou "Floating" (solta, pode ser arrastada).</summary>
+        public string IslandStyle { get; set; } = "Attached";
+        /// <summary>Ilha flutuante presa no lugar (não arrasta).</summary>
+        public bool FloatLocked { get; set; } = false;
+        /// <summary>Posição da ilha flutuante (canto superior esquerdo da janela, pixels físicos).</summary>
+        public int? FloatX { get; set; }
+        public int? FloatY { get; set; }
+        /// <summary>"Side" (trilho lateral) ou "Top" (barra no topo).</summary>
+        public string TabPosition { get; set; } = "Side";
 
         // Comportamento
         public int HoverDelayMs { get; set; } = 0;
@@ -75,6 +84,11 @@ namespace Ilha
             CollapsedHeight = d.CollapsedHeight;
             ShowShadow = d.ShowShadow;
             SpringAnimation = d.SpringAnimation;
+            IslandStyle = d.IslandStyle;
+            FloatLocked = d.FloatLocked;
+            FloatX = d.FloatX;
+            FloatY = d.FloatY;
+            TabPosition = d.TabPosition;
             HoverDelayMs = d.HoverDelayMs;
             CollapseDelayMs = d.CollapseDelayMs;
             HotkeyEnabled = d.HotkeyEnabled;

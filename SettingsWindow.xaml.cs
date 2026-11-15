@@ -43,7 +43,11 @@ namespace Ilha
 
             StartupCheck.IsChecked = Startup.IsEnabled;
             VersionText.Text = $"Versão {UpdateService.CurrentVersion}";
+            AboutVersion.Text = $"Versão {UpdateService.CurrentVersion}";
             SyncMaterial();
+            SyncChoices();
+            ApplyAccent();
+            ShowPage(PageGeneral);
             SupportButton.Visibility = Support.IsConfigured ? Visibility.Visible : Visibility.Collapsed;
             DataContext = _settings;
 
@@ -51,6 +55,7 @@ namespace Ilha
             {
                 _apply.Stop();
                 _settings.Save();
+                ApplyAccent();
                 SettingsChanged?.Invoke();
             };
 
@@ -96,10 +101,98 @@ namespace Ilha
             }
         }
 
+        // ───────────── Navegação ─────────────
+
+        private void Nav_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized) return;
+            var page = sender == NavLook ? PageLook
+                : sender == NavIsland ? PageIsland
+                : sender == NavFeatures ? PageFeatures
+                : sender == NavAlerts ? PageAlerts
+                : sender == NavUpdates ? PageUpdates
+                : sender == NavAbout ? PageAbout
+                : PageGeneral;
+            ShowPage(page);
+            if (sender is RadioButton { Content: string title }) PageTitle.Text = title;
+        }
+
+        private void ShowPage(FrameworkElement page)
+        {
+            foreach (var p in new FrameworkElement[] { PageGeneral, PageLook, PageIsland, PageFeatures, PageAlerts, PageUpdates, PageAbout })
+                p.Visibility = p == page ? Visibility.Visible : Visibility.Collapsed;
+            PageSubtitle.Text = page.Tag as string ?? "";
+            PageScroll.ScrollToTop();
+            page.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+        /// <summary>A cor de destaque das configurações acompanha a da ilha.</summary>
+        private void ApplyAccent()
+        {
+            try
+            {
+                if (ColorConverter.ConvertFromString(_settings.AccentColor) is Color c)
+                    Resources["Accent"] = new SolidColorBrush(c);
+            }
+            catch
+            {
+                // Cor inválida sendo digitada: mantém a anterior.
+            }
+        }
+
+        // ───────────── Escolhas com cartão ─────────────
+
+        private bool _syncing;
+
+        private void SyncChoices()
+        {
+            _syncing = true;
+            bool floating = string.Equals(_settings.IslandStyle, "Floating", StringComparison.OrdinalIgnoreCase);
+            AttachedRadio.IsChecked = !floating;
+            FloatingRadio.IsChecked = floating;
+            bool top = string.Equals(_settings.TabPosition, "Top", StringComparison.OrdinalIgnoreCase);
+            SideTabsRadio.IsChecked = !top;
+            TopTabsRadio.IsChecked = top;
+            UpdateFloatOptions();
+            _syncing = false;
+        }
+
+        private void UpdateFloatOptions()
+        {
+            bool floating = FloatingRadio.IsChecked == true;
+            FloatOptions.Visibility = floating ? Visibility.Visible : Visibility.Collapsed;
+            FloatHint.Visibility = FloatOptions.Visibility;
+        }
+
+        private void IslandStyle_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized || _syncing) return;
+            _settings.IslandStyle = sender == FloatingRadio ? "Floating" : "Attached";
+            UpdateFloatOptions();
+        }
+
+        private void Tabs_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized || _syncing) return;
+            _settings.TabPosition = sender == TopTabsRadio ? "Top" : "Side";
+        }
+
+        private void CenterIsland_Click(object sender, RoutedEventArgs e)
+        {
+            _settings.FloatX = null;
+            _settings.FloatY = null;
+            _apply.Stop();
+            _settings.Save();
+            SettingsChanged?.Invoke();
+        }
+
         private void Reset_Click(object sender, RoutedEventArgs e)
         {
             _settings.ResetPreferences();
             SyncMaterial();
+            SyncChoices();
             DataContext = null;
             DataContext = _settings;
             _apply.Stop();
@@ -122,6 +215,7 @@ namespace Ilha
 
         private void Material_Checked(object sender, RoutedEventArgs e)
         {
+            if (!IsInitialized) return;
             _settings.Material = sender == SolidRadio ? "Solid" : "Glass";
             UpdateMaterialHint();
         }

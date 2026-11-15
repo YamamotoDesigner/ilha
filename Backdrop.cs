@@ -63,12 +63,14 @@ namespace Ilha
         /// Posiciona o vidro (pixels físicos, relativos à janela). Os cantos de cima ficam retos:
         /// a forma começa acima do topo da janela, então só os de baixo aparecem arredondados.
         /// </summary>
-        public void SetBounds(float left, float width, float height, float radius)
+        /// <param name="roundTop">Ilha flutuante: os quatro cantos arredondados.</param>
+        public void SetBounds(float left, float width, float height, float radius, bool roundTop)
         {
             _visual.Offset = new Vector3(left, 0, 0);
             _visual.Size = new Vector2(width, height);
-            _shape.Offset = new Vector2(0, -radius);
-            _shape.Size = new Vector2(width, height + radius);
+            float lift = roundTop ? 0 : radius;
+            _shape.Offset = new Vector2(0, -lift);
+            _shape.Size = new Vector2(width, height + lift);
             _shape.CornerRadius = new Vector2(radius, radius);
         }
 

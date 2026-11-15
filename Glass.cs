@@ -20,11 +20,11 @@ namespace Ilha
         /// Recorta a janela no formato da ilha: cantos de cima retos (colados na borda da tela)
         /// e cantos de baixo arredondados. Coordenadas em pixels físicos, relativas à janela.
         /// </summary>
-        public static void SetIslandRegion(IntPtr hwnd, int left, int top, int right, int bottom, int radius)
+        public static void SetIslandRegion(IntPtr hwnd, int left, int top, int right, int bottom, int radius, bool roundTop = false)
         {
             int d = Math.Max(2, radius * 2);
-            // Começa acima do topo da janela para que só os cantos de baixo fiquem arredondados.
-            IntPtr region = CreateRoundRectRgn(left, top - d, right + 1, bottom + 1, d, d);
+            // Colada no topo: começa acima da janela para que só os cantos de baixo fiquem arredondados.
+            IntPtr region = CreateRoundRectRgn(left, roundTop ? top : top - d, right + 1, bottom + 1, d, d);
             if (SetWindowRgn(hwnd, region, true) == 0) DeleteObject(region); // em caso de sucesso o Windows é o dono
         }
 

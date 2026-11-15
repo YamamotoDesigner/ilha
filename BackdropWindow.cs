@@ -56,12 +56,12 @@ namespace Ilha
         }
 
         /// <summary>Formato da ilha (pixels físicos relativos à janela).</summary>
-        public void SetShape(float left, float width, float height, float radius)
+        public void SetShape(float left, float width, float height, float radius, bool roundTop)
         {
             if (_hwnd == IntPtr.Zero) return;
-            _backdrop?.SetBounds(left, width, height, radius);
+            _backdrop?.SetBounds(left, width, height, radius, roundTop);
             // A região só serve para os cliques: fora da ilha, passam para o que está embaixo.
-            Glass.SetIslandRegion(_hwnd, (int)left, 0, (int)(left + width), (int)height, (int)radius);
+            Glass.SetIslandRegion(_hwnd, (int)left, 0, (int)(left + width), (int)height, (int)radius, roundTop);
         }
 
         [StructLayout(LayoutKind.Sequential)]

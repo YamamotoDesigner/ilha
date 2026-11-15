@@ -41,11 +41,12 @@ timer e área de transferência, sempre à mão e nunca no caminho.
 | 🫧 **Vidro ou sólido** | Efeito de vidro com desfoque real do que está atrás (o mesmo do Windows 11), tingido pela sua cor — ou cor sólida, se preferir. |
 | 🪞 **Espelho** | Confira o cabelo antes da call: a câmera aparece na ilha e só fica ligada enquanto a aba está aberta. |
 | 🔔 **Avisos rápidos** | A ilha recolhida cresce por um instante para mostrar volume, carregador conectado e música nova. |
+| 🏝️ **Colada ou flutuante** | Presa no topo da tela, ou solta com os quatro cantos arredondados: arraste para qualquer lugar e fixe com o alfinete. |
 | ⌨️ **Atalho global** | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd> abre e fecha de qualquer lugar. |
 
 ## 🎨 Do seu jeito
 
-Visual próprio, com o capricho da Apple: abas num trilho lateral, cantos suaves (nada de pílulas),
+Visual próprio, com o capricho da Apple: abas na lateral ou no topo, cantos suaves (nada de pílulas),
 fonte fácil de ler, ícones desenhados à mão e animações com mola.
 Material vidro ou sólido, intensidade da cor, cor da ilha e de destaque, tamanho, arredondamento, largura e altura da pílula, sombra,
 animação com mola, atrasos de abertura e fechamento, monitor, relógio 24 h, quais recursos

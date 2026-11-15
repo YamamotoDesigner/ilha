@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Media;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Effects;
@@ -91,6 +92,11 @@ namespace Ilha
         public MainWindow(BackdropWindow? glass)
         {
             InitializeComponent();
+#if DEBUG
+            // Testes visuais: muda só na memória (as configurações reais não são tocadas).
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_FLOAT") == "1") _settings.IslandStyle = "Floating";
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_TABSTOP") == "1") _settings.TabPosition = "Top";
+#endif
             _glassWindow = glass;
             Owner = glass;
 
@@ -148,11 +154,10 @@ namespace Ilha
             };
             Island.SizeChanged += (_, _) =>
             {
-                // Cantos proporcionais à altura: a ilha recolhida nunca vira uma pílula.
-                double r = Math.Min(_cornerRadius, Island.ActualHeight * 0.4);
-                Island.CornerRadius = new CornerRadius(0, 0, r, r);
+                UpdateIslandCorners();
                 UpdateGlassRegion();
             };
+            LocationChanged += (_, _) => _glassWindow?.Follow(_hwnd); // inclusive enquanto arrasta
             CpuGraph.SizeChanged += (_, _) => UpdateStats();
             MemGraph.SizeChanged += (_, _) => UpdateStats();
             DrawTimerTrack();
@@ -204,7 +209,10 @@ namespace Ilha
                     {
                         OpenSettings();
                         var w = _settingsWindow!;
-                        w.Height = 2200;
+                        w.Height = 900;
+                        if (Environment.GetEnvironmentVariable("ILHA_TEST_PAGE") is { Length: > 0 } navName &&
+                            w.FindName(navName) is RadioButton nav)
+                            nav.IsChecked = true;
                         var snap = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
                         snap.Tick += (_, _) =>
                         {
@@ -268,27 +276,148 @@ namespace Ilha
             return IntPtr.Zero;
         }
 
-        private Forms.Screen TargetScreen() =>
-            Forms.Screen.AllScreens.FirstOrDefault(s => s.DeviceName == _settings.MonitorDevice)
-            ?? Forms.Screen.PrimaryScreen
-            ?? Forms.Screen.AllScreens[0];
+        private bool Floating => string.Equals(_settings.IslandStyle, "Floating", StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>Centraliza no topo do monitor escolhido (coordenadas físicas, ciente de DPI).</summary>
+        /// <summary>Posição salva da ilha flutuante, se ainda estiver dentro de algum monitor.</summary>
+        private System.Drawing.Point? SavedFloatPosition()
+        {
+            if (!Floating || _settings.FloatX is not int x || _settings.FloatY is not int y) return null;
+            var p = new System.Drawing.Point(x, y);
+            // O meio da janela precisa estar em algum monitor (ex.: monitor desconectado).
+            var probe = new System.Drawing.Point(x + 40, y + 10);
+            return Forms.Screen.AllScreens.Any(s => s.Bounds.Contains(probe)) ? p : null;
+        }
+
+        private Forms.Screen TargetScreen()
+        {
+            if (SavedFloatPosition() is { } p) return Forms.Screen.FromPoint(new System.Drawing.Point(p.X + 40, p.Y + 10));
+            return Forms.Screen.AllScreens.FirstOrDefault(s => s.DeviceName == _settings.MonitorDevice)
+                   ?? Forms.Screen.PrimaryScreen
+                   ?? Forms.Screen.AllScreens[0];
+        }
+
+        /// <summary>
+        /// Colada: centralizada no topo do monitor escolhido. Flutuante: onde o usuário deixou
+        /// (ou centralizada um pouco abaixo do topo). Coordenadas físicas, ciente de DPI.
+        /// </summary>
         private void PositionOnScreen()
         {
             if (_hwnd == IntPtr.Zero) return;
-            var bounds = TargetScreen().Bounds;
+            var screen = TargetScreen();
+            var bounds = screen.Bounds;
             Native.MoveTopmost(_hwnd, bounds.Left, bounds.Top); // aplica o DPI do monitor primeiro
             var dpi = VisualTreeHelper.GetDpi(this);
             int widthPx = (int)Math.Round(Width * dpi.DpiScaleX);
-            int top = bounds.Top;
+            int left = bounds.Left + (bounds.Width - widthPx) / 2;
+            int top = bounds.Top + (Floating ? (int)Math.Round(10 * dpi.DpiScaleY) : 0);
+            if (SavedFloatPosition() is { } saved)
+            {
+                left = saved.X;
+                top = saved.Y;
+            }
 #if DEBUG
             if (int.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_Y"), out int testY)) top += testY;
 #endif
-            Native.MoveTopmost(_hwnd, bounds.Left + (bounds.Width - widthPx) / 2, top);
+            Native.MoveTopmost(_hwnd, left, top);
             _glassWindow?.Follow(_hwnd);
             UpdateGlassRegion();
         }
+
+        /// <summary>Cantos proporcionais à altura (nunca vira pílula); flutuante arredonda os quatro.</summary>
+        private void UpdateIslandCorners()
+        {
+            double r = Math.Min(_cornerRadius, Island.ActualHeight * 0.4);
+            Island.CornerRadius = Floating ? new CornerRadius(r) : new CornerRadius(0, 0, r, r);
+        }
+
+        // ───────────── Ilha flutuante: arrastar e fixar ─────────────
+
+        private void Island_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (!_expanded) DragIsland(e); // recolhida: qualquer ponto da ilha serve de alça
+        }
+
+        private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragIsland(e);
+
+        private void DragIsland(MouseButtonEventArgs e)
+        {
+            if (!Floating || _settings.FloatLocked || e.ButtonState != MouseButtonState.Pressed) return;
+            e.Handled = true;
+            _collapseTimer.Stop();
+            _draggingOut = true; // mantém aberta durante o arraste
+            try
+            {
+                DragMove();
+            }
+            catch (InvalidOperationException)
+            {
+                // Botão já solto.
+            }
+            finally
+            {
+                _draggingOut = false;
+            }
+            if (GetWindowRect(_hwnd, out var r))
+            {
+                _settings.FloatX = r.Left;
+                _settings.FloatY = r.Top;
+                _settings.Save();
+            }
+            _glassWindow?.Follow(_hwnd);
+            if (!Island.IsMouseOver) RestartCollapseTimer();
+        }
+
+        private void Pin_Click(object sender, RoutedEventArgs e)
+        {
+            _settings.FloatLocked = !_settings.FloatLocked;
+            _settings.Save();
+            UpdatePinUi();
+        }
+
+        private void UpdatePinUi()
+        {
+            bool floating = Floating;
+            PinButton.Visibility = floating ? Visibility.Visible : Visibility.Collapsed;
+            GripGlyph.Visibility = floating && !_settings.FloatLocked ? Visibility.Visible : Visibility.Collapsed;
+            PinGlyph.Filled = _settings.FloatLocked;
+            PinButton.Foreground = _settings.FloatLocked ? (Brush)Resources["Accent"] : new SolidColorBrush(Color.FromArgb(0xA6, 0xFF, 0xFF, 0xFF));
+            PinButton.ToolTip = _settings.FloatLocked ? "Posição fixada — clique para soltar e poder arrastar"
+                                                      : "Fixar a ilha neste lugar";
+            HeaderBar.Cursor = floating && !_settings.FloatLocked ? Cursors.SizeAll : null;
+        }
+
+        /// <summary>Abas no trilho lateral ou numa barra no topo do cabeçalho.</summary>
+        private void ApplyTabPosition()
+        {
+            bool top = string.Equals(_settings.TabPosition, "Top", StringComparison.OrdinalIgnoreCase);
+            var currentHost = TabBar.Parent as FrameworkElement;
+            if (top && currentHost != TopTabsHost)
+            {
+                RailHost.Children.Remove(TabBar);
+                TopTabsHost.Child = TabBar;
+            }
+            else if (!top && currentHost != RailHost)
+            {
+                TopTabsHost.Child = null;
+                RailHost.Children.Add(TabBar);
+            }
+            TabBar.Orientation = top ? Orientation.Horizontal : Orientation.Vertical;
+            foreach (var tab in TabBar.Children.OfType<RadioButton>())
+            {
+                tab.Width = top ? 34 : 36;
+                tab.Height = top ? 24 : 30;
+                tab.Margin = top ? new Thickness(1, 0, 1, 0) : new Thickness(0, 0, 0, 3);
+            }
+            RailCol.Width = new GridLength(top ? 0 : 36);
+            RailGapCol.Width = new GridLength(top ? 0 : 14);
+            RailLine.Visibility = top ? Visibility.Collapsed : Visibility.Visible;
+            TopTabsHost.Visibility = top && TabBar.Visibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct Rect32 { public int Left, Top, Right, Bottom; }
+
+        [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out Rect32 rect);
 
         /// <summary>
         /// Acompanha o formato atual da ilha (quadro a quadro durante a animação) com o vidro de trás.
@@ -302,7 +431,7 @@ namespace Ilha
             double left = (ActualWidth - w) / 2;
             double radius = Island.CornerRadius.BottomLeft * scale;
             _glassWindow.SetShape((float)(left * dpi.DpiScaleX), (float)(w * dpi.DpiScaleX),
-                                  (float)(h * dpi.DpiScaleY), (float)(radius * dpi.DpiScaleX));
+                                  (float)(h * dpi.DpiScaleY), (float)(radius * dpi.DpiScaleX), Floating);
         }
 
         private void ApplyMaterial()
@@ -325,7 +454,10 @@ namespace Ilha
                     Color.FromArgb(bottom, baseColor.R, baseColor.G, baseColor.B), 90);
                 IslandSheen.Visibility = Visibility.Visible;
                 IslandRim.Visibility = Visibility.Visible;
-                Island.Effect = null;
+                // Solta na tela, uma sombra leve dá a sensação de estar "flutuando".
+                Island.Effect = Floating && s.ShowShadow
+                    ? new DropShadowEffect { BlurRadius = 22, ShadowDepth = 4, Direction = 270, Opacity = 0.3 }
+                    : null;
             }
             else
             {
@@ -486,8 +618,9 @@ namespace Ilha
 
             // Forma
             _cornerRadius = Math.Clamp(s.CornerRadius, 0, 40);
-            double r = Math.Min(_cornerRadius, Island.ActualHeight * 0.4);
-            Island.CornerRadius = new CornerRadius(0, 0, r, r);
+            UpdateIslandCorners();
+            IslandRim.BorderThickness = Floating ? new Thickness(1) : new Thickness(1, 0, 1, 1);
+            UpdatePinUi();
             CollapsedView.Height = s.CollapsedHeight;
             PeekView.Height = s.CollapsedHeight;
             MiniArt.Width = MiniArt.Height = Math.Max(12, Math.Min(22, s.CollapsedHeight - 10));
@@ -525,6 +658,7 @@ namespace Ilha
             var visibleTabs = TabBar.Children.OfType<RadioButton>()
                 .Where(t => t.Visibility == Visibility.Visible).ToList();
             TabBar.Visibility = visibleTabs.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+            ApplyTabPosition();
             if (visibleTabs.Count == 0)
                 SelectTab("home");
             else if (!visibleTabs.Any(t => t.IsChecked == true))
