@@ -43,7 +43,7 @@ que está tocando, a sua agenda, um timer, notas e os arquivos que você quer te
 ## Do seu jeito
 
 Vidro (com o desfoque real do Windows 11) ou cor sólida. Colada na borda, solta no topo ou livre
-para arrastar e redimensionar. Abas na lateral ou no topo, modo claro ou escuro, português ou inglês.
+para arrastar e redimensionar. Modo claro ou escuro, português ou inglês.
 Cor da ilha e de destaque, arredondamento, tamanho fechada e aberta (com prévia), atrasos de abertura,
 monitor e quais recursos aparecem: tudo muda ao vivo. Ela some sozinha em jogos e vídeos em tela cheia.
 
