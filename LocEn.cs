@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Ilha
 {
@@ -8,6 +8,15 @@ namespace Ilha
         public static readonly Dictionary<string, string> Strings = new()
         {
             ["Teleprompter"] = "Teleprompter",
+            ["Escolha pelo menos um recurso"] = "Pick at least one feature",
+            ["Ideias para o fim de semana"] = "Ideas for the weekend",
+            ["Feira de sábado cedo"] = "Saturday morning market",
+            ["Terminar o livro"] = "Finish the book",
+            ["Revisar a apresentação"] = "Review the presentation",
+            ["Caminhar 30 minutos"] = "Walk for 30 minutes",
+            ["Olá! Este é o teleprompter do Ilha."] = "Hi! This is Ilha's teleprompter.",
+            ["O texto passa logo abaixo da câmera."] = "The text runs right below the camera.",
+            ["A linha atual fica em destaque."] = "The current line is highlighted.",
             ["Tem lembretes neste dia"] = "Has reminders on this day",
             ["Nada marcado para este dia. Escreva abaixo para criar um lembrete."] = "Nothing planned for this day. Type below to add a reminder.",
             ["Escolher recursos"] = "Choose features",

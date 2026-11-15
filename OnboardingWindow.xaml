@@ -168,6 +168,20 @@
                             </Border>
                             <StackPanel x:Name="DemoBars" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                         </Grid>
+                        <!-- Prévia ao vivo no passo "O que você quer na ilha?": abas escolhidas + conteúdo -->
+                        <Grid x:Name="DemoPreview" Opacity="0" Margin="16,8,16,12" IsHitTestVisible="False">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="26"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock x:Name="PreviewClock" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"/>
+                            <Border x:Name="PreviewTabsHost" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    CornerRadius="9" Padding="2">
+                                <StackPanel x:Name="PreviewTabs" Orientation="Horizontal"/>
+                            </Border>
+                            <Border x:Name="PreviewBody" Grid.Row="1" Margin="0,10,0,0"/>
+                        </Grid>
                         <!-- Aberta: música + mini agenda -->
                         <Grid x:Name="DemoFull" Opacity="0" Margin="16,14,16,14">
                             <Grid.ColumnDefinitions>

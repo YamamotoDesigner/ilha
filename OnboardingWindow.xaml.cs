@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -24,6 +24,10 @@ namespace Ilha
         private readonly DispatcherTimer _demo = new() { Interval = TimeSpan.FromSeconds(2.6) };
         private readonly List<(CheckBox Box, Action<bool> Set, string Label)> _features = new();
         private int _step;
+        private const int FeaturesStep = 3;
+        private bool _previewMode;
+        /// <summary>Último recurso ligado: é ele que aparece aberto na prévia.</summary>
+        private string? _previewFocus;
         private bool _demoOpen, _finished;
 
         /// <summary>Terminou (botão Começar, X ou fechar a janela).</summary>
@@ -60,6 +64,7 @@ namespace Ilha
                 int first = 0;
 #if DEBUG
                 if (int.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_STEP"), out int testStep)) first = testStep;
+                if (Environment.GetEnvironmentVariable("ILHA_TEST_FOCUS") is { Length: > 0 } testFocus) _previewFocus = testFocus;
                 if (Environment.GetEnvironmentVariable("ILHA_TEST_DEMO") == "open") ToggleDemo();
                 if (Environment.GetEnvironmentVariable("ILHA_TEST_SHOT") is { Length: > 0 } shot)
                 {
@@ -122,6 +127,7 @@ namespace Ilha
             DemoDay.Text = DateTime.Today.ToString("ddd").TrimEnd('.').ToUpperInvariant();
             foreach (var f in _features) f.Box.Content = L.T(f.Label);
             BuildTips();
+            RefreshPreview();
             UpdateButtons();
         }
 
@@ -169,6 +175,7 @@ namespace Ilha
 
             UpdateDots();
             UpdateButtons();
+            SetPreviewMode(_step == FeaturesStep);
         }
 
         private void Next_Click(object sender, RoutedEventArgs e)
@@ -217,6 +224,7 @@ namespace Ilha
             ThemePalette.Apply(!light);
             ThemePalette.ApplyTo(this);
             ApplyDemoTheme(light, animate: true);
+            RefreshPreview();
         }
 
         private void Style_Checked(object sender, RoutedEventArgs e)
@@ -242,8 +250,9 @@ namespace Ilha
             void Add(string label, bool on, Action<bool> set)
             {
                 var box = new CheckBox { Style = (Style)FindResource("Feature"), IsChecked = on, Content = L.T(label) };
-                box.Checked += (_, _) => set(true);
-                box.Unchecked += (_, _) => set(false);
+                // Cada escolha aparece na hora na ilha de cima (prévia).
+                box.Checked += (_, _) => { set(true); _previewFocus = label; RefreshPreview(); };
+                box.Unchecked += (_, _) => { set(false); if (_previewFocus == label) _previewFocus = null; RefreshPreview(); };
                 FeatureGrid.Children.Add(box);
                 _features.Add((box, set, label));
             }
@@ -333,6 +342,7 @@ namespace Ilha
         /// <summary>A ilha de demonstração abre e fecha sozinha, com a mesma mola do app.</summary>
         private void ToggleDemo()
         {
+            if (_previewMode) return;
             _demoOpen = !_demoOpen;
             var spring = new SpringEase();
             var dur = TimeSpan.FromMilliseconds(620);
@@ -373,6 +383,281 @@ namespace Ilha
                 DemoIsland.BeginAnimation(MarginProperty, new ThicknessAnimation(to, TimeSpan.FromMilliseconds(520)) { EasingFunction = new SpringEase() });
             else
                 DemoIsland.Margin = to;
+        }
+
+        // ───────────── Prévia ao vivo dos recursos ─────────────
+
+        /// <summary>
+        /// No passo dos recursos, a ilha de cima fica aberta e mostra exatamente as abas escolhidas,
+        /// com o conteúdo da última que a pessoa ligou.
+        /// </summary>
+        private void SetPreviewMode(bool on)
+        {
+            if (on == _previewMode) return;
+            _previewMode = on;
+            var spring = new SpringEase();
+            var dur = TimeSpan.FromMilliseconds(620);
+            if (on)
+            {
+                _demo.Stop();
+                _demoOpen = false;
+                RefreshPreview();
+                DemoIsland.BeginAnimation(WidthProperty, new DoubleAnimation(500, dur) { EasingFunction = spring });
+                DemoIsland.BeginAnimation(HeightProperty, new DoubleAnimation(156, dur) { EasingFunction = spring });
+                DemoMini.BeginAnimation(OpacityProperty, new DoubleAnimation(0, TimeSpan.FromMilliseconds(120)));
+                DemoFull.BeginAnimation(OpacityProperty, new DoubleAnimation(0, TimeSpan.FromMilliseconds(100)));
+                DemoPreview.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(280)) { BeginTime = TimeSpan.FromMilliseconds(160) });
+            }
+            else
+            {
+                DemoPreview.BeginAnimation(OpacityProperty, new DoubleAnimation(0, TimeSpan.FromMilliseconds(100)));
+                DemoIsland.BeginAnimation(WidthProperty, new DoubleAnimation(130, dur) { EasingFunction = spring });
+                DemoIsland.BeginAnimation(HeightProperty, new DoubleAnimation(30, dur) { EasingFunction = spring });
+                DemoMini.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(260)) { BeginTime = TimeSpan.FromMilliseconds(200) });
+                _demo.Start();
+            }
+        }
+
+        private bool LightTheme => string.Equals(_settings.Theme, "Light", StringComparison.OrdinalIgnoreCase);
+        private Color InkColor => LightTheme ? Color.FromRgb(0x14, 0x14, 0x18) : Colors.White;
+        private Brush Ink(byte a) { var c = InkColor; return new SolidColorBrush(Color.FromArgb(a, c.R, c.G, c.B)); }
+        private static readonly Color AccentColor = Color.FromRgb(0x7C, 0xE3, 0xA1);
+
+        /// <summary>Abas da ilha, na mesma ordem do app: (recurso, aba, ícone, preenchido).</summary>
+        private static readonly (string Feature, string Tab, string Icon, bool Filled)[] PreviewTabsOrder =
+        {
+            ("Música", "home", "FillHome", true),
+            ("Prateleira", "shelf", "IcoTray", false),
+            ("Agenda e tarefas", "agenda", "FillCalendar", true),
+            ("Notas", "notes", "FillNotes", true),
+            ("Foco (timer)", "timer", "FillTimer", true),
+            ("Copiados", "clip", "FillClip", true),
+            ("Espelho (câmera)", "mirror", "FillCamera", true),
+            ("Teleprompter", "prompter", "FillPrompter", true),
+        };
+
+        private bool FeatureOn(string label) => _features.FirstOrDefault(f => f.Label == label).Box?.IsChecked == true;
+
+        private void RefreshPreview()
+        {
+            if (DemoPreview == null || _features.Count == 0) return;
+            PreviewClock.Text = DateTime.Now.ToString("HH:mm");
+            PreviewClock.Foreground = Ink(0xFF);
+            PreviewTabsHost.Background = Ink(0x0D);
+
+            // Abas ligadas (a Início aparece com Música ou com CPU e memória).
+            var tabs = PreviewTabsOrder.Where(t => FeatureOn(t.Feature) || (t.Tab == "home" && FeatureOn("CPU e memória"))).ToList();
+            string? focusTab = _previewFocus == "CPU e memória" ? "home"
+                : PreviewTabsOrder.FirstOrDefault(t => t.Feature == _previewFocus).Tab;
+            if (focusTab == null || !tabs.Any(t => t.Tab == focusTab)) focusTab = tabs.FirstOrDefault().Tab;
+
+            PreviewTabs.Children.Clear();
+            foreach (var t in tabs)
+            {
+                bool sel = t.Tab == focusTab;
+                PreviewTabs.Children.Add(new Border
+                {
+                    Width = 26, Height = 20, CornerRadius = new CornerRadius(7), Margin = new Thickness(1, 0, 1, 0),
+                    Background = sel ? Ink(0x24) : Brushes.Transparent,
+                    Child = new Glyph
+                    {
+                        Data = (Geometry)FindResource(t.Icon), Size = t.Filled ? 12 : 11.5, Filled = t.Filled,
+                        Thickness = t.Filled ? 0 : 1.8, Foreground = Ink(sel ? (byte)0xFF : (byte)0x80),
+                    },
+                });
+            }
+            PreviewTabsHost.Visibility = tabs.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+
+            var body = focusTab == null ? EmptyPreview() : BuildPreviewBody(focusTab);
+            PreviewBody.Child = body;
+            body.Opacity = 0;
+            body.BeginAnimation(OpacityProperty, new DoubleAnimation(1, TimeSpan.FromMilliseconds(220)));
+        }
+
+        private FrameworkElement EmptyPreview() => new TextBlock
+        {
+            Text = L.T("Escolha pelo menos um recurso"), FontSize = 12.5, Foreground = Ink(0x80),
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        private Border Card(UIElement child, double radius = 12) => new()
+        {
+            CornerRadius = new CornerRadius(radius), Background = Ink(0x0F), Padding = new Thickness(10, 8, 10, 8), Child = child,
+        };
+
+        private TextBlock Txt(string s, double size, byte alpha = 0xFF, bool bold = false) => new()
+        {
+            Text = s, FontSize = size, Foreground = Ink(alpha), FontWeight = bold ? FontWeights.SemiBold : FontWeights.Normal,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+
+        private Border Bar(double width, double height, byte alpha, double radius = 3) => new()
+        {
+            Width = width, Height = height, CornerRadius = new CornerRadius(radius), Background = Ink(alpha),
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+
+        private static Brush ArtBrush() => new LinearGradientBrush(Color.FromRgb(0xFF, 0x8F, 0xB1), Color.FromRgb(0x7A, 0x5C, 0xFF), 45);
+
+        private FrameworkElement BuildPreviewBody(string tab)
+        {
+            var accent = new SolidColorBrush(AccentColor);
+            switch (tab)
+            {
+                case "home":
+                {
+                    var g = new Grid();
+                    g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    g.ColumnDefinitions.Add(new ColumnDefinition());
+                    g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    if (FeatureOn("Música"))
+                    {
+                        g.Children.Add(new Border { Width = 78, Height = 78, CornerRadius = new CornerRadius(12), Background = ArtBrush() });
+                        var info = new StackPanel { Margin = new Thickness(14, 6, 10, 0) };
+                        info.Children.Add(Txt("Sunset Drive", 13.5, bold: true));
+                        info.Children.Add(Txt(L.T("Ilha FM"), 11.5, 0xA6));
+                        var prog = new Grid { Height = 3, Margin = new Thickness(0, 12, 0, 10) };
+                        prog.Children.Add(new Border { CornerRadius = new CornerRadius(2), Background = Ink(0x26) });
+                        prog.Children.Add(new Border { CornerRadius = new CornerRadius(2), Background = Ink(0xE6), Width = 90, HorizontalAlignment = HorizontalAlignment.Left });
+                        info.Children.Add(prog);
+                        var ctrl = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+                        ctrl.Children.Add(new Glyph { Data = (Geometry)FindResource("IcoPrev"), Filled = true, Size = 12, Foreground = Ink(0xD9), Margin = new Thickness(0, 0, 18, 0) });
+                        ctrl.Children.Add(new Glyph { Data = (Geometry)FindResource("IcoPause"), Filled = true, Size = 16, Foreground = Ink(0xFF) });
+                        ctrl.Children.Add(new Glyph { Data = (Geometry)FindResource("IcoNext"), Filled = true, Size = 12, Foreground = Ink(0xD9), Margin = new Thickness(18, 0, 0, 0) });
+                        info.Children.Add(ctrl);
+                        Grid.SetColumn(info, 1);
+                        g.Children.Add(info);
+                    }
+                    if (FeatureOn("CPU e memória"))
+                    {
+                        var stats = new StackPanel { Width = 96 };
+                        stats.Children.Add(Card(StatLine("CPU", "28%")));
+                        var ram = Card(StatLine("RAM", "53%"));
+                        ram.Margin = new Thickness(0, 8, 0, 0);
+                        stats.Children.Add(ram);
+                        Grid.SetColumn(stats, FeatureOn("Música") ? 2 : 0);
+                        g.Children.Add(stats);
+                    }
+                    return g;
+                }
+                case "shelf":
+                {
+                    var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+                    foreach (var name in new[] { "plano.pdf", "foto.jpg", "lista.txt" })
+                    {
+                        var tile = new StackPanel { Margin = new Thickness(0, 0, 22, 0) };
+                        tile.Children.Add(new Border { Width = 26, Height = 32, CornerRadius = new CornerRadius(5),
+                            Background = name.EndsWith("jpg") ? ArtBrush() : new SolidColorBrush(Color.FromRgb(0xE9, 0xE6, 0xDF)) });
+                        var label = Txt(name, 10, 0xA6); label.Margin = new Thickness(0, 5, 0, 0); label.HorizontalAlignment = HorizontalAlignment.Center;
+                        tile.Children.Add(label);
+                        row.Children.Add(tile);
+                    }
+                    var col = new StackPanel();
+                    col.Children.Add(Txt(L.T("PRATELEIRA"), 9.5, 0x80, bold: true));
+                    col.Children.Add(row);
+                    var c = Card(col); c.Padding = new Thickness(14, 10, 14, 10);
+                    return c;
+                }
+                case "agenda":
+                {
+                    var g = new Grid();
+                    g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+                    g.ColumnDefinitions.Add(new ColumnDefinition());
+                    var todo = new StackPanel();
+                    todo.Children.Add(new TextBlock { Text = L.T("Hoje").ToUpperInvariant(), FontSize = 9.5, FontWeight = FontWeights.SemiBold, Foreground = accent });
+                    todo.Children.Add(Txt(L.T("Revisar a apresentação"), 11.5));
+                    todo.Children.Add(Txt(L.T("Caminhar 30 minutos"), 11.5, 0xA6));
+                    g.Children.Add(Card(todo));
+                    var weeks = new StackPanel { Margin = new Thickness(14, 2, 0, 0) };
+                    int today = DateTime.Today.Day;
+                    var start = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+                    for (int w = 0; w < 2; w++)
+                    {
+                        var r = new System.Windows.Controls.Primitives.UniformGrid { Rows = 1, Columns = 7, Margin = new Thickness(0, 0, 0, 6) };
+                        for (int i = 0; i < 7; i++)
+                        {
+                            var d = start.AddDays(w * 7 + i);
+                            bool isToday = d == DateTime.Today;
+                            r.Children.Add(new Border
+                            {
+                                Width = 28, Height = 24, CornerRadius = new CornerRadius(8),
+                                Background = isToday ? accent : Brushes.Transparent,
+                                Child = new TextBlock
+                                {
+                                    Text = d.Day.ToString(), FontSize = 11.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                                    FontWeight = isToday ? FontWeights.SemiBold : FontWeights.Normal,
+                                    Foreground = isToday ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11)) : Ink(0xE6),
+                                },
+                            });
+                        }
+                        weeks.Children.Add(r);
+                    }
+                    Grid.SetColumn(weeks, 1);
+                    g.Children.Add(weeks);
+                    return g;
+                }
+                case "notes":
+                {
+                    var col = new StackPanel();
+                    col.Children.Add(Txt(L.T("Ideias para o fim de semana"), 12, bold: true));
+                    col.Children.Add(Txt("— " + L.T("Feira de sábado cedo"), 11.5, 0xC0));
+                    col.Children.Add(Txt("— " + L.T("Terminar o livro"), 11.5, 0xC0));
+                    var c = Card(col); c.Padding = new Thickness(14, 10, 14, 10);
+                    return c;
+                }
+                case "timer":
+                {
+                    var row = new StackPanel { Orientation = Orientation.Horizontal };
+                    var ring = new Border
+                    {
+                        Width = 82, Height = 82, CornerRadius = new CornerRadius(24), BorderThickness = new Thickness(3),
+                        BorderBrush = accent,
+                        Child = new TextBlock { Text = "25:00", FontSize = 19, FontWeight = FontWeights.Light, Foreground = Ink(0xFF),
+                            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
+                    };
+                    row.Children.Add(ring);
+                    var chips = new WrapPanel { Width = 300, Margin = new Thickness(18, 4, 0, 0) };
+                    foreach (var s in new[] { L.T("Foco") + " 25", L.T("Pausa") + " 5", "1", "5", "10", "15", "25", "45", "1 h" })
+                        chips.Children.Add(new Border { CornerRadius = new CornerRadius(7), Background = Ink(0x14), Padding = new Thickness(8, 3, 8, 3),
+                            Margin = new Thickness(0, 0, 5, 6), Child = Txt(s, 10.5, 0xD9) });
+                    row.Children.Add(chips);
+                    return row;
+                }
+                case "clip":
+                {
+                    var col = new StackPanel();
+                    foreach (var s in new[] { "Reunião às 15h na sala 2", "Rua das Flores, 120", "Lista: café, pão, frutas" })
+                    {
+                        var c = Card(Txt(s, 11.5), 8); c.Padding = new Thickness(10, 5, 10, 5); c.Margin = new Thickness(0, 0, 0, 4);
+                        col.Children.Add(c);
+                    }
+                    return col;
+                }
+                case "mirror":
+                    return new Border
+                    {
+                        Width = 92, Height = 92, CornerRadius = new CornerRadius(46), HorizontalAlignment = HorizontalAlignment.Center,
+                        Background = new LinearGradientBrush(Color.FromRgb(0x56, 0x62, 0x78), Color.FromRgb(0x2A, 0x30, 0x3C), 90),
+                        Child = new Glyph { Data = (Geometry)FindResource("FillCamera"), Filled = true, Size = 20, Foreground = Ink(0x99) },
+                    };
+                default: // prompter
+                {
+                    var col = new StackPanel { Margin = new Thickness(4, 4, 0, 0) };
+                    col.Children.Add(Txt(L.T("Olá! Este é o teleprompter do Ilha."), 15, 0x59, bold: true));
+                    col.Children.Add(Txt(L.T("O texto passa logo abaixo da câmera."), 15, 0xFF, bold: true));
+                    col.Children.Add(Txt(L.T("A linha atual fica em destaque."), 15, 0x8C, bold: true));
+                    return col;
+                }
+            }
+
+            FrameworkElement StatLine(string label, string value)
+            {
+                var d = new DockPanel();
+                var v = Txt(value, 11, bold: true); DockPanel.SetDock(v, Dock.Right);
+                d.Children.Add(v);
+                d.Children.Add(Txt(label, 9.5, 0x80, bold: true));
+                return d;
+            }
         }
 
         /// <summary>Bolhas de cor do fundo flutuando devagar.</summary>
