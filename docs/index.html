@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ilha — o topo da tela, com uma função</title>
-<meta name="description" content="Ilha é uma barra discreta no topo do Windows que abre com a música, a agenda, um timer, notas e os seus arquivos. Grátis e de código aberto.">
+<meta name="description" content="Ilha é uma barra discreta no topo da tela, no Windows e no Mac, que abre com a música, a agenda, um timer, notas e os seus arquivos. Grátis e de código aberto.">
 <meta property="og:title" content="Ilha — o topo da tela, com uma função">
-<meta property="og:description" content="Música, agenda, timer, notas e arquivos numa ilha no topo do Windows. Grátis.">
+<meta property="og:description" content="Música, agenda, timer, notas e arquivos numa ilha no topo da tela. Windows e Mac. Grátis.">
 <meta property="og:image" content="https://yamamotodesigner.github.io/ilha/assets/hero.png">
 <meta name="theme-color" content="#f4f3ef">
 <link rel="icon" href="assets/icon.png">
@@ -62,6 +62,9 @@
   .btn:active { transform: scale(.98); }
   .btn svg { width: 17px; height: 17px; }
   .btn.small { padding: 9px 15px; font-size: 14.5px; border-radius: 10px; }
+  .btn.alt { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .btn.alt:hover { background: rgba(0,0,0,.05); }
+  .actions .btns { display: flex; flex-wrap: wrap; gap: 12px; }
   .link { font-weight: 500; font-size: 16px; border-bottom: 1px solid var(--line); padding-bottom: 2px;
           transition: border-color .2s; }
   .link:hover { border-bottom-color: var(--ink); }
@@ -336,6 +339,7 @@
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5.2h2.8v13.6H7zM14.2 5.2H17v13.6h-2.8z"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M7.5 5v14l11.5-7z"/></symbol>
   <symbol id="i-tray" viewBox="0 0 24 24"><path d="M4.5 13.5v3A2.5 2.5 0 0 0 7 19h10a2.5 2.5 0 0 0 2.5-2.5v-3M12 4.5v10M8 10.5l4 4 4-4"/></symbol>
+  <symbol id="i-mac" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5V15H4zm2 .5v7h12V6zM2 16.5h20v.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></symbol>
   <symbol id="i-win" viewBox="0 0 24 24"><path d="M3 5.3 10.6 4.2v7.3H3zm8.6-1.2L21 2.7v8.8h-9.4zM3 12.5h7.6v7.3L3 18.7zm8.6 0H21v8.8l-9.4-1.4z"/></symbol>
 </svg>
 
@@ -420,12 +424,12 @@
   <div class="wrap">
     <div class="copy">
       <h1>O topo da tela,<br>com uma função.</h1>
-      <p class="lead">Ilha é uma barra discreta no topo do Windows. Passe o mouse e ela abre com a música que está tocando, a sua agenda, um timer, notas e os arquivos que você quer ter à mão.</p>
+      <p class="lead">Ilha é uma barra discreta no topo da tela, no Windows e no Mac. Passe o mouse e ela abre com a música que está tocando, a sua agenda, um timer, notas e os arquivos que você quer ter à mão.</p>
       <div class="actions">
-        <a class="btn download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-win"/></svg>Baixar para Windows</a>
+        <span class="btns"><a class="btn download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-win"/></svg>Baixar para Windows</a><a class="btn alt mac-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-mac"/></svg>Baixar para Mac</a></span>
         <a class="link" href="https://github.com/YamamotoDesigner/ilha">Ver o código no GitHub</a>
       </div>
-      <p class="meta"><span class="dl-meta">Grátis · Windows 10 e 11 · instala sem administrador</span></p>
+      <p class="meta"><span class="dl-meta">Grátis · Windows 10 e 11 · macOS 13 ou mais novo</span></p>
     </div>
     <div class="desk" id="hero-desk">
       <div class="stage" id="hero-stage"></div>
@@ -440,7 +444,7 @@
     <div class="chapter rise">
       <div class="copy">
         <h2>A música, sem trocar de janela.</h2>
-        <p>Capa, título e controles do que estiver tocando: Spotify, YouTube no navegador ou qualquer player do Windows. Clique na barra para ir a outro trecho. No Spotify, o coração salva a faixa nas Músicas Curtidas.</p>
+        <p>Capa, título e controles do que estiver tocando: no Windows, Spotify, YouTube no navegador ou qualquer player; no Mac, Spotify e o app Música. Clique na barra para ir a outro trecho e use o coração para salvar a faixa nas favoritas.</p>
       </div>
       <div class="plate"><div class="demo" data-page="home"></div></div>
     </div>
@@ -468,8 +472,9 @@
         <div><dt>Teleprompter</dt><dd>O roteiro rola logo abaixo da câmera, com contagem regressiva e velocidade ajustável.</dd></div>
         <div><dt>Espelho</dt><dd>Confira a câmera antes da chamada. Ela só liga com a aba aberta e nada é gravado.</dd></div>
         <div><dt>Avisos rápidos</dt><dd>Volume, carregador, música nova e downloads aparecem por um instante na ilha fechada.</dd></div>
-        <div><dt>Atalho</dt><dd>Abra e feche de qualquer lugar com <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd>.</dd></div>
-        <div><dt>Atualiza sozinha</dt><dd>Quando sai versão nova, a ilha avisa. Um clique e ela reabre atualizada, com tudo no lugar.</dd></div>
+        <div><dt>Atalho</dt><dd>Abra e feche de qualquer lugar com <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd> no Windows, ou <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>N</kbd> no Mac.</dd></div>
+        <div><dt>No notch do Mac</dt><dd>Nos MacBooks com notch, a ilha fechada se encaixa no entalhe da tela e cresce a partir dele.</dd></div>
+        <div><dt>Avisa quando atualizar</dt><dd>Quando sai versão nova, a ilha avisa. No Windows, um clique e ela reabre atualizada, com tudo no lugar.</dd></div>
       </dl>
     </div>
   </div>
@@ -516,10 +521,14 @@
         <p>Sim. A Ilha é gratuita e de código aberto; o código está todo no <a href="https://github.com/YamamotoDesigner/ilha">GitHub</a>.</p></details>
       <details><summary>O Windows mostrou "O Windows protegeu o computador". E agora?</summary>
         <p>Esse aviso (SmartScreen) aparece para apps novos que ainda não têm assinatura digital paga. Clique em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</p></details>
+      <details><summary>O Mac disse que não conseguiu verificar o app. E agora?</summary>
+        <p>A Ilha ainda não tem a assinatura paga da Apple. Na primeira vez, vá em <b>Ajustes do Sistema → Privacidade e Segurança</b>, role até o fim e clique em <b>Abrir mesmo assim</b>. Depois disso ela abre normalmente.</p></details>
+      <details><summary>No Mac, por que ela pede para controlar o Spotify e o app Música?</summary>
+        <p>É assim que ela mostra a capa e o nome da música e controla tocar, pausar e pular. Responda <b>OK</b>. Se negou sem querer, libere em Ajustes do Sistema → Privacidade e Segurança → Automação.</p></details>
       <details><summary>Precisa de permissão de administrador?</summary>
-        <p>Não. A Ilha instala só para o seu usuário, em <code>%LOCALAPPDATA%\Programs\Ilha</code>.</p></details>
+        <p>Não. No Windows, a Ilha instala só para o seu usuário, em <code>%LOCALAPPDATA%\Programs\Ilha</code>. No Mac, basta arrastar para a pasta Aplicativos.</p></details>
       <details><summary>Meus dados vão para algum lugar?</summary>
-        <p>Não. Notas, tarefas, prateleira e configurações ficam no seu PC, em <code>%APPDATA%\Ilha</code>. O histórico da área de transferência fica só na memória e some ao fechar o app. A única conexão com a internet é para verificar atualizações, e dá para desligar.</p></details>
+        <p>Não. Notas, tarefas, prateleira e configurações ficam no seu computador (<code>%APPDATA%\Ilha</code> no Windows, <code>~/Library/Application Support/Ilha</code> no Mac). O histórico da área de transferência fica só na memória e some ao fechar o app. A única conexão com a internet é para verificar atualizações, e dá para desligar.</p></details>
       <details><summary>A ilha aberta está grande demais. Dá para diminuir?</summary>
         <p>Dá. Em Configurações → Ilha e posição → Tamanho você ajusta a largura e a altura da ilha fechada e da aberta, com uma prévia das duas. O que não cabe sai sozinho.</p></details>
       <details><summary>Como deixo a ilha solta e mudo ela de lugar?</summary>
@@ -527,7 +536,7 @@
       <details><summary>Atrapalha jogos ou vídeos em tela cheia?</summary>
         <p>Não. A ilha se esconde quando um app está em tela cheia e volta quando você sai.</p></details>
       <details><summary>Como desinstalo?</summary>
-        <p>Em Configurações do Windows → Aplicativos → Aplicativos instalados → Ilha → Desinstalar.</p></details>
+        <p>No Windows: Configurações → Aplicativos → Aplicativos instalados → Ilha → Desinstalar. No Mac: feche a Ilha pelo ícone na barra de menus e arraste o app da pasta Aplicativos para o Lixo.</p></details>
     </div>
   </div>
 </section>
@@ -536,15 +545,15 @@
   <div class="wrap rise">
     <h2>Dê uma função ao topo da sua tela.</h2>
     <div class="actions">
-      <a class="btn download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-win"/></svg>Baixar para Windows</a>
-      <span class="meta dl-meta">Grátis · Windows 10 e 11 · 64-bit</span>
+      <span class="btns"><a class="btn download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-win"/></svg>Baixar para Windows</a><a class="btn alt mac-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest"><svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-mac"/></svg>Baixar para Mac</a></span>
+      <span class="meta dl-meta">Grátis · Windows 10 e 11 · macOS 13 ou mais novo</span>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <span>Ilha, feita no Brasil para o Windows.</span>
+    <span>Ilha, feita no Brasil para Windows e Mac.</span>
     <span><a href="https://github.com/YamamotoDesigner/ilha">GitHub</a> &nbsp;·&nbsp; <a href="https://github.com/YamamotoDesigner/ilha/releases">Versões</a> &nbsp;·&nbsp; <a href="https://github.com/YamamotoDesigner/ilha/issues">Reportar problema</a></span>
   </div>
 </footer>
@@ -652,11 +661,19 @@
     .then(rel => {
       if (!rel) return;
       const asset = (rel.assets || []).find(a => /^Ilha-Setup.*\.exe$/i.test(a.name));
+      const mac = (rel.assets || []).find(a => /mac.*\.dmg$/i.test(a.name));
       const ver = (rel.tag_name || '').replace(/^v/i, '');
-      if (!asset) return;
-      document.querySelectorAll('.download-link').forEach(a => a.href = asset.browser_download_url);
-      const mb = Math.round(asset.size / 1048576);
-      document.querySelectorAll('.dl-meta').forEach(el => el.textContent = `Grátis · versão ${ver} · ${mb} MB · Windows 10 e 11`);
+      if (asset) document.querySelectorAll('.download-link').forEach(a => a.href = asset.browser_download_url);
+      if (mac) document.querySelectorAll('.mac-link').forEach(a => a.href = mac.browser_download_url);
+      if (ver) document.querySelectorAll('.dl-meta').forEach(el => el.textContent = `Grátis · versão ${ver} · Windows 10 e 11 · macOS 13 ou mais novo`);
+      // No Mac, o botão do Mac vem primeiro e em destaque
+      if (/Mac/.test(navigator.platform)) {
+        document.querySelectorAll('.btns').forEach(b => {
+          const w = b.querySelector('.download-link'), m = b.querySelector('.mac-link');
+          w.classList.add('alt'); m.classList.remove('alt'); b.prepend(m);
+        });
+        document.querySelectorAll('nav .download-link').forEach(a => { if (mac) a.href = mac.browser_download_url; });
+      }
     }).catch(() => {});
 
   // Barra do topo ganha uma linha ao rolar; seções entram suavemente

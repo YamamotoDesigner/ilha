@@ -6,10 +6,10 @@
 
 ### O topo da tela, com uma função.
 
-Ilha é uma barra discreta no topo do Windows. Passe o mouse e ela abre com a música que está
-tocando, a sua agenda, um timer, notas e os arquivos que você quer ter à mão.
+Ilha é uma barra discreta no topo da tela, no Windows e no Mac. Passe o mouse e ela abre com a música
+que está tocando, a sua agenda, um timer, notas e os arquivos que você quer ter à mão.
 
-[**Baixar para Windows**](https://github.com/YamamotoDesigner/ilha/releases/latest) &nbsp;·&nbsp; [Conhecer o site](https://yamamotodesigner.github.io/ilha/)
+[**Baixar para Windows**](https://github.com/YamamotoDesigner/ilha/releases/latest) &nbsp;·&nbsp; [**Baixar para Mac**](https://github.com/YamamotoDesigner/ilha/releases/latest) &nbsp;·&nbsp; [Conhecer o site](https://yamamotodesigner.github.io/ilha/)
 
 [![Versão](https://img.shields.io/github/v/release/YamamotoDesigner/ilha?label=vers%C3%A3o&color=1c1c1e&labelColor=1c1c1e)](https://github.com/YamamotoDesigner/ilha/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/YamamotoDesigner/ilha/total?label=downloads&color=1c1c1e&labelColor=1c1c1e)](https://github.com/YamamotoDesigner/ilha/releases)
@@ -58,6 +58,10 @@ configurações e notas no lugar. (Dá para desligar em Configurações → Atua
 2. Execute. Não precisa de administrador.
 3. Se aparecer "O Windows protegeu o computador", clique em **Mais informações → Executar assim mesmo**
    (o app ainda não tem assinatura digital paga).
+
+**No Mac:** baixe o **`Ilha-mac-x.y.z.dmg`**, abra e arraste o Ilha para Aplicativos (macOS 13 ou mais novo).
+Na primeira vez, se o Mac disser que não conseguiu verificar o app, vá em **Ajustes do Sistema → Privacidade e
+Segurança → Abrir mesmo assim**.
 
 **Privacidade:** notas, prateleira e configurações ficam só no seu PC (`%APPDATA%\Ilha`).
 A única conexão com a internet é a verificação de atualizações.
