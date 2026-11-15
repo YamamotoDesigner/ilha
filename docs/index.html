@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ilha — o topo da sua tela, finalmente útil</title>
+<meta name="description" content="Ilha transforma o topo do Windows numa ilha que se expande com música, arquivos, notas, timer e área de transferência. Grátis e de código aberto.">
+<meta property="og:title" content="Ilha — o topo da sua tela, finalmente útil">
+<meta property="og:description" content="Música, arquivos, notas, timer e área de transferência numa ilha no topo do Windows. Grátis.">
+<meta property="og:image" content="https://yamamotodesigner.github.io/ilha/assets/hero.png">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="assets/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --bg-2: #111113;
+    --line: rgba(255,255,255,.08);
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
+    --island: #000000;
+    --accent: #7CE3A1;
+    --radius: 22px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.55; overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+  /* ── Nav ── */
+  nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(14px);
+        background: rgba(10,10,11,.7); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; height: 60px; gap: 28px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .logo-mark { width: 30px; height: 14px; border-radius: 99px; background: #fff; position: relative; }
+  .logo-mark::after { content: ""; position: absolute; right: 3px; top: 3px; width: 8px; height: 8px;
+                      border-radius: 50%; background: var(--accent); transition: background .3s; }
+  nav .links { display: flex; gap: 24px; margin-left: auto; font-size: 14px; color: var(--muted); }
+  nav .links a:hover { color: var(--text); }
+  .btn { display: inline-flex; align-items: center; gap: 9px; border-radius: 999px; font-weight: 600;
+         font-size: 15px; padding: 13px 24px; transition: transform .15s, background .2s, box-shadow .2s; cursor: pointer; border: 0; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color: #06130b; box-shadow: 0 8px 30px -8px var(--accent); }
+  .btn-ghost { background: rgba(255,255,255,.06); color: var(--text); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: rgba(255,255,255,.1); }
+  .btn-sm { padding: 8px 16px; font-size: 14px; }
+  .btn svg { width: 18px; height: 18px; }
+
+  /* ── Hero ── */
+  .hero { position: relative; padding: 80px 0 40px; text-align: center; }
+  .glow { position: absolute; inset: -200px 0 auto; height: 700px; pointer-events: none; z-index: -1;
+          background: radial-gradient(600px 300px at 50% 30%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%); }
+  .pill-tag { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted);
+              border: 1px solid var(--line); border-radius: 99px; padding: 6px 14px; background: rgba(255,255,255,.03); }
+  .pill-tag b { color: var(--accent); font-weight: 600; }
+  h1 { font-size: clamp(40px, 7vw, 76px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800; margin: 22px auto 20px; max-width: 900px; }
+  h1 em { font-style: normal; background: linear-gradient(90deg, var(--accent), #fff 80%);
+          -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { font-size: clamp(17px, 2vw, 20px); color: var(--muted); max-width: 640px; margin: 0 auto; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 34px; }
+  .fine { margin-top: 16px; font-size: 13px; color: #71717a; }
+
+  /* ── Tela de demonstração ── */
+  .stage-outer { margin: 60px auto 0; max-width: 980px; }
+  .screen {
+    position: relative; border-radius: 18px; overflow: hidden; border: 1px solid var(--line);
+    aspect-ratio: 16 / 9; box-shadow: 0 40px 120px -30px rgba(0,0,0,.9);
+    background:
+      radial-gradient(900px 500px at 15% 110%, #2a3b6b 0%, transparent 60%),
+      radial-gradient(700px 500px at 100% 0%, #3a1f4f 0%, transparent 55%),
+      linear-gradient(160deg, #1b2236, #0e1018);
+  }
+  .screen::after { /* barra de tarefas */
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6%;
+    background: rgba(20,20,26,.75); backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,.06);
+  }
+  .screen .hint { position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%); font-size: 13px;
+                  color: rgba(255,255,255,.55); white-space: nowrap; transition: opacity .3s; }
+  .stage { position: absolute; top: 0; left: 50%; width: 580px; transform-origin: top center; }
+
+  /* ── A ilha ── */
+  .island {
+    position: relative; margin: 0 auto; background: var(--island); color: #fff;
+    width: 250px; height: 34px; border-radius: 0 0 var(--radius) var(--radius);
+    box-shadow: 0 0 14px rgba(0,0,0,.4); overflow: hidden; cursor: default;
+    transition: width .42s cubic-bezier(.34,1.4,.64,1), height .42s cubic-bezier(.34,1.4,.64,1), background .3s, border-radius .3s;
+    font-family: "Segoe UI Variable Text", "Segoe UI", Inter, sans-serif;
+  }
+  .island.open { width: 580px; height: 210px; }
+  .collapsed { position: absolute; inset: 0 14px; height: 34px; display: flex; align-items: center;
+               justify-content: space-between; transition: opacity .15s; }
+  .island.open .collapsed { opacity: 0; }
+  .mini-art { width: 22px; height: 22px; border-radius: 6px; }
+  .bars { display: flex; gap: 3px; align-items: center; height: 14px; }
+  .bars i { width: 3px; height: 14px; border-radius: 2px; background: var(--accent); animation: eq .5s ease-in-out infinite alternate; }
+  .bars i:nth-child(2) { animation-duration: .62s; } .bars i:nth-child(3) { animation-duration: .4s; }
+  @keyframes eq { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
+  .expanded { position: absolute; top: 0; left: 50%; width: 580px; height: 210px; margin-left: -290px;
+              padding: 8px 20px 16px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .island.open .expanded { opacity: 1; pointer-events: auto; transition-delay: .09s; }
+  .head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; height: 28px; }
+  .clock { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .clock small { font-size: 12px; opacity: .55; font-weight: 400; margin-left: 8px; }
+  .tabs { display: flex; gap: 4px; }
+  .tab { width: 30px; height: 24px; border-radius: 12px; display: grid; place-items: center; color: rgba(255,255,255,.7);
+         cursor: pointer; border: 0; background: transparent; transition: background .15s, color .15s; }
+  .tab:hover { background: rgba(255,255,255,.12); }
+  .tab.on { background: rgba(255,255,255,.18); color: var(--accent); }
+  .tab svg { width: 14px; height: 14px; }
+  .battery { justify-self: end; display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .battery svg { width: 13px; height: 13px; opacity: .9; }
+  .pages { position: relative; height: 148px; margin-top: 10px; }
+  .page { position: absolute; inset: 0; display: none; }
+  .page.on { display: flex; }
+
+  .art { width: 100px; height: 100px; border-radius: 14px; flex: none;
+         background: conic-gradient(from 210deg at 30% 70%, #ff8a5b, #ff3d77, #7b5cff, #2ec5ff, #ff8a5b); position: relative; overflow: hidden; }
+  .art::after { content: ""; position: absolute; inset: 0;
+                background: radial-gradient(circle at 70% 25%, rgba(255,255,255,.45), transparent 35%), radial-gradient(circle at 50% 50%, transparent 30%, rgba(0,0,0,.35)); }
+  .media { display: flex; gap: 14px; flex: 1; align-items: center; }
+  .media-info { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; text-align: left; }
+  .t1 { font-size: 15px; font-weight: 600; } .t2 { font-size: 13px; opacity: .65; } .t3 { font-size: 11px; opacity: .4; }
+  .prog { margin-top: auto; }
+  .track { height: 4px; border-radius: 2px; background: rgba(255,255,255,.2); overflow: hidden; }
+  .fill { height: 100%; width: 38%; background: var(--accent); border-radius: 2px; animation: progress 40s linear infinite; }
+  @keyframes progress { from { width: 38%; } to { width: 100%; } }
+  .times { display: flex; justify-content: space-between; font-size: 10px; opacity: .5; margin-top: 3px; }
+  .ctrls { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 2px; }
+  .ctrls svg { width: 16px; height: 16px; } .ctrls .pp svg { width: 22px; height: 22px; }
+  .shelf { width: 200px; margin-left: 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,.19);
+           background: rgba(255,255,255,.05); display: flex; flex-wrap: wrap; align-content: flex-start; padding: 8px; gap: 4px; }
+  .mini-art.art { width: 22px; height: 22px; border-radius: 6px; }
+  .file { width: 56px; text-align: center; font-size: 10px; opacity: .9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file .ic { width: 32px; height: 38px; margin: 4px auto 4px; border-radius: 4px; position: relative; }
+  .file .ic::before { content: ""; position: absolute; right: 0; top: 0; border: 6px solid; border-color: var(--island) var(--island) rgba(255,255,255,.35) rgba(255,255,255,.35); }
+  .notes { flex: 1; border-radius: 14px; border: 1px solid rgba(255,255,255,.19); background: rgba(255,255,255,.05);
+           padding: 10px 14px; font-size: 13px; text-align: left; line-height: 1.6; }
+  .notes .caret { display: inline-block; width: 1px; height: 15px; background: #fff; vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .timer { flex: 1; display: flex; align-items: center; }
+  .timer-big { flex: 1; text-align: center; }
+  .timer-big b { display: block; font-size: 52px; font-weight: 300; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .timer-big span { font-size: 12px; opacity: .5; }
+  .chips { width: 230px; text-align: left; } .chips p { font-size: 11px; opacity: .5; margin-bottom: 8px; }
+  .chip { display: inline-block; font-size: 12px; padding: 4px 11px; border-radius: 12px; background: rgba(255,255,255,.11); margin: 0 4px 6px 0; }
+  .clips { flex: 1; display: flex; flex-direction: column; gap: 4px; text-align: left; }
+  .clip { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,.05); }
+  .clip span:last-child { opacity: .4; font-size: 10px; flex: none; }
+  .clip:first-child { background: rgba(255,255,255,.12); }
+
+  /* ── Seções ── */
+  section { padding: 110px 0 0; }
+  .kicker { color: var(--accent); font-weight: 600; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+  h2 { font-size: clamp(30px, 4.4vw, 48px); line-height: 1.08; letter-spacing: -.03em; font-weight: 800; margin: 12px 0 16px; }
+  .sub { color: var(--muted); font-size: 18px; max-width: 620px; }
+  .center { text-align: center; } .center .sub { margin: 0 auto; }
+
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-top: 48px; }
+  .card { grid-column: span 2; background: var(--bg-2); border: 1px solid var(--line); border-radius: 20px; padding: 26px;
+          position: relative; overflow: hidden; transition: border-color .2s, transform .2s; }
+  .card:hover { border-color: rgba(255,255,255,.16); transform: translateY(-2px); }
+  .card.wide { grid-column: span 3; }
+  .card .ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 18px;
+               background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+  .card .ico svg { width: 20px; height: 20px; }
+  .card h3 { font-size: 19px; letter-spacing: -.01em; margin-bottom: 6px; }
+  .card p { color: var(--muted); font-size: 15px; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  .panel { background: var(--bg-2); border: 1px solid var(--line); border-radius: 24px; padding: 40px 24px 48px; position: relative; overflow: hidden; }
+  .panel .stage-mini { display: flex; justify-content: center; }
+  .swatch-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 22px; }
+  .swatch { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; outline: 1px solid rgba(255,255,255,.15);
+            transition: transform .15s; }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch.on { border-color: #fff; }
+  .label { font-size: 14px; font-weight: 600; }
+  .range { width: 100%; accent-color: var(--accent); margin: 10px 0 22px; }
+  ul.checks { list-style: none; margin-top: 24px; display: grid; gap: 10px; }
+  ul.checks li { display: flex; gap: 10px; color: var(--muted); }
+  ul.checks li::before { content: "✓"; color: var(--accent); font-weight: 700; }
+
+  .keys { display: flex; gap: 10px; justify-content: center; margin: 36px 0 8px; }
+  kbd { font-family: inherit; font-size: 22px; font-weight: 600; min-width: 74px; padding: 16px 20px; border-radius: 14px; text-align: center;
+        background: linear-gradient(#1c1c20, #141417); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 4px 0 #050506, inset 0 1px 0 rgba(255,255,255,.08); }
+  .plus { align-self: center; color: #52525b; font-size: 22px; }
+
+  .update-demo { display: flex; justify-content: center; margin-top: 28px; }
+  .update-chip { display: inline-flex; align-items: center; gap: 10px; background: #000; border-radius: 0 0 20px 20px; padding: 10px 18px; font-size: 14px; }
+  .update-chip span { color: var(--accent); background: rgba(255,255,255,.1); padding: 4px 12px; border-radius: 12px; font-size: 12px; }
+
+  .faq { max-width: 760px; margin: 40px auto 0; }
+  details { border-bottom: 1px solid var(--line); padding: 20px 4px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 17px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  summary::after { content: "+"; color: var(--muted); font-size: 22px; line-height: 1; transition: transform .2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details p { color: var(--muted); margin-top: 10px; }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .9em; background: rgba(255,255,255,.07); padding: 2px 6px; border-radius: 6px; }
+
+  .final { margin: 120px 0 0; padding: 70px 24px; text-align: center; border-radius: 28px; border: 1px solid var(--line);
+           background: radial-gradient(500px 220px at 50% 0%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 75%), var(--bg-2); }
+  footer { padding: 50px 0 60px; color: #71717a; font-size: 14px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  footer a:hover { color: var(--text); }
+
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s, transform .7s; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 860px) {
+    nav .links { display: none; }
+    .grid { grid-template-columns: 1fr; } .card, .card.wide { grid-column: auto; }
+    .split { grid-template-columns: 1fr; gap: 32px; }
+    section { padding-top: 80px; }
+    kbd { font-size: 17px; min-width: 56px; padding: 12px 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+  /* Modo captura (gera as imagens do README) */
+  body.shot nav, body.shot .hint, body.shot .hero .pill-tag, body.shot .fine { display: none; }
+  body.shot .reveal { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
+    <symbol id="i-timer" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></g></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.5h6V4M9 10h6M9 14h6"/></g></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></g></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path fill="currentColor" d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path fill="currentColor" d="M6 5h2v14H6zM20 5v14L9 12z"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path fill="currentColor" d="M16 5h2v14h-2zM4 5v14l11-7z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 4v16l13-8z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M6 4h4v16H6zM14 4h4v16h-4z"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></g></symbol>
+    <symbol id="i-tray" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3v11M8 10l4 4 4-4"/><path d="M3 15v5h18v-5"/></g></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-1.5-1-2.5 1-1.5 2-1.5h2a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/></g></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5L20 16M20 20v-4h-4"/></g></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></g></symbol>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5 10.5 4.5v7H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></symbol>
+    <symbol id="i-gh" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.4 1.1 2.9.8.1-.7.4-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7c-.1-.3-.5-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9V21c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></symbol>
+  </defs>
+</svg>
+
+<template id="island-tpl">
+  <div class="island">
+    <div class="collapsed">
+      <div class="mini-art art"></div>
+      <div class="bars"><i></i><i></i><i></i></div>
+    </div>
+    <div class="expanded">
+      <div class="head">
+        <div class="clock"><span data-clock>21:42</span><small data-date>sex, 14 nov</small></div>
+        <div class="tabs">
+          <button class="tab on" data-tab="home" title="Início"><svg><use href="#i-home"/></svg></button>
+          <button class="tab" data-tab="notes" title="Notas"><svg><use href="#i-note"/></svg></button>
+          <button class="tab" data-tab="timer" title="Timer"><svg><use href="#i-timer"/></svg></button>
+          <button class="tab" data-tab="clip" title="Área de transferência"><svg><use href="#i-clip"/></svg></button>
+        </div>
+        <div class="battery"><span><svg style="color:var(--accent)"><use href="#i-bolt"/></svg> 86%</span><svg><use href="#i-gear"/></svg></div>
+      </div>
+      <div class="pages">
+        <div class="page on" data-page="home">
+          <div class="media">
+            <div class="art"></div>
+            <div class="media-info">
+              <div class="t1">Luzes da Cidade</div>
+              <div class="t2">Maré Alta</div>
+              <div class="t3">Spotify</div>
+              <div class="prog"><div class="track"><div class="fill"></div></div>
+                <div class="times"><span>1:24</span><span>3:41</span></div></div>
+              <div class="ctrls"><svg><use href="#i-prev"/></svg><span class="pp"><svg><use href="#i-pause"/></svg></span><svg><use href="#i-next"/></svg></div>
+            </div>
+          </div>
+          <div class="shelf">
+            <div class="file"><div class="ic" style="background:#e5484d"></div>briefing.pdf</div>
+            <div class="file"><div class="ic" style="background:#3e63dd"></div>proposta.docx</div>
+            <div class="file"><div class="ic" style="background:#30a46c"></div>orçamento.xlsx</div>
+          </div>
+        </div>
+        <div class="page" data-page="notes">
+          <div class="notes">☐ Ligar pro cliente às 15h<br>☑ Revisar layout da home<br>☐ Comprar café ☕<span class="caret"></span></div>
+        </div>
+        <div class="page" data-page="timer">
+          <div class="timer">
+            <div class="timer-big"><b data-timer>24:13</b><span>Em andamento</span></div>
+            <div class="chips"><p>Início rápido</p>
+              <span class="chip">1 min</span><span class="chip">5 min</span><span class="chip">10 min</span><span class="chip">25 min</span><span class="chip">45 min</span><span class="chip">1 h</span>
+            </div>
+          </div>
+        </div>
+        <div class="page" data-page="clip">
+          <div class="clips">
+            <div class="clip"><span>https://github.com/YamamotoDesigner/ilha</span><span>21:40</span></div>
+            <div class="clip"><span>Rua das Flores, 120 — apto 42</span><span>21:31</span></div>
+            <div class="clip"><span>#7CE3A1</span><span>21:12</span></div>
+            <div class="clip"><span>Reunião remarcada para quinta às 10h</span><span>20:58</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#"><span class="logo-mark"></span>Ilha</a>
+    <div class="links">
+      <a href="#recursos">Recursos</a>
+      <a href="#personalize">Personalize</a>
+      <a href="#faq">Perguntas</a>
+      <a href="https://github.com/YamamotoDesigner/ilha">GitHub</a>
+    </div>
+    <a class="btn btn-primary btn-sm download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest">Baixar</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="glow"></div>
+  <div class="wrap">
+    <span class="pill-tag"><b>Novo</b> Versão <span class="version">1.1</span> com atualização automática</span>
+    <h1>O topo da sua tela,<br><em>finalmente útil.</em></h1>
+    <p class="lead">A Ilha vive no topo do Windows e se abre com um passar de mouse — música, arquivos, notas, timer e área de transferência, sempre à mão e nunca no caminho.</p>
+    <div class="cta">
+      <a class="btn btn-primary download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest">
+        <svg><use href="#i-win"/></svg> Baixar para Windows — grátis
+      </a>
+      <a class="btn btn-ghost" href="https://github.com/YamamotoDesigner/ilha"><svg><use href="#i-gh"/></svg> Ver no GitHub</a>
+    </div>
+    <p class="fine">Windows 10 e 11 · 64-bit · instala sem administrador · código aberto</p>
+
+    <div class="stage-outer">
+      <div class="screen" id="hero-screen">
+        <div class="stage" id="hero-stage"></div>
+        <div class="hint" id="hero-hint">Passe o mouse na ilha ↑</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="recursos">
+  <div class="wrap">
+    <div class="center reveal">
+      <div class="kicker">Recursos</div>
+      <h2>Tudo que você abre dez vezes por dia.<br>A um gesto de distância.</h2>
+      <p class="sub">Sem janelas extras, sem trocar de app. A Ilha fica pequena enquanto você trabalha e cresce só quando você precisa.</p>
+    </div>
+    <div class="grid">
+      <div class="card wide reveal"><div class="ico"><svg><use href="#i-music"/></svg></div>
+        <h3>Controle de mídia</h3><p>Capa, título, progresso e controles do que estiver tocando — Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows.</p></div>
+      <div class="card wide reveal"><div class="ico"><svg><use href="#i-tray"/></svg></div>
+        <h3>Prateleira de arquivos</h3><p>Arraste arquivos para a ilha e solte onde quiser depois. Perfeito para levar coisas entre pastas, e-mails e apps sem perder nada.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-note"/></svg></div>
+        <h3>Notas rápidas</h3><p>Um bloco sempre aberto, salvo automaticamente. Anote e volte ao que estava fazendo.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-timer"/></svg></div>
+        <h3>Timer</h3><p>Pomodoro em um clique. A contagem aparece na pílula e a ilha avisa quando acabar.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-clip"/></svg></div>
+        <h3>Área de transferência</h3><p>Histórico do que você copiou. Clique para copiar de novo. Fica só na memória.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="personalize">
+  <div class="wrap split">
+    <div class="reveal">
+      <div class="kicker">Personalize</div>
+      <h2>Do seu jeito.<br>Até o último pixel.</h2>
+      <p class="sub">Cores, tamanho, arredondamento, atrasos de abertura, monitor e quais recursos aparecem. Experimente aqui ao lado — é exatamente assim no app.</p>
+      <ul class="checks">
+        <li>Some sozinha em jogos e vídeos em tela cheia</li>
+        <li>Funciona em qualquer monitor, com qualquer escala</li>
+        <li>Inicia junto com o Windows (se você quiser)</li>
+      </ul>
+    </div>
+    <div class="panel reveal">
+      <div class="label">Cor da ilha</div>
+      <div class="swatch-row" data-var="--island">
+        <button class="swatch on" style="background:#000000" data-v="#000000"></button>
+        <button class="swatch" style="background:#1C1C1E" data-v="#1C1C1E"></button>
+        <button class="swatch" style="background:#14213D" data-v="#14213D"></button>
+        <button class="swatch" style="background:#3A0CA3" data-v="#3A0CA3"></button>
+        <button class="swatch" style="background:#5C1A1A" data-v="#5C1A1A"></button>
+        <button class="swatch" style="background:#0B3D2E" data-v="#0B3D2E"></button>
+      </div>
+      <div class="label">Cor de destaque</div>
+      <div class="swatch-row" data-var="--accent">
+        <button class="swatch on" style="background:#7CE3A1" data-v="#7CE3A1"></button>
+        <button class="swatch" style="background:#4CC9F0" data-v="#4CC9F0"></button>
+        <button class="swatch" style="background:#A78BFA" data-v="#A78BFA"></button>
+        <button class="swatch" style="background:#F472B6" data-v="#F472B6"></button>
+        <button class="swatch" style="background:#FB923C" data-v="#FB923C"></button>
+        <button class="swatch" style="background:#FACC15" data-v="#FACC15"></button>
+      </div>
+      <div class="label">Arredondamento</div>
+      <input class="range" type="range" min="0" max="34" value="22" id="radius">
+      <div class="stage-mini" id="custom-stage"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap center reveal">
+    <div class="kicker">Atalho</div>
+    <h2>Mãos no teclado? Sem problema.</h2>
+    <p class="sub">Abra e feche a ilha de qualquer lugar.</p>
+    <div class="keys"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>Alt</kbd><span class="plus">+</span><kbd>N</kbd></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap center reveal">
+    <div class="kicker">Sempre atualizada</div>
+    <h2>Melhora sozinha.</h2>
+    <p class="sub">Quando sai uma versão nova, a Ilha avisa. Um clique e ela se atualiza e reabre — com todas as suas configurações e notas no lugar.</p>
+    <div class="update-demo"><div class="update-chip">Nova versão disponível <span>Atualizar</span></div></div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="center reveal">
+      <div class="kicker">Perguntas</div>
+      <h2>Perguntas frequentes</h2>
+    </div>
+    <div class="faq reveal">
+      <details><summary>É grátis mesmo?</summary>
+        <p>Sim. A Ilha é gratuita e de código aberto — o código está todo no <a href="https://github.com/YamamotoDesigner/ilha" style="color:var(--accent)">GitHub</a>.</p></details>
+      <details><summary>O Windows mostrou "O Windows protegeu o computador". E agora?</summary>
+        <p>Esse aviso (SmartScreen) aparece para apps novos que ainda não têm assinatura digital paga. Clique em <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>.</p></details>
+      <details><summary>Precisa de permissão de administrador?</summary>
+        <p>Não. A Ilha instala só para o seu usuário, em <code>%LOCALAPPDATA%\Programs\Ilha</code>.</p></details>
+      <details><summary>Meus dados vão para algum lugar?</summary>
+        <p>Não. Notas, prateleira e configurações ficam no seu PC, em <code>%APPDATA%\Ilha</code>. O histórico da área de transferência fica só na memória e some ao fechar o app. A única conexão de internet é para verificar atualizações — e dá para desligar.</p></details>
+      <details><summary>Atrapalha jogos ou vídeos em tela cheia?</summary>
+        <p>Não. A ilha se esconde automaticamente quando um app está em tela cheia e volta quando você sai.</p></details>
+      <details><summary>Como desinstalo?</summary>
+        <p>Em Configurações do Windows → Aplicativos → Aplicativos instalados → Ilha → Desinstalar.</p></details>
+    </div>
+
+    <div class="final reveal">
+      <h2>Dê uma função ao topo da sua tela.</h2>
+      <p class="sub" style="margin:0 auto 30px">Leva menos de um minuto para instalar.</p>
+      <a class="btn btn-primary download-link" href="https://github.com/YamamotoDesigner/ilha/releases/latest">
+        <svg><use href="#i-win"/></svg> Baixar para Windows — grátis
+      </a>
+      <p class="fine"><span class="dl-meta">Windows 10 e 11 · 64-bit</span></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Ilha — feito para Windows.</span>
+    <span><a href="https://github.com/YamamotoDesigner/ilha">GitHub</a> · <a href="https://github.com/YamamotoDesigner/ilha/releases">Versões</a> · <a href="https://github.com/YamamotoDesigner/ilha/issues">Reportar problema</a></span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  const shot = params.get('shot');
+  if (shot) document.body.classList.add('shot');
+
+  const tpl = document.getElementById('island-tpl');
+  const make = host => { host.appendChild(tpl.content.cloneNode(true)); return host.querySelector('.island'); };
+
+  // Abas de cada ilha
+  const wireTabs = island => island.querySelectorAll('.tab').forEach(t => t.addEventListener('click', e => {
+    e.stopPropagation();
+    island.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+    island.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.dataset.page === t.dataset.tab));
+  }));
+  const selectTab = (island, tab) => island.querySelector(`.tab[data-tab="${tab}"]`).click();
+
+  // Ilha principal
+  const heroStage = document.getElementById('hero-stage');
+  const hero = make(heroStage);
+  wireTabs(hero);
+  const hint = document.getElementById('hero-hint');
+
+  // Escala a tela de demonstração para caber no celular
+  const screen = document.getElementById('hero-screen');
+  const fit = () => {
+    const s = Math.min(1.25, screen.clientWidth / 760);
+    heroStage.style.transform = `translateX(-50%) scale(${s})`;
+  };
+  addEventListener('resize', fit); fit();
+
+  // Demonstração automática até o visitante interagir
+  let touched = false, demoStep = 0;
+  const demo = ['open', 'home', 'notes', 'timer', 'clip', 'close'];
+  const runDemo = () => {
+    if (touched) return;
+    const step = demo[demoStep++ % demo.length];
+    if (step === 'open') hero.classList.add('open');
+    else if (step === 'close') { hero.classList.remove('open'); selectTab(hero, 'home'); }
+    else selectTab(hero, step);
+  };
+  hero.addEventListener('mouseenter', () => { touched = true; hint.style.opacity = 0; hero.classList.add('open'); });
+  hero.addEventListener('mouseleave', () => hero.classList.remove('open'));
+  hero.addEventListener('click', () => { touched = true; hero.classList.add('open'); });
+
+  // Ilha de personalização (sempre aberta)
+  const custom = make(document.getElementById('custom-stage'));
+  wireTabs(custom);
+  custom.classList.add('open');
+  const fitCustom = () => {
+    const host = document.getElementById('custom-stage');
+    const s = Math.min(1, host.clientWidth / 590);
+    custom.style.transform = `scale(${s})`; custom.style.transformOrigin = 'top center';
+    host.style.height = (210 * s) + 'px';
+  };
+  addEventListener('resize', fitCustom); fitCustom();
+
+  document.querySelectorAll('.swatch-row').forEach(row => row.addEventListener('click', e => {
+    const b = e.target.closest('.swatch'); if (!b) return;
+    row.querySelectorAll('.swatch').forEach(x => x.classList.toggle('on', x === b));
+    document.documentElement.style.setProperty(row.dataset.var, b.dataset.v);
+  }));
+  document.getElementById('radius').addEventListener('input', e =>
+    document.documentElement.style.setProperty('--radius', e.target.value + 'px'));
+
+  // Relógio e timer de verdade
+  const pad = n => String(n).padStart(2, '0');
+  let timerLeft = 24 * 60 + 13;
+  const tick = () => {
+    const d = new Date();
+    document.querySelectorAll('[data-clock]').forEach(el => el.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    document.querySelectorAll('[data-date]').forEach(el => el.textContent =
+      d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, ''));
+    if (!shot) timerLeft = Math.max(0, timerLeft - 1);
+    document.querySelectorAll('[data-timer]').forEach(el => el.textContent = `${Math.floor(timerLeft / 60)}:${pad(timerLeft % 60)}`);
+  };
+  tick(); setInterval(tick, 1000);
+
+  // Link direto para o instalador mais recente
+  fetch('https://api.github.com/repos/YamamotoDesigner/ilha/releases/latest')
+    .then(r => r.ok ? r.json() : null)
+    .then(rel => {
+      if (!rel) return;
+      const asset = (rel.assets || []).find(a => /^Ilha-Setup.*\.exe$/i.test(a.name));
+      const ver = (rel.tag_name || '').replace(/^v/i, '');
+      document.querySelectorAll('.version').forEach(el => el.textContent = ver);
+      if (asset) {
+        document.querySelectorAll('.download-link').forEach(a => a.href = asset.browser_download_url);
+        const mb = Math.round(asset.size / 1048576);
+        document.querySelectorAll('.dl-meta').forEach(el => el.textContent = `Versão ${ver} · ${mb} MB · Windows 10 e 11 · 64-bit`);
+      }
+    }).catch(() => {});
+
+  // Animação de entrada das seções
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .15 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // Modo captura: estados fixos para as imagens do README
+  if (shot) {
+    hero.classList.add('open');
+    if (shot !== 'hero') selectTab(hero, shot);
+  } else {
+    setTimeout(() => { runDemo(); setInterval(runDemo, 2600); }, 1200);
+  }
+})();
+</script>
+</body>
+</html>
