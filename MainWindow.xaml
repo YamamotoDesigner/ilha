@@ -451,7 +451,10 @@
                                                  ToolTip="{local:T 'Início'}" IsChecked="True" Checked="Tab_Checked">
                                         <local:Glyph Data="{StaticResource FillHome}" Size="17" Filled="True" Thickness="0"/>
                                     </RadioButton>
-                                    <RadioButton x:Name="TabAgenda" Style="{StaticResource TabButton}" Tag="agenda"
+                                    <RadioButton x:Name="TabShelf" Style="{StaticResource TabButton}" Tag="shelf"
+                                                 ToolTip="{local:T 'Prateleira'}" Checked="Tab_Checked">
+                                        <local:Glyph Data="{StaticResource IcoTray}" Size="16" Thickness="1.9"/>
+                                    </RadioButton>                                    <RadioButton x:Name="TabAgenda" Style="{StaticResource TabButton}" Tag="agenda"
                                                  ToolTip="{local:T 'Agenda e tarefas'}" Checked="Tab_Checked">
                                         <local:Glyph Data="{StaticResource FillCalendar}" Size="17" Filled="True" Thickness="0"/>
                                     </RadioButton>
@@ -732,8 +735,13 @@
                                             </Border>
                                         </Grid>
 
+
+                                    </Grid>
+
+                                    <!-- ── Prateleira (aba própria) ── -->
+                                    <Grid x:Name="PageShelf" Visibility="Collapsed">
                                         <!-- Prateleira -->
-                                        <Border Grid.Column="4" x:Name="ShelfZone" Style="{StaticResource Card}">
+                                        <Border x:Name="ShelfZone" Style="{StaticResource Card}">
                                             <Grid>
                                                 <TextBlock Text="{local:T 'PRATELEIRA'}" Style="{StaticResource Label}" FontSize="10"
                                                            Margin="14,12,0,0" IsHitTestVisible="False"/>
@@ -911,7 +919,11 @@
                                                            VerticalAlignment="Center"/>
                                             </DockPanel>
                                             <UniformGrid x:Name="CalHeader" DockPanel.Dock="Top" Rows="1" Columns="7" Margin="0,0,0,2"/>
-                                            <UniformGrid x:Name="CalGrid" Rows="6" Columns="7"/>
+                                            <ScrollViewer x:Name="CalScroll" VerticalScrollBarVisibility="Hidden"
+                                                          HorizontalScrollBarVisibility="Disabled" CanContentScroll="False"
+                                                          ScrollChanged="CalScroll_ScrollChanged">
+                                                <StackPanel x:Name="CalWeeks"/>
+                                            </ScrollViewer>
                                         </DockPanel>
                                     </Grid>
 
@@ -990,12 +1002,16 @@
 
                                             <WrapPanel x:Name="TimerChips">
                                                 <Button Style="{StaticResource ChipButton}" Content="1" Tag="1" Click="TimerPreset_Click" Padding="7,4" ToolTip="1 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="3" Tag="3" Click="TimerPreset_Click" Padding="7,4" ToolTip="3 min"/>
                                                 <Button Style="{StaticResource ChipButton}" Content="5" Tag="5" Click="TimerPreset_Click" Padding="7,4" ToolTip="5 min"/>
                                                 <Button Style="{StaticResource ChipButton}" Content="10" Tag="10" Click="TimerPreset_Click" Padding="7,4" ToolTip="10 min"/>
                                                 <Button Style="{StaticResource ChipButton}" Content="15" Tag="15" Click="TimerPreset_Click" Padding="7,4" ToolTip="15 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="20" Tag="20" Click="TimerPreset_Click" Padding="7,4" ToolTip="20 min"/>
                                                 <Button Style="{StaticResource ChipButton}" Content="25" Tag="25" Click="TimerPreset_Click" Padding="7,4" ToolTip="25 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="30" Tag="30" Click="TimerPreset_Click" Padding="7,4" ToolTip="30 min"/>
                                                 <Button Style="{StaticResource ChipButton}" Content="45" Tag="45" Click="TimerPreset_Click" Padding="7,4" ToolTip="45 min"/>
                                                 <Button Style="{StaticResource ChipButton}" Content="1 h" Tag="60" Click="TimerPreset_Click" Padding="7,4"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="1 h 30" Tag="90" Click="TimerPreset_Click" Padding="7,4"/>
                                                 <Button Style="{StaticResource ChipButton}" Content="+1" Tag="1" Click="TimerAdd_Click" Padding="7,4"
                                                         ToolTip="{local:T 'Mais 1 minuto'}"/>
                                                 <Button Style="{StaticResource ChipButton}" Content="+5" Tag="5" Click="TimerAdd_Click" Padding="7,4"
@@ -1151,10 +1167,10 @@
 
                                     <!-- ── Espelho (câmera) ── -->
                                     <Grid x:Name="PageMirror" Visibility="Collapsed">
-                                        <Border x:Name="MirrorFrame" Width="300" Style="{StaticResource Card}"
+                                        <Border x:Name="MirrorFrame" Width="180" Height="180" Style="{StaticResource Card}" CornerRadius="90"
                                                 HorizontalAlignment="Center" ClipToBounds="True">
                                             <Grid>
-                                                <Border x:Name="MirrorImage" CornerRadius="13" RenderTransformOrigin="0.5,0.5">
+                                                <Border x:Name="MirrorImage" CornerRadius="90" RenderTransformOrigin="0.5,0.5">
                                                     <Border.RenderTransform>
                                                         <ScaleTransform ScaleX="-1"/>
                                                     </Border.RenderTransform>

@@ -109,7 +109,7 @@
          transition: width .52s cubic-bezier(.3,1.28,.42,1), height .52s cubic-bezier(.3,1.28,.42,1),
                      border-radius .4s, background .3s, margin-top .3s;
          -webkit-user-select: none; user-select: none; }
-  .isl.open { width: 640px; height: 236px; border-radius: 0 0 var(--radius) var(--radius); }
+  .isl.open { width: var(--ow, 640px); height: var(--oh, 236px); border-radius: 0 0 var(--radius) var(--radius); }
   .isl.float { margin-top: 12px; border-radius: 15px; box-shadow: 0 14px 34px -14px rgba(0,0,0,.5); }
   .isl.float.open { border-radius: var(--radius); }
   .isl.glass { background: color-mix(in srgb, var(--island) 46%, transparent);
@@ -126,7 +126,7 @@
   .bars i:nth-child(4) { animation-duration: .74s; }
   @keyframes eq { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
 
-  .isl .body { position: absolute; top: 0; left: 50%; width: 640px; height: 236px; margin-left: -320px;
+  .isl .body { position: absolute; top: 0; left: 50%; width: var(--ow, 640px); height: var(--oh, 236px); margin-left: calc(var(--ow, 640px) / -2);
                padding: 20px 26px 24px; opacity: 0; transform: translateY(-6px) scale(.97); transform-origin: top center;
                transition: opacity .12s, transform .3s; pointer-events: none; }
   .isl.open .body { opacity: 1; transform: none; transition: opacity .28s .1s, transform .45s .06s cubic-bezier(.2,.8,.3,1);
@@ -142,7 +142,7 @@
          color: rgba(255,255,255,.55); transition: background .25s, color .25s; }
   .tab:hover { color: rgba(255,255,255,.9); }
   .tab.on { background: rgba(255,255,255,.13); color: #fff; }
-  .pages { position: relative; height: 142px; margin-top: 16px; }
+  .pages { position: relative; height: calc(var(--oh, 236px) - 94px); margin-top: 16px; }
   .page { position: absolute; inset: 0; opacity: 0; transform: translateX(14px); pointer-events: none;
           transition: opacity .16s, transform .3s; }
   .page.on { opacity: 1; transform: none; pointer-events: auto; transition: opacity .26s .06s, transform .38s cubic-bezier(.2,.8,.3,1); }
@@ -152,7 +152,8 @@
   .dim { color: rgba(255,255,255,.7); } .dimmer { color: rgba(255,255,255,.5); }
 
   /* Início */
-  .p-home { display: grid; grid-template-columns: 118px 1fr 176px; gap: 22px; align-items: center; }
+  .p-home { display: grid; grid-template-columns: 116px 1fr; gap: 22px; align-items: center; }
+  .p-shelf .shelf { height: 100%; }
   .cover { background: linear-gradient(140deg, #f2c48d, #d9765a 48%, #2f5d62); position: relative; overflow: hidden; }
   .cover::after { content: ""; position: absolute; width: 70%; height: 70%; left: 46%; top: 42%; border-radius: 50%;
                   background: rgba(255,244,224,.82); }
@@ -181,7 +182,7 @@
 
   /* Agenda */
   .p-agenda { display: grid; grid-template-columns: 232px 1fr; gap: 26px; }
-  .todo { padding: 13px 16px 12px; height: 142px; display: flex; flex-direction: column; }
+  .todo { padding: 13px 16px 12px; height: 100%; display: flex; flex-direction: column; }
   .todo .day { color: var(--accent); }
   .todo b { font-size: 15px; font-weight: 500; display: block; margin: 2px 0 8px; }
   .todo label { display: flex; align-items: center; gap: 9px; font-size: 12.5px; padding: 3px 0; cursor: pointer; }
@@ -193,12 +194,18 @@
   .todo label.done span { color: rgba(255,255,255,.45); text-decoration: line-through; }
   .cal .top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
   .cal .top b { font-size: 13.5px; font-weight: 500; text-transform: capitalize; }
-  .cal .grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 1px; text-align: center;
-               font-size: 11.5px; font-variant-numeric: tabular-nums; }
-  .cal .grid span { height: 17px; line-height: 17px; }
+  .cal { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+  /* Dias grandes e arredondados; a lista rola para escolher o dia */
+  .cal .grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; text-align: center;
+               font-size: 12.5px; font-variant-numeric: tabular-nums; overflow-y: auto; scrollbar-width: none; min-height: 0; }
+  .cal .grid::-webkit-scrollbar { display: none; }
+  .cal .grid span { height: 26px; line-height: 26px; width: 30px; margin: 0 auto; border-radius: 8px; cursor: pointer; }
+  .cal .grid span:not(.h):hover { background: rgba(255,255,255,.08); }
+  .cal .grid .h { height: 16px; line-height: 16px; cursor: default; }
+  .cal .grid .s { background: rgba(255,255,255,.16); font-weight: 600; }
   .cal .grid .h { font-size: 10px; font-weight: 500; color: rgba(255,255,255,.5); }
   .cal .grid .o { color: rgba(255,255,255,.25); }
-  .cal .grid .t { background: var(--accent); color: #111; font-weight: 600; border-radius: 6px; width: 26px; margin: 0 auto; }
+  .cal .grid .t { background: var(--accent); color: #111; font-weight: 600; }
 
   /* Notas */
   .p-notes { padding: 12px 16px; font-size: 13.5px; line-height: 1.55; color: rgba(255,255,255,.92); }
@@ -357,6 +364,7 @@
         <span class="clock" data-clock>9:41</span>
         <div class="tabs">
           <button class="tab on" data-tab="home" aria-label="Início"><svg><use href="#i-home"/></svg></button>
+          <button class="tab" data-tab="shelf" aria-label="Prateleira"><svg class="line"><use href="#i-tray"/></svg></button>
           <button class="tab" data-tab="agenda" aria-label="Agenda"><svg><use href="#i-cal"/></svg></button>
           <button class="tab" data-tab="notes" aria-label="Notas"><svg><use href="#i-note"/></svg></button>
           <button class="tab" data-tab="timer" aria-label="Foco"><svg><use href="#i-timer"/></svg></button>
@@ -372,6 +380,8 @@
             <div class="prog"><span>1:28</span><div><i></i></div><span>3:12</span></div>
             <div class="ctrl"><svg><use href="#i-prev"/></svg><svg class="big"><use href="#i-pause"/></svg><svg><use href="#i-next"/></svg></div>
           </div>
+        </div>
+        <div class="page p-shelf" data-page="shelf">
           <div class="cardx shelf">
             <span class="lbl">Prateleira</span>
             <div class="files"><span><i></i>plano.pdf</span><span><i></i>foto.jpg</span><span><i></i>lista.txt</span></div>
@@ -400,7 +410,7 @@
           <div>
             <div class="chips"><span class="chip main">Pausar</span><span class="chip big">Zerar</span></div>
             <div class="chips"><span class="chip">Foco <em>25</em></span><span class="chip">Pausa <em>5</em></span><span class="chip">Pausa longa <em>15</em></span></div>
-            <div class="chips" style="margin:0"><span class="chip">5</span><span class="chip">10</span><span class="chip">15</span><span class="chip">45</span><span class="chip">1 h</span><span class="chip">+1</span></div>
+            <div class="chips" style="margin:0"><span class="chip">1</span><span class="chip">3</span><span class="chip">5</span><span class="chip">10</span><span class="chip">15</span><span class="chip">20</span><span class="chip">25</span><span class="chip">30</span><span class="chip">45</span><span class="chip">1 h</span><span class="chip">1 h 30</span><span class="chip">+1</span><span class="chip">+5</span><span class="chip">−1</span></div>
           </div>
         </div>
         <div class="page p-clip" data-page="clip">
@@ -457,14 +467,14 @@
     <div class="chapter flip rise">
       <div class="copy">
         <h2>O dia inteiro num relance.</h2>
-        <p>O mês de um lado, as tarefas de hoje do outro. Marque o que já fez e siga em frente; a lista fica salva do jeito que você deixou.</p>
+        <p>Role pelas semanas, toque num dia e deixe um lembrete para ele. Os dias com lembrete ficam marcados, e a lista de hoje fica salva do jeito que você deixou.</p>
       </div>
       <div class="plate"><div class="demo" data-page="agenda"></div></div>
     </div>
     <div class="chapter rise">
       <div class="copy">
         <h2>Foco com hora para acabar.</h2>
-        <p>Blocos de foco e pausa, ou qualquer tempo de um minuto a uma hora. A contagem continua visível com a ilha fechada, e ela avisa quando o tempo termina.</p>
+        <p>Blocos de foco e pausa, ou qualquer tempo de um minuto a uma hora e meia. A contagem continua visível com a ilha fechada, e ela avisa quando o tempo termina.</p>
       </div>
       <div class="plate"><div class="demo" data-page="timer"></div></div>
     </div>
@@ -472,11 +482,13 @@
     <div class="more rise">
       <h2>E mais algumas coisas que você vai usar todo dia.</h2>
       <dl>
-        <div><dt>Prateleira</dt><dd>Arraste arquivos para a ilha e solte depois em outra pasta, e-mail ou app. Downloads concluídos já aparecem lá.</dd></div>
+        <div><dt>Prateleira</dt><dd>Uma aba só para os seus arquivos. Arraste até a ilha e solte depois em outra pasta, e-mail ou app. Downloads concluídos já aparecem lá.</dd></div>
+        <div><dt>Do tamanho certo</dt><dd>A ilha cresce ou encolhe conforme a aba: pequena para a música, maior para o calendário. Nada fica espremido.</dd></div>
+        <div><dt>Só o que você usa</dt><dd>Na primeira vez, a ilha pergunta quais abas você quer. O resto fica de fora, e dá para mudar quando quiser.</dd></div>
         <div><dt>Notas</dt><dd>Um bloco sempre à mão, que salva sozinho enquanto você escreve.</dd></div>
         <div><dt>Área de transferência</dt><dd>O histórico do que você copiou. Um clique copia de novo. Fica só na memória.</dd></div>
         <div><dt>Teleprompter</dt><dd>O roteiro rola logo abaixo da câmera, com contagem regressiva e velocidade ajustável.</dd></div>
-        <div><dt>Espelho</dt><dd>Confira a câmera antes da chamada. Ela só liga com a aba aberta e nada é gravado.</dd></div>
+        <div><dt>Espelho</dt><dd>Uma prévia redonda da câmera para conferir o rosto antes da chamada. Ela só liga com a aba aberta e nada é gravado.</dd></div>
         <div><dt>Avisos rápidos</dt><dd>Volume, carregador, música nova e downloads aparecem por um instante na ilha fechada.</dd></div>
         <div><dt>Atalho</dt><dd>Abra e feche de qualquer lugar com <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd> no Windows, ou <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>N</kbd> no Mac.</dd></div>
         <div><dt>No notch do Mac</dt><dd>Nos MacBooks com notch, a ilha fechada se encaixa no entalhe da tela e cresce a partir dele.</dd></div>
@@ -574,7 +586,11 @@
   const OPEN_W = 640;
 
   const make = host => { host.appendChild(tpl.content.cloneNode(true)); return host.querySelector('.isl'); };
+  // Cada aba tem o seu tamanho, como no app
+  const SIZES = { home: [480, 212], shelf: [460, 196], agenda: [640, 300], notes: [500, 220], timer: [620, 256], clip: [500, 240] };
   const select = (isl, tab) => {
+    const [w, h] = SIZES[tab] || [640, 236];
+    isl.style.setProperty('--ow', w + 'px'); isl.style.setProperty('--oh', h + 'px');
     isl.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
     isl.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.dataset.page === tab));
   };
@@ -588,7 +604,9 @@
       const s = Math.min(1, (host.clientWidth - room) / OPEN_W);
       stage.style.transform = `translateX(-50%) scale(${s})`;
       // Capítulos: a moldura fica do tamanho da ilha, com a mesma folga em cima e embaixo
-      if (wrapHeight) host.style.height = Math.round(236 * s + 2 * stage.offsetTop) + 'px';
+      const isl = stage.querySelector('.isl');
+      const oh = isl ? parseFloat(isl.style.getPropertyValue('--oh')) || 236 : 236;
+      if (wrapHeight) host.style.height = Math.round(oh * s + 2 * stage.offsetTop) + 'px';
     };
     addEventListener('resize', apply); apply();
   };
@@ -598,7 +616,7 @@
   const hero = make(heroStage); wire(hero); fit(heroStage, heroDesk);
   const hint = document.getElementById('hero-hint');
   let touched = false, step = 0;
-  const script = ['open', 'home', 'agenda', 'timer', 'notes', 'close'];
+  const script = ['open', 'home', 'agenda', 'timer', 'shelf', 'notes', 'close'];
   const demo = () => {
     if (touched) return;
     const s = script[step++ % script.length];
@@ -648,12 +666,19 @@
   document.querySelectorAll('[data-week]').forEach(el => el.textContent = 'Semana ' + week);
   const first = new Date(now.getFullYear(), now.getMonth(), 1);
   let cells = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => `<span class="h">${d}</span>`).join('');
-  for (let i = 0; i < 35; i++) {
+  for (let i = 0; i < 63; i++) {
     const d = new Date(first.getFullYear(), first.getMonth(), 1 - first.getDay() + i);
     const cls = d.getMonth() !== now.getMonth() ? 'o' : d.getDate() === now.getDate() ? 't' : '';
     cells += `<span class="${cls}">${d.getDate()}</span>`;
   }
-  document.querySelectorAll('[data-cal]').forEach(el => el.innerHTML = cells);
+  document.querySelectorAll('[data-cal]').forEach(el => {
+    el.innerHTML = cells;
+    // Toque num dia para escolher
+    el.addEventListener('click', e => {
+      const d = e.target.closest('span'); if (!d || d.classList.contains('h') || d.classList.contains('t')) return;
+      el.querySelectorAll('.s').forEach(x => x.classList.remove('s')); d.classList.add('s');
+    });
+  });
   let left = 18 * 60 + 42;
   const tick = () => {
     const d = new Date();

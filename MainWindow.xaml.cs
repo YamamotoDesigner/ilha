@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -188,7 +189,7 @@ namespace Ilha
                 UpdateGlassRegion();
             };
             LocationChanged += (_, _) => _glassWindow?.Follow(_hwnd); // inclusive enquanto arrasta
-            CalGrid.SizeChanged += (_, _) => SizeCalendarCells();
+            CalScroll.SizeChanged += (_, _) => UpdateCalendarMonthLabel();
             _downloads.Completed += OnDownloadCompleted;
             TabStrip.SizeChanged += (_, _) => MoveTabIndicator(animate: false);
             PrompterViewport.SizeChanged += (_, _) => SizePrompterLines();
@@ -496,8 +497,10 @@ namespace Ilha
             if (!_resizing) return;
             _resizing = false;
             _draggingOut = false;
-            _settings.OpenWidth = Math.Round(_expW);
-            _settings.OpenHeight = Math.Round(_expH);
+            // O tamanho escolhido vira uma proporção sobre o tamanho de cada aba.
+            var (bw, bh) = BaseTabSize(_currentTab);
+            _settings.OpenWidth = Math.Round(DefaultOpenWidth * _expW / bw);
+            _settings.OpenHeight = Math.Round(DefaultOpenHeight * _expH / bh);
             _settings.Save();
             if (!Island.IsMouseOver) RestartCollapseTimer();
         }
@@ -566,6 +569,37 @@ namespace Ilha
         private bool TabsOnTop => true; // abas sempre no topo
 
         /// <summary>
+        /// Cada aba tem o seu tamanho: a ilha cresce ou encolhe para o que a tela pede
+        /// (a música fica pequena, o calendário ganha espaço), sem nada espremido.
+        /// </summary>
+        private static (double W, double H) BaseTabSize(string tab) => tab switch
+        {
+            "home" => (460, 176),
+            "shelf" => (460, 188),
+            "agenda" => (620, 300),
+            "notes" => (480, 220),
+            "timer" => (580, 250),
+            "clipboard" => (480, 250),
+            "prompter" => (580, 236),
+            "mirror" => (460, 280),
+            _ => (DefaultOpenWidth, DefaultOpenHeight),
+        };
+
+        /// <summary>Aplica o tamanho da aba atual, na proporção que a pessoa escolheu nas configurações.</summary>
+        private void ApplyTabSize(bool animate)
+        {
+            var (bw, bh) = BaseTabSize(_currentTab);
+            double kw = Math.Clamp(_settings.OpenWidth / DefaultOpenWidth, 0.7, 1.6);
+            double kh = Math.Clamp(_settings.OpenHeight / DefaultOpenHeight, 0.7, 1.6);
+            _expW = Math.Clamp(bw * kw, MinFloatWidth, MaxFloatWidth);
+            _expH = Math.Clamp(bh * kh, MinFloatHeight, MaxFloatHeight);
+            ExpandedView.Width = _expW;
+            ExpandedView.Height = _expH;
+            UpdateResponsiveLayout();
+            if (_expanded) AnimateSize(_expW, _expH, animate && _settings.SpringAnimation);
+        }
+
+        /// <summary>
         /// Encaixa o conteúdo no tamanho atual da ilha aberta: escala quando fica pequeno demais e
         /// esconde o que não cabe (sistema, prateleira, tarefas, modos do timer, data...).
         /// Poucos blocos por tela, com espaço entre eles, em vez de tudo espremido.
@@ -612,12 +646,12 @@ namespace Ilha
             bool media = s.ShowMedia;
             double used = media ? 230 : 0;
             double shelfW = 168;
-            bool shelf = s.ShowShelf && pageW >= used + (media ? gap1 : 0) + 150;
+            bool shelf = false; // a prateleira tem aba própria
             if (shelf) used += (media ? gap1 : 0) + shelfW;
             bool stats = s.ShowStats && pageH >= 120 && pageW >= used + gap2 + statsW + (media ? 60 : 0);
             if (shelf && !stats && media) shelfW = Math.Min(200, pageW * 0.36);
             MediaArea.Visibility = media ? visible : hidden;
-            ShelfZone.Visibility = shelf ? visible : hidden;
+            ShelfZone.Visibility = visible; // na aba própria, sempre inteira
             StatsCard.Visibility = stats ? visible : hidden;
             var star = new GridLength(1, GridUnitType.Star);
             HomeMediaCol.Width = media ? star : new GridLength(0);
@@ -652,7 +686,10 @@ namespace Ilha
             TimerChips.Visibility = pageH >= 126 && pageW >= 300 ? visible : hidden;
 
             // Espelho
-            MirrorFrame.Width = Math.Min(300, pageW);
+            double mirror = Math.Max(80, Math.Min(pageH, pageW));
+            MirrorFrame.Width = MirrorFrame.Height = mirror;
+            MirrorFrame.CornerRadius = new CornerRadius(mirror / 2);
+            MirrorImage.CornerRadius = new CornerRadius(mirror / 2);
 
             UpdateStats();
         }
@@ -913,13 +950,9 @@ namespace Ilha
             RootScale.ScaleX = RootScale.ScaleY = scale;
             // Tamanho da ilha aberta (o mesmo em todos os estilos; na "Livre" o canto também muda).
             // A janela (transparente) já comporta o máximo, para redimensionar sem mover a ilha.
-            _expW = Math.Clamp(s.OpenWidth, MinFloatWidth, MaxFloatWidth);
-            _expH = Math.Clamp(s.OpenHeight, MinFloatHeight, MaxFloatHeight);
-            ExpandedView.Width = _expW;
-            ExpandedView.Height = _expH;
             Width = (MaxFloatWidth + 60) * scale;
             Height = (MaxFloatHeight + 56) * scale;
-            if (_expanded) AnimateSize(_expW, _expH, spring: false);
+            ApplyTabSize(animate: false);
 
             // Tempos
             _expandTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, s.HoverDelayMs));
@@ -929,7 +962,8 @@ namespace Ilha
             _downloads.Enabled = s.LiveDownloads || (s.DownloadsToShelf && s.ShowShelf);
 
             // Abas
-            TabHome.Visibility = s.ShowMedia || s.ShowShelf || s.ShowStats ? Visibility.Visible : Visibility.Collapsed;
+            TabHome.Visibility = s.ShowMedia || s.ShowStats ? Visibility.Visible : Visibility.Collapsed;
+            TabShelf.Visibility = s.ShowShelf ? Visibility.Visible : Visibility.Collapsed;
             TabAgenda.Visibility = s.ShowCalendar ? Visibility.Visible : Visibility.Collapsed;
             TabNotes.Visibility = s.ShowNotes ? Visibility.Visible : Visibility.Collapsed;
             TabTimer.Visibility = s.ShowTimer ? Visibility.Visible : Visibility.Collapsed;
@@ -1257,11 +1291,11 @@ namespace Ilha
             if (sender is RadioButton { Tag: string tab }) SelectTab(tab);
         }
 
-        private static readonly string[] TabOrder = { "home", "agenda", "notes", "timer", "clipboard", "mirror", "prompter" };
+        private static readonly string[] TabOrder = { "home", "shelf", "agenda", "notes", "timer", "clipboard", "mirror", "prompter" };
 
         private (string Tab, FrameworkElement Page)[] AllPages => new (string, FrameworkElement)[]
         {
-            ("home", PageHome), ("agenda", PageAgenda), ("notes", PageNotes), ("timer", PageTimer),
+            ("home", PageHome), ("shelf", PageShelf), ("agenda", PageAgenda), ("notes", PageNotes), ("timer", PageTimer),
             ("clipboard", PageClipboard), ("mirror", PageMirror), ("prompter", PagePrompter),
         };
 
@@ -1332,6 +1366,7 @@ namespace Ilha
                 }
             }
             MoveTabIndicator(animate: changed);
+            if (changed) ApplyTabSize(animate: _expanded);
             if (changed && _expanded && CurrentPage is { } entering) StaggerIn(entering);
             if (tab != "prompter" && previous == "prompter" && _prompterRunning) PrompterStop(resetToStart: false);
             if (tab != "notes" && tab != "agenda" && tab != "prompter") ReleaseKeyboard();
@@ -1453,12 +1488,8 @@ namespace Ilha
             AgendaDate.Text = sel.ToString(L.English ? "MMMM d" : "d 'de' MMMM", culture);
             RefreshTodoFilter();
 
-            // Mês exibido
-            var month = new DateTime(today.Year, today.Month, 1).AddMonths(_monthOffset);
-            CalMonth.Text = culture.TextInfo.ToTitleCase(month.ToString("MMMM yyyy", culture));
-            int week = ISOWeek.GetWeekOfYear(_monthOffset == 0 ? today : month);
-            CalWeekNumber.Text = L.F("SEMANA {0}", week);
-
+            // Semanas em lista que rola: dias grandes e arredondados, e o mês muda conforme a rolagem.
+            CalWeekNumber.Text = L.F("SEMANA {0}", ISOWeek.GetWeekOfYear(today));
             var firstDay = culture.DateTimeFormat.FirstDayOfWeek;
             CalHeader.Children.Clear();
             for (int i = 0; i < 7; i++)
@@ -1473,89 +1504,122 @@ namespace Ilha
                     HorizontalAlignment = HorizontalAlignment.Center,
                 });
             }
+            BuildCalendarWeeks(today, sel, culture, firstDay);
+        }
 
-            CalGrid.Children.Clear();
-            int lead = ((int)month.DayOfWeek - (int)firstDay + 7) % 7;
-            var start = month.AddDays(-lead);
+        private const double CalRowH = 34, CalLabelH = 24;
+        private readonly List<(double Top, DateTime Month)> _calRows = new();
+        private bool _calScrollToSelected = true;
+
+        private void BuildCalendarWeeks(DateTime today, DateTime sel, CultureInfo culture, DayOfWeek firstDay)
+        {
+            double keep = CalScroll.VerticalOffset;
+            CalWeeks.Children.Clear();
+            _calRows.Clear();
             var accent = (Brush)Resources["Accent"];
-            for (int i = 0; i < 42; i++)
+            var dark = new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11));
+            var pending = new HashSet<string>(_todos.Where(t => !t.Done && !string.IsNullOrEmpty(t.Date)).Select(t => t.Date!));
+
+            // De 2 meses atrás até 1 ano à frente.
+            var anchor = new DateTime(today.Year, today.Month, 1).AddMonths(-2);
+            var start = anchor.AddDays(-(((int)anchor.DayOfWeek - (int)firstDay + 7) % 7));
+            double y = 0, selTop = 0;
+            for (int w = 0; w < 66; w++)
             {
-                var day = start.AddDays(i);
-                bool inMonth = day.Month == month.Month;
-                bool isToday = day == today;
-                bool isSelected = day == sel && !isToday;
-                bool weekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
-                bool hasTasks = _todos.Any(t => !t.Done && t.Date == DayKey(day));
-                var number = new TextBlock
+                var weekStart = start.AddDays(w * 7);
+                var newMonth = Enumerable.Range(0, 7).Select(i => weekStart.AddDays(i)).FirstOrDefault(d => d.Day == 1);
+                if (w == 0 || newMonth != default)
                 {
-                    Text = day.Day.ToString(culture),
-                    FontSize = 11.5,
-                    FontWeight = isToday || isSelected || hasTasks ? FontWeights.SemiBold : FontWeights.Normal,
-                    // Dia com lembrete pendente: número na cor de destaque.
-                    Foreground = isToday ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11))
-                        : hasTasks ? accent
-                        : !inMonth ? Ink(0x40)
-                        : weekend ? (Brush)FindResource("Tertiary") : Ink(0xFF),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Typography = { NumeralAlignment = FontNumeralAlignment.Tabular },
-                };
-                var cell = new Border
-                {
-                    Margin = new Thickness(3, 1, 3, 1),
-                    CornerRadius = new CornerRadius(6),
-                    Background = isToday ? accent : isSelected ? Ink(0x2E) : Brushes.Transparent,
-                    Cursor = Cursors.Hand,
-                    Tag = day,
-                    ToolTip = hasTasks ? L.T("Tem lembretes neste dia") : null,
-                    // Com pouca altura, o número encolhe junto com a célula em vez de ser cortado.
-                    Child = new Viewbox
+                    var m = w == 0 ? weekStart.AddDays(6) : newMonth;
+                    CalWeeks.Children.Add(new TextBlock
                     {
-                        StretchDirection = StretchDirection.DownOnly,
+                        Text = culture.TextInfo.ToTitleCase(m.ToString(m.Year == today.Year ? "MMMM" : "MMMM yyyy", culture)),
+                        FontSize = 11, FontWeight = FontWeights.SemiBold,
+                        Foreground = (Brush)FindResource("Secondary"),
+                        Height = CalLabelH, Padding = new Thickness(6, 6, 0, 0),
+                    });
+                    y += CalLabelH;
+                }
+                var monthOfRow = new DateTime(weekStart.AddDays(6).Year, weekStart.AddDays(6).Month, 1);
+                _calRows.Add((y, monthOfRow));
+                var row = new System.Windows.Controls.Primitives.UniformGrid { Rows = 1, Columns = 7, Height = CalRowH };
+                for (int i = 0; i < 7; i++)
+                {
+                    var day = weekStart.AddDays(i);
+                    bool isToday = day == today;
+                    bool isSelected = day == sel && !isToday;
+                    if (day == sel) selTop = y;
+                    bool weekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+                    bool hasTasks = pending.Contains(DayKey(day));
+                    var cell = new Border
+                    {
+                        Width = 32, Height = 28,
+                        CornerRadius = new CornerRadius(9),
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center,
-                        Child = number,
-                    },
-                };
-                cell.MouseLeftButtonUp += (s, _) =>
-                {
-                    if (s is not Border { Tag: DateTime d }) return;
-                    // Dia de outro mês: o calendário vai para aquele mês.
-                    if (d.Month != month.Month) _monthOffset += d < month ? -1 : 1;
-                    SelectDay(d);
-                };
-                if (!isToday && !isSelected)
-                {
-                    cell.MouseEnter += (s, _) => ((Border)s).Background = Ink(0x14);
-                    cell.MouseLeave += (s, _) => ((Border)s).Background = Brushes.Transparent;
+                        Background = isToday ? accent : isSelected ? Ink(0x2E) : Brushes.Transparent,
+                        Cursor = Cursors.Hand,
+                        Tag = day,
+                        ToolTip = hasTasks ? L.T("Tem lembretes neste dia") : null,
+                        Child = new TextBlock
+                        {
+                            Text = day.Day.ToString(culture),
+                            FontSize = 12.5,
+                            FontWeight = isToday || isSelected || hasTasks ? FontWeights.SemiBold : FontWeights.Normal,
+                            // Dia com lembrete pendente: número na cor de destaque.
+                            Foreground = isToday ? dark : hasTasks ? accent
+                                : weekend ? (Brush)FindResource("Tertiary") : Ink(0xFF),
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            VerticalAlignment = VerticalAlignment.Center,
+                            Typography = { NumeralAlignment = FontNumeralAlignment.Tabular },
+                        },
+                    };
+                    cell.MouseLeftButtonUp += (s, _) =>
+                    {
+                        if (s is Border { Tag: DateTime d }) { _calScrollToSelected = false; SelectDay(d); }
+                    };
+                    if (!isToday && !isSelected)
+                    {
+                        cell.MouseEnter += (s, _) => ((Border)s).Background = Ink(0x14);
+                        cell.MouseLeave += (s, _) => ((Border)s).Background = Brushes.Transparent;
+                    }
+                    row.Children.Add(cell);
                 }
-                CalGrid.Children.Add(cell);
+                CalWeeks.Children.Add(row);
+                y += CalRowH;
             }
-            SizeCalendarCells();
+
+            // Ao abrir (ou em "Hoje"), a semana escolhida aparece logo no topo; ao clicar num dia, a lista fica onde está.
+            double target = _calScrollToSelected ? Math.Max(0, selTop - CalLabelH) : keep;
+            _calScrollToSelected = true;
+            Dispatcher.BeginInvoke(() => { CalScroll.ScrollToVerticalOffset(target); UpdateCalendarMonthLabel(); },
+                                   DispatcherPriority.Loaded);
         }
 
-        /// <summary>Células do mês com largura proporcional à altura: o destaque de hoje nunca vira pílula.</summary>
-        private void SizeCalendarCells()
+        /// <summary>O título mostra o mês que está no topo da lista.</summary>
+        private void UpdateCalendarMonthLabel()
         {
-            double rowH = CalGrid.ActualHeight / 6, colW = CalGrid.ActualWidth / 7;
-            if (rowH <= 0 || colW <= 0) return;
-            double width = Math.Max(10, Math.Min(colW - 6, Math.Max(rowH - 2, 12) * 1.6));
-            foreach (var cell in CalGrid.Children.OfType<Border>())
+            if (_calRows.Count == 0) return;
+            double top = CalScroll.VerticalOffset + CalLabelH;
+            var month = _calRows[0].Month;
+            foreach (var (rowTop, m) in _calRows)
             {
-                cell.Width = width;
-                cell.HorizontalAlignment = HorizontalAlignment.Center;
-                cell.CornerRadius = new CornerRadius(Math.Min(6, (rowH - 2) / 3));
+                if (rowTop > top) break;
+                month = m;
             }
+            var culture = CultureInfo.CurrentCulture;
+            CalMonth.Text = culture.TextInfo.ToTitleCase(month.ToString("MMMM yyyy", culture));
         }
 
+        private void CalScroll_ScrollChanged(object sender, ScrollChangedEventArgs e) => UpdateCalendarMonthLabel();
+
+        /// <summary>Setas: rolam quatro semanas; o pontinho volta para hoje.</summary>
         private void CalendarMonth_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button { Tag: string tag } || !int.TryParse(tag, out int delta)) return;
-            _monthOffset = delta == 0 ? 0 : _monthOffset + delta;
-            if (delta == 0) SelectDay(DateTime.Today);
-            else UpdateCalendar(force: true);
+            if (delta == 0) { _calScrollToSelected = true; SelectDay(DateTime.Today); return; }
+            CalScroll.ScrollToVerticalOffset(Math.Max(0, CalScroll.VerticalOffset + delta * CalRowH * 4));
         }
-
         private static string DayKey(DateTime d) => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         private void SelectDay(DateTime day)
@@ -1729,7 +1793,7 @@ namespace Ilha
             e.Handled = true;
             if (!accept) return;
             _collapseTimer.Stop();
-            TabHome.IsChecked = true;
+            TabShelf.IsChecked = true;
             Expand();
             SetDropGlow(true);
         }

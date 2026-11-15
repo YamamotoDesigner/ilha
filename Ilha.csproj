@@ -11,7 +11,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Ilha</AssemblyName>
     <RootNamespace>Ilha</RootNamespace>
-    <Version>1.9.2</Version>
+    <Version>1.9.3</Version>
     <ApplicationIcon>Ilha.ico</ApplicationIcon>
     <!-- O DPI Ã© definido pelo manifesto (correto para WPF); WinForms sÃ³ fornece o Ã­cone da bandeja. -->
     <NoWarn>$(NoWarn);WFO0003;WPF0001</NoWarn>

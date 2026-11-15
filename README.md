@@ -16,7 +16,7 @@ que está tocando, a sua agenda, um timer, notas e os arquivos que você quer te
 
 <br>
 
-<img src="docs/assets/screen.png" alt="A Ilha aberta no topo da tela, mostrando a música tocando e a prateleira de arquivos" width="900">
+<img src="docs/assets/screen.png" alt="A Ilha aberta no topo da tela, mostrando a música tocando" width="900">
 
 </div>
 
@@ -29,13 +29,13 @@ que está tocando, a sua agenda, um timer, notas e os arquivos que você quer te
 | | |
 |---|---|
 | **Música** | Capa, título, progresso e controles do que estiver tocando: Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows. No Spotify, o coração salva a faixa nas Músicas Curtidas. |
-| **Agenda e tarefas** | Calendário do mês inteiro e uma lista de tarefas para o dia, salva automaticamente. |
-| **Foco** | Modos Foco, Pausa e Pausa longa, além de atalhos de 1 min a 1 h. A contagem aparece na ilha recolhida e ela avisa quando acabar. |
-| **Prateleira** | Arraste arquivos para a ilha e solte onde quiser depois. Downloads concluídos já aparecem lá. |
+| **Agenda e lembretes** | Calendário em semanas que rolam: toque num dia e deixe um lembrete para ele. |
+| **Foco** | Modos Foco, Pausa e Pausa longa, além de atalhos de 1 min a 1 h 30. A contagem aparece na ilha recolhida e ela avisa quando acabar. |
+| **Prateleira** | Uma aba só para arquivos: arraste para a ilha e solte onde quiser depois. Downloads concluídos já aparecem lá. |
 | **Notas** | Um bloco sempre à mão, salvo automaticamente. |
 | **Área de transferência** | Histórico do que você copiou; clique para copiar de novo. Fica só na memória. |
 | **Teleprompter** | O roteiro rola logo abaixo da câmera, com contagem 3-2-1, linha atual em destaque, velocidade ajustável e lembretes como [pausa]. |
-| **Espelho** | A câmera aparece na ilha e só fica ligada enquanto a aba está aberta. |
+| **Espelho** | Uma prévia redonda da câmera, que só fica ligada enquanto a aba está aberta. |
 | **Monitor do sistema** | Uso de processador e memória com gráfico dos últimos segundos. |
 | **Avisos rápidos** | A ilha recolhida cresce por um instante para mostrar volume, carregador conectado, música nova e downloads. |
 | **Atalho global** | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd> abre e fecha de qualquer lugar. |
