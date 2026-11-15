@@ -43,6 +43,7 @@ namespace Ilha
 
             StartupCheck.IsChecked = Startup.IsEnabled;
             VersionText.Text = $"Versão instalada: {UpdateService.CurrentVersion}";
+            SupportButton.Visibility = Support.IsConfigured ? Visibility.Visible : Visibility.Collapsed;
             DataContext = _settings;
 
             _apply.Tick += (_, _) =>
@@ -105,6 +106,8 @@ namespace Ilha
         }
 
         private void Quit_Click(object sender, RoutedEventArgs e) => QuitRequested?.Invoke();
+
+        private void Support_Click(object sender, RoutedEventArgs e) => SupportWindow.ShowSingle();
 
         private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
         {

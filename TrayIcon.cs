@@ -34,6 +34,8 @@ namespace Ilha
                 menu.Items.Add(startup);
 
                 menu.Items.Add(new Forms.ToolStripSeparator());
+                if (Support.IsConfigured)
+                    menu.Items.Add("Apoiar o projeto ❤", null, (_, _) => SupportWindow.ShowSingle());
                 menu.Items.Add("Sair", null, (_, _) => exit());
                 e.Cancel = false;
             };
