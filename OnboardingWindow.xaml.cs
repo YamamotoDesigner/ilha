@@ -233,6 +233,7 @@ namespace Ilha
             Add("Agenda e tarefas", s.ShowCalendar, v => s.ShowCalendar = v);
             Add("Notas", s.ShowNotes, v => s.ShowNotes = v);
             Add("Foco (timer)", s.ShowTimer, v => s.ShowTimer = v);
+            Add("Teleprompter", s.ShowPrompter, v => s.ShowPrompter = v);
             Add("Prateleira", s.ShowShelf, v => s.ShowShelf = v);
             Add("Copiados", s.ShowClipboard, v => s.ShowClipboard = v);
             Add("Espelho (câmera)", s.ShowMirror, v => s.ShowMirror = v);

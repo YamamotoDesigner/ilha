@@ -786,6 +786,8 @@
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Monitor do sistema (CPU e memória)'}" IsChecked="{Binding ShowStats}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Prateleira de arquivos'}" IsChecked="{Binding ShowShelf}"/>
+                                <Border Style="{StaticResource Divider}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Downloads novos vão para a prateleira'}" IsChecked="{Binding DownloadsToShelf}"/>
                             </StackPanel>
                         </Border>
 
@@ -797,6 +799,8 @@
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Notas'}" IsChecked="{Binding ShowNotes}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Foco (timer)'}" IsChecked="{Binding ShowTimer}"/>
+                                <Border Style="{StaticResource Divider}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Teleprompter'}" IsChecked="{Binding ShowPrompter}"/>
                             </StackPanel>
                         </Border>
 
@@ -833,6 +837,10 @@
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Carregador conectado ou desconectado'}" IsChecked="{Binding LiveCharging}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Música nova começando'}" IsChecked="{Binding LiveTrack}"/>
+                                <Border Style="{StaticResource Divider}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Download concluído'}" IsChecked="{Binding LiveDownloads}"/>
+                                <Border Style="{StaticResource Divider}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Versão nova do Ilha'}" IsChecked="{Binding LiveUpdate}"/>
                             </StackPanel>
                         </Border>
                         <TextBlock Style="{StaticResource Hint}" Text="{local:T 'A ilha recolhida cresce por um instante para mostrar o aviso.'}"/>

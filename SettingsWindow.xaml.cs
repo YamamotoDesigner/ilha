@@ -133,6 +133,9 @@ namespace Ilha
 
         private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
+        /// <summary>Abre direto na página de recursos (botão "+" da ilha).</summary>
+        public void ShowFeatures() => NavFeatures.IsChecked = true;
+
         /// <summary>A cor de destaque das configurações acompanha a da ilha.</summary>
         private void ApplyAccent()
         {

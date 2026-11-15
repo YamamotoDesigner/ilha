@@ -7,7 +7,25 @@ namespace Ilha
     {
         public static readonly Dictionary<string, string> Strings = new()
         {
-            [" — clique para instalar."] = " — click to install.",
+            ["Teleprompter"] = "Teleprompter",
+            ["Escolher recursos"] = "Choose features",
+            ["Travar: a ilha fica aberta e o texto não rola sem querer"] = "Lock: the island stays open and the text won't scroll by accident",
+            ["Editar"] = "Edit",
+            ["Roteiro anterior"] = "Previous script",
+            ["Próximo roteiro"] = "Next script",
+            ["Aperte Iniciar e leia junto"] = "Press Start and read along",
+            ["Uma contagem de 3 segundos te dá tempo de se preparar"] = "A 3-second countdown gives you time to get ready",
+            ["Voltar ao início"] = "Back to the start",
+            ["Mais devagar"] = "Slower",
+            ["Mais rápido"] = "Faster",
+            ["Roteiro {0}"] = "Script {0}",
+            ["{0} restantes"] = "{0} left",
+            ["Download concluído"] = "Download complete",
+            ["Versão {0} disponível"] = "Version {0} available",
+            ["Downloads novos vão para a prateleira"] = "New downloads go to the shelf",
+            ["Versão nova do Ilha"] = "New Ilha version",
+            ["Olá! Este é o teleprompter do Ilha.\n\nO texto passa logo abaixo da câmera, então você lê olhando para a lente. [sorria]\n\nA linha atual fica em destaque, e as que você já leu ficam mais apagadas. [pausa]\n\nToque em Editar para escrever o seu roteiro. Use colchetes para deixar lembretes, como [respire]."] =
+                "Hi! This is Ilha's teleprompter.\n\nThe text runs right below the camera, so you read while looking at the lens. [smile]\n\nThe current line is highlighted, and the ones you've read fade out. [pause]\n\nTap Edit to write your own script. Use brackets for reminders, like [breathe].",            [" — clique para instalar."] = " — click to install.",
             [" (principal)"] = " (main)",
             ["{0} A FAZER"] = "{0} TO DO",
             ["A câmera só liga enquanto a aba Espelho está aberta, e nada é gravado. O histórico fica só na memória."] = "The camera only turns on while the Mirror tab is open, and nothing is recorded. The history stays in memory only.",

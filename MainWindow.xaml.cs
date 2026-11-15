@@ -25,7 +25,7 @@ namespace Ilha
         private const double MinFloatWidth = 340, MaxFloatWidth = 1040, MinFloatHeight = 130, MaxFloatHeight = 460;
         private double _expW = DefaultOpenWidth, _expH = DefaultOpenHeight;
         private const double CollapsedExtraWidth = 64;
-        private const double PeekExtraWidth = 170;
+        private const double PeekExtraWidth = 215;
         private const int HotkeyId = 0x4948;
         private Geometry GlyphPlay => (Geometry)FindResource("IcoPlay");
         private Geometry GlyphPause => (Geometry)FindResource("IcoPause");
@@ -46,6 +46,7 @@ namespace Ilha
         private int _monthOffset;
         private double _cornerRadius = 22;
         private readonly SystemStats _stats = new();
+        private readonly DownloadWatcher _downloads = new();
         private readonly ObservableCollection<TodoItem> _todos = new();
         private string _currentTab = "home";
         private readonly ObservableCollection<ShelfItem> _shelf = new();
@@ -177,6 +178,11 @@ namespace Ilha
             };
             LocationChanged += (_, _) => _glassWindow?.Follow(_hwnd); // inclusive enquanto arrasta
             CalGrid.SizeChanged += (_, _) => SizeCalendarCells();
+            _downloads.Completed += OnDownloadCompleted;
+            TabStrip.SizeChanged += (_, _) => MoveTabIndicator(animate: false);
+            PrompterViewport.SizeChanged += (_, _) => SizePrompterLines();
+            PrompterViewport.MouseWheel += PrompterViewport_MouseWheel;
+            LoadPrompter();
             CpuGraph.SizeChanged += (_, _) => UpdateStats();
             MemGraph.SizeChanged += (_, _) => UpdateStats();
             DrawTimerTrack();
@@ -272,10 +278,13 @@ namespace Ilha
                                  null, "Volume", 0.62, "62", seconds: 30);
                         return;
                     }
+                    if (testTab == "idle") return; // só a ilha recolhida, esperando avisos
                     _pinned = true;
                     Expand();
                     foreach (var tabButton in TabBar.Children.OfType<RadioButton>())
                         if ((string)tabButton.Tag == testTab) tabButton.IsChecked = true;
+                    if (testTab == "prompter" && Environment.GetEnvironmentVariable("ILHA_TEST_PROMPTER") == "start")
+                        PrompterStart_Click(this, new RoutedEventArgs());
                 };
                 t.Start();
             }
@@ -478,17 +487,19 @@ namespace Ilha
         private void ApplyTabPosition()
         {
             bool top = string.Equals(_settings.TabPosition, "Top", StringComparison.OrdinalIgnoreCase);
-            var currentHost = TabBar.Parent as FrameworkElement;
+            var currentHost = TabStrip.Parent as FrameworkElement;
             if (top && currentHost != TopTabsHost)
             {
-                RailHost.Children.Remove(TabBar);
-                TopTabsHost.Child = TabBar;
+                RailHost.Children.Remove(TabStrip);
+                TopTabsHost.Child = TabStrip;
             }
             else if (!top && currentHost != RailHost)
             {
                 TopTabsHost.Child = null;
-                RailHost.Children.Add(TabBar);
+                RailHost.Children.Add(TabStrip);
             }
+            AddTabButton.Width = top ? 26 : 36;
+            AddTabButton.Height = top ? 24 : 26;
             TabBar.Orientation = top ? Orientation.Horizontal : Orientation.Vertical;
             foreach (var tab in TabBar.Children.OfType<RadioButton>())
             {
@@ -501,6 +512,30 @@ namespace Ilha
             RailGapCol.Width = new GridLength(top ? 0 : 14);
             RailLine.Visibility = top ? Visibility.Collapsed : Visibility.Visible;
             TopTabsHost.Visibility = top && TabBar.Visibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
+            TabStrip.Visibility = TabBar.Visibility;
+            Dispatcher.BeginInvoke(() => MoveTabIndicator(animate: false), DispatcherPriority.Loaded);
+        }
+
+        /// <summary>
+        /// O destaque da aba escolhida desliza até ela (com um leve "esticar" no caminho),
+        /// em vez de simplesmente trocar de lugar.
+        /// </summary>
+        private void MoveTabIndicator(bool animate)
+        {
+            var target = TabBar.Children.OfType<RadioButton>().FirstOrDefault(t => t.IsChecked == true && t.Visibility == Visibility.Visible);
+            if (target == null || target.ActualWidth <= 0 || !TabStrip.IsAncestorOf(target))
+            {
+                TabIndicator.Visibility = Visibility.Hidden;
+                return;
+            }
+            TabIndicator.Visibility = Visibility.Visible;
+            var p = target.TranslatePoint(new Point(0, 0), TabStrip);
+            var dur = TimeSpan.FromMilliseconds(animate && !ReduceMotion ? 460 : 0);
+            IEasingFunction ease = new SpringEase { Damping = 0.8, Frequency = 11 };
+            TabIndicator.BeginAnimation(WidthProperty, new DoubleAnimation(target.ActualWidth, dur) { EasingFunction = ease });
+            TabIndicator.BeginAnimation(HeightProperty, new DoubleAnimation(target.ActualHeight, dur) { EasingFunction = ease });
+            TabIndicatorShift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(p.X, dur) { EasingFunction = ease });
+            TabIndicatorShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(p.Y, dur) { EasingFunction = ease });
         }
 
         // Abaixo deste tamanho de conteúdo, tudo encolhe por igual em vez de cortar.
@@ -533,8 +568,11 @@ namespace Ilha
             if (!top)
             {
                 var tabs = TabBar.Children.OfType<RadioButton>().Where(t => t.Visibility == visible).ToList();
-                double tabH = tabs.Count == 0 ? 30 : Math.Clamp(vh / tabs.Count - 3, 20, 30);
+                // O botão "+" também precisa caber no fim do trilho.
+                double addH = Math.Clamp(vh * 0.11, 18, 26);
+                double tabH = tabs.Count == 0 ? 30 : Math.Clamp((vh - addH) / tabs.Count - 3, 18, 30);
                 foreach (var t in tabs) t.Height = tabH;
+                AddTabButton.Height = addH;
             }
 
             // Cabeçalho
@@ -569,8 +607,8 @@ namespace Ilha
             AgendaGapCol.Width = new GridLength(todo ? 14 : 0);
 
             // Foco: o quadrado encolhe com a altura; modos e atalhos só se couber
-            TimerModes.Visibility = pageW >= 480 ? visible : hidden;
-            TimerChips.Visibility = pageH >= 140 && pageW >= 380 ? visible : hidden;
+            TimerModes.Visibility = pageW >= 300 && pageH >= 96 ? visible : hidden;
+            TimerChips.Visibility = pageH >= 118 && pageW >= 300 ? visible : hidden;
 
             // Espelho
             MirrorFrame.Width = Math.Min(300, pageW);
@@ -669,6 +707,7 @@ namespace Ilha
             if (_hotkeyRegistered) Native.UnregisterHotKey(_hwnd, HotkeyId);
             if (_clipboardListening) Native.RemoveClipboardFormatListener(_hwnd);
             _camera.Stop();
+            _downloads.Dispose();
             _tray?.Dispose();
             _tray = null;
             Application.Current.Shutdown();
@@ -696,6 +735,9 @@ namespace Ilha
             UpdateButton.IsEnabled = true;
             UpdateButton.Visibility = Visibility.Visible;
             _tray?.SetUpdate(L.F("Instalar atualização {0}", info.Version), () => _ = InstallUpdateAsync(), notify && isNew);
+            if (notify && isNew && _settings.LiveUpdate)
+                ShowPeek((Geometry)FindResource("IcoRefresh"), false, null, null, L.F("Versão {0} disponível", info.Version), null,
+                         L.T("Atualizar"), (Brush)Resources["Accent"], seconds: 5);
             return true;
         }
 
@@ -755,6 +797,13 @@ namespace Ilha
         // ───────────── Configurações ─────────────
 
         private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
+
+        /// <summary>Botão "+" das abas: abre o catálogo de recursos nas configurações.</summary>
+        private void AddFeatures_Click(object sender, RoutedEventArgs e)
+        {
+            OpenSettings();
+            _settingsWindow?.ShowFeatures();
+        }
 
         private void OpenSettings()
         {
@@ -826,6 +875,7 @@ namespace Ilha
             _collapseTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(50, s.CollapseDelayMs));
 
             UpdateLikeUi();
+            _downloads.Enabled = s.LiveDownloads || (s.DownloadsToShelf && s.ShowShelf);
 
             // Abas
             TabHome.Visibility = s.ShowMedia || s.ShowShelf || s.ShowStats ? Visibility.Visible : Visibility.Collapsed;
@@ -834,6 +884,7 @@ namespace Ilha
             TabTimer.Visibility = s.ShowTimer ? Visibility.Visible : Visibility.Collapsed;
             TabClipboard.Visibility = s.ShowClipboard ? Visibility.Visible : Visibility.Collapsed;
             TabMirror.Visibility = s.ShowMirror ? Visibility.Visible : Visibility.Collapsed;
+            TabPrompter.Visibility = s.ShowPrompter ? Visibility.Visible : Visibility.Collapsed;
             var visibleTabs = TabBar.Children.OfType<RadioButton>()
                 .Where(t => t.Visibility == Visibility.Visible).ToList();
             TabBar.Visibility = visibleTabs.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
@@ -890,6 +941,7 @@ namespace Ilha
 
         private bool ShouldStayOpen() =>
             _draggingOut || _pinned || _timerAlerting || Island.IsMouseOver ||
+            _prompterLocked || _prompterRunning || _prompterCounting ||
             (IsForeground && Keyboard.FocusedElement is TextBox);
 
         /// <summary>
@@ -967,6 +1019,7 @@ namespace Ilha
             Fade(ExpandedView, 0, 110);
             ReleaseKeyboard();
             StopMirror();
+            if (_prompterRunning || _prompterCounting) PrompterStop(resetToStart: false);
             UpdateCollapsedState(force: true);
         }
 
@@ -996,6 +1049,7 @@ namespace Ilha
 
         private void AnimateSize(double width, double height, bool spring)
         {
+            spring &= !ReduceMotion;
             IEasingFunction ease = spring
                 ? new SpringEase()
                 : new CubicEase { EasingMode = EasingMode.EaseOut };
@@ -1092,6 +1146,22 @@ namespace Ilha
                      charging ? green : null, seconds: 2.6);
         }
 
+        /// <summary>Download terminou: aviso na ilha e (se ligado) o arquivo vai para a prateleira.</summary>
+        private void OnDownloadCompleted(string path, long size)
+        {
+            if (_settings.DownloadsToShelf && _settings.ShowShelf &&
+                !_shelf.Any(s => string.Equals(s.Path, path, StringComparison.OrdinalIgnoreCase)))
+            {
+                var item = ShelfItem.From(path);
+                if (item.Exists()) _shelf.Add(item);
+            }
+            if (!_settings.LiveDownloads) return;
+            string ext = System.IO.Path.GetExtension(path).TrimStart('.').ToUpperInvariant();
+            ShowPeek((Geometry)FindResource("IcoTray"), false, null, null,
+                     L.T("Download concluído") + " · " + DownloadWatcher.FormatSize(size), null,
+                     ext.Length is > 0 and <= 5 ? ext : "", (Brush)Resources["Accent"], seconds: 3.4);
+        }
+
         private void WatchTrack()
         {
             if (!_media.HasSession || string.IsNullOrEmpty(_media.Title)) return;
@@ -1132,31 +1202,83 @@ namespace Ilha
             if (sender is RadioButton { Tag: string tab }) SelectTab(tab);
         }
 
+        private static readonly string[] TabOrder = { "home", "agenda", "notes", "timer", "clipboard", "mirror", "prompter" };
+
+        private (string Tab, FrameworkElement Page)[] AllPages => new (string, FrameworkElement)[]
+        {
+            ("home", PageHome), ("agenda", PageAgenda), ("notes", PageNotes), ("timer", PageTimer),
+            ("clipboard", PageClipboard), ("mirror", PageMirror), ("prompter", PagePrompter),
+        };
+
+        /// <summary>Sem animações quando o Windows pede menos movimento.</summary>
+        private static bool ReduceMotion => !SystemParameters.ClientAreaAnimation;
+
         private void SelectTab(string tab)
         {
             if (PageHome == null) return; // durante InitializeComponent
-            bool changed = tab != _currentTab;
+            string previous = _currentTab;
+            bool changed = tab != previous;
             _currentTab = tab;
-            var pages = new (string Tab, FrameworkElement Page)[]
-            {
-                ("home", PageHome), ("agenda", PageAgenda), ("notes", PageNotes), ("timer", PageTimer),
-                ("clipboard", PageClipboard), ("mirror", PageMirror),
-            };
-            foreach (var (name, page) in pages)
+
+            // Direção: para frente desliza de um lado, para trás do outro (vertical com abas na lateral).
+            int dir = Math.Sign(Array.IndexOf(TabOrder, tab) - Array.IndexOf(TabOrder, previous));
+            bool vertical = !TabsOnTop;
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            foreach (var (name, page) in AllPages)
             {
                 bool show = name == tab;
-                page.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-                if (show && changed)
+                if (show)
                 {
-                    // Troca suave: a página nova entra com fade e um leve deslize.
-                    page.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
-                    var shift = new TranslateTransform();
-                    page.RenderTransform = shift;
-                    shift.BeginAnimation(TranslateTransform.YProperty,
-                        new DoubleAnimation(6, 0, TimeSpan.FromMilliseconds(260)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+                    page.Visibility = Visibility.Visible;
+                    page.IsHitTestVisible = true;
+                    Panel.SetZIndex(page, 1);
+                    if (!changed) continue;
+                    if (ReduceMotion)
+                    {
+                        page.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150)));
+                        continue;
+                    }
+                    // Entra: aparece, desliza 18 px e cresce de 0,97 a 1, tudo junto.
+                    var move = new TranslateTransform();
+                    var grow = new ScaleTransform(0.97, 0.97);
+                    page.RenderTransformOrigin = new Point(0.5, 0.5);
+                    page.RenderTransform = new TransformGroup { Children = { grow, move } };
+                    var dur = TimeSpan.FromMilliseconds(380);
+                    page.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(240)) { EasingFunction = ease });
+                    (vertical ? (Action)(() => move.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(18 * dir, 0, dur) { EasingFunction = ease }))
+                              : () => move.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(22 * dir, 0, dur) { EasingFunction = ease }))();
+                    grow.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(1, dur) { EasingFunction = ease });
+                    grow.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(1, dur) { EasingFunction = ease });
+                }
+                else if (changed && name == previous && page.Visibility == Visibility.Visible && !ReduceMotion)
+                {
+                    // Sai: some rápido para o lado oposto enquanto a nova entra (troca cruzada).
+                    Panel.SetZIndex(page, 0);
+                    page.IsHitTestVisible = false;
+                    var move = new TranslateTransform();
+                    page.RenderTransform = move;
+                    var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(160));
+                    var leaving = page;
+                    fade.Completed += (_, _) =>
+                    {
+                        if (_currentTab == name) return; // voltou para ela no meio da troca
+                        leaving.Visibility = Visibility.Collapsed;
+                        leaving.BeginAnimation(OpacityProperty, null);
+                        leaving.Opacity = 1;
+                        leaving.IsHitTestVisible = true;
+                    };
+                    page.BeginAnimation(OpacityProperty, fade);
+                    var shiftOut = new DoubleAnimation(-12 * dir, TimeSpan.FromMilliseconds(220)) { EasingFunction = ease };
+                    move.BeginAnimation(vertical ? TranslateTransform.YProperty : TranslateTransform.XProperty, shiftOut);
+                }
+                else
+                {
+                    page.Visibility = Visibility.Collapsed;
                 }
             }
-            if (tab != "notes" && tab != "agenda") ReleaseKeyboard();
+            MoveTabIndicator(animate: changed);
+            if (tab != "prompter" && previous == "prompter" && _prompterRunning) PrompterStop(resetToStart: false);
+            if (tab != "notes" && tab != "agenda" && tab != "prompter") ReleaseKeyboard();
             if (tab == "agenda" && changed)
             {
                 _monthOffset = 0;
@@ -1614,7 +1736,7 @@ namespace Ilha
             if (IsForeground && _previousForeground != IntPtr.Zero && Native.IsWindow(_previousForeground))
                 Native.SetForegroundWindow(_previousForeground);
             _previousForeground = IntPtr.Zero;
-            if (!PageNotes.IsMouseOver && !TodoPanel.IsMouseOver) Native.SetNoActivate(_hwnd, true);
+            if (!PageNotes.IsMouseOver && !TodoPanel.IsMouseOver && !PagePrompter.IsMouseOver) Native.SetNoActivate(_hwnd, true);
         }
 
         // ───────────── Tarefas ─────────────

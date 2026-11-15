@@ -72,6 +72,13 @@ namespace Ilha
         public bool ShowCalendar { get; set; } = true;
         public bool ShowMirror { get; set; } = true;
         public bool ShowStats { get; set; } = true;
+        public bool ShowPrompter { get; set; } = true;
+        /// <summary>Aviso na ilha quando um download termina (pasta Downloads).</summary>
+        public bool LiveDownloads { get; set; } = true;
+        /// <summary>Downloads novos vão para a prateleira.</summary>
+        public bool DownloadsToShelf { get; set; } = true;
+        /// <summary>Aviso quando sai versão nova.</summary>
+        public bool LiveUpdate { get; set; } = true;
         /// <summary>Botão de curtir a música do Spotify.</summary>
         public bool EnableLike { get; set; } = true;
 
@@ -84,6 +91,10 @@ namespace Ilha
         public List<string> Shelf { get; set; } = new();
         public string Notes { get; set; } = "";
         public List<TodoItem> Todos { get; set; } = new();
+        /// <summary>Roteiros do teleprompter.</summary>
+        public List<string> Scripts { get; set; } = new();
+        public int ScriptIndex { get; set; }
+        public double PrompterSpeed { get; set; } = 1.0;
 
         /// <summary>Restaura aparência e comportamento, preservando dados (prateleira, notas, monitor).</summary>
         public void ResetPreferences()
@@ -125,6 +136,10 @@ namespace Ilha
             ShowMirror = d.ShowMirror;
             ShowStats = d.ShowStats;
             EnableLike = d.EnableLike;
+            ShowPrompter = d.ShowPrompter;
+            LiveDownloads = d.LiveDownloads;
+            DownloadsToShelf = d.DownloadsToShelf;
+            LiveUpdate = d.LiveUpdate;
             LiveVolume = d.LiveVolume;
             LiveCharging = d.LiveCharging;
             LiveTrack = d.LiveTrack;

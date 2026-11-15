@@ -185,7 +185,6 @@
                                 <Setter TargetName="Hover" Property="Opacity" Value="0.07"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Sel" Property="Opacity" Value="0.2"/>
                                 <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -384,7 +383,13 @@
 
                             <!-- Trilho de abas (ou, com abas no topo, elas vão para o cabeçalho) -->
                             <Grid x:Name="RailHost">
-                                <StackPanel x:Name="TabBar" VerticalAlignment="Top">
+                                <!-- Abas + destaque que desliza até a aba escolhida -->
+                                <Grid x:Name="TabStrip" VerticalAlignment="Top" HorizontalAlignment="Left">
+                                <Border x:Name="TabIndicator" Background="{DynamicResource Accent}" Opacity="0.2" CornerRadius="9"
+                                        HorizontalAlignment="Left" VerticalAlignment="Top" Width="36" Height="30" IsHitTestVisible="False">
+                                    <Border.RenderTransform><TranslateTransform x:Name="TabIndicatorShift"/></Border.RenderTransform>
+                                </Border>
+                                <StackPanel x:Name="TabBar">
                                     <RadioButton x:Name="TabHome" Style="{StaticResource TabButton}" Tag="home"
                                                  ToolTip="{local:T 'Início'}" IsChecked="True" Checked="Tab_Checked">
                                         <local:Glyph Data="{StaticResource FillHome}" Size="17" Filled="True" Thickness="0"/>
@@ -409,7 +414,16 @@
                                                  ToolTip="{local:T 'Espelho (câmera)'}" Checked="Tab_Checked">
                                         <local:Glyph Data="{StaticResource FillCamera}" Size="17" Filled="True" Thickness="0"/>
                                     </RadioButton>
+                                    <RadioButton x:Name="TabPrompter" Style="{StaticResource TabButton}" Tag="prompter"
+                                                 ToolTip="{local:T 'Teleprompter'}" Checked="Tab_Checked">
+                                        <local:Glyph Data="{StaticResource FillPrompter}" Size="17" Filled="True" Thickness="0"/>
+                                    </RadioButton>
+                                    <Button x:Name="AddTabButton" Style="{StaticResource IconButton}" Width="36" Height="26" Foreground="{DynamicResource Ink_73}"
+                                            Click="AddFeatures_Click" ToolTip="{local:T 'Escolher recursos'}">
+                                        <local:Glyph Data="{StaticResource IcoPlus}" Size="13" Thickness="2.4"/>
+                                    </Button>
                                 </StackPanel>
+                                </Grid>
                             </Grid>
 
                             <!-- Linha fina separando o trilho do conteúdo -->
@@ -533,11 +547,11 @@
 
                                                 <Grid x:Name="ProgressRow" Grid.Row="2" Margin="0,0,0,6">
                                                     <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="38"/>
+                                                        <ColumnDefinition Width="Auto" MinWidth="34"/>
                                                         <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="38"/>
+                                                        <ColumnDefinition Width="Auto" MinWidth="34"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock x:Name="PositionText" FontSize="11" VerticalAlignment="Center"
+                                                    <TextBlock x:Name="PositionText" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"
                                                                Foreground="{DynamicResource Tertiary}"
                                                                Typography.NumeralAlignment="Tabular"/>
                                                     <Grid x:Name="ProgressHit" Grid.Column="1" Height="14" Background="Transparent"
@@ -549,7 +563,7 @@
                                                                 Background="{DynamicResource Ink_E6}" VerticalAlignment="Center"
                                                                 HorizontalAlignment="Left" Width="0"/>
                                                     </Grid>
-                                                    <TextBlock x:Name="DurationText" Grid.Column="2" FontSize="11"
+                                                    <TextBlock x:Name="DurationText" Grid.Column="2" FontSize="11" Margin="8,0,0,0"
                                                                VerticalAlignment="Center" HorizontalAlignment="Right"
                                                                Foreground="{DynamicResource Tertiary}"
                                                                Typography.NumeralAlignment="Tabular"/>
@@ -852,9 +866,9 @@
                                         </Viewbox>
 
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                                 <Button x:Name="TimerStartButton" Style="{StaticResource ChipButton}"
-                                                        Padding="16,8" Margin="0,0,8,0" Click="TimerStartPause_Click"
+                                                        Padding="14,6" Margin="0,0,8,0" Click="TimerStartPause_Click"
                                                         Background="{DynamicResource Accent}" Foreground="#111111">
                                                     <StackPanel Orientation="Horizontal">
                                                         <local:Glyph x:Name="TimerStartGlyph" Data="{StaticResource IcoPlay}"
@@ -871,37 +885,32 @@
                                                 </Button>
                                             </StackPanel>
 
-                                            <StackPanel x:Name="TimerModes" Orientation="Horizontal" Margin="0,0,0,10">
-                                                <Button Style="{StaticResource ModeTile}" Tag="25|FOCO" Click="TimerMode_Click">
-                                                    <StackPanel>
-                                                        <TextBlock Text="{local:T 'Foco'}" FontSize="12.5" FontWeight="SemiBold"/>
-                                                        <TextBlock Text="25 min" FontSize="11" Foreground="{DynamicResource Tertiary}"/>
-                                                    </StackPanel>
+                                            <!-- Modos (pomodoro): compactos para caber mesmo com a ilha pequena -->
+                                            <StackPanel x:Name="TimerModes" Orientation="Horizontal" Margin="0,0,0,8">
+                                                <Button Style="{StaticResource ChipButton}" Tag="25|FOCO" Click="TimerMode_Click" Padding="10,5">
+                                                    <TextBlock><Run Text="{local:T 'Foco'}" FontWeight="SemiBold"/><Run Text=" 25" Foreground="{DynamicResource Tertiary}"/></TextBlock>
                                                 </Button>
-                                                <Button Style="{StaticResource ModeTile}" Tag="5|PAUSA" Click="TimerMode_Click">
-                                                    <StackPanel>
-                                                        <TextBlock Text="{local:T 'Pausa'}" FontSize="12.5" FontWeight="SemiBold"/>
-                                                        <TextBlock Text="5 min" FontSize="11" Foreground="{DynamicResource Tertiary}"/>
-                                                    </StackPanel>
+                                                <Button Style="{StaticResource ChipButton}" Tag="5|PAUSA" Click="TimerMode_Click" Padding="10,5">
+                                                    <TextBlock><Run Text="{local:T 'Pausa'}" FontWeight="SemiBold"/><Run Text=" 5" Foreground="{DynamicResource Tertiary}"/></TextBlock>
                                                 </Button>
-                                                <Button Style="{StaticResource ModeTile}" Tag="15|PAUSA LONGA" Click="TimerMode_Click">
-                                                    <StackPanel>
-                                                        <TextBlock Text="{local:T 'Pausa longa'}" FontSize="12.5" FontWeight="SemiBold"/>
-                                                        <TextBlock Text="15 min" FontSize="11" Foreground="{DynamicResource Tertiary}"/>
-                                                    </StackPanel>
+                                                <Button Style="{StaticResource ChipButton}" Tag="15|PAUSA LONGA" Click="TimerMode_Click" Padding="10,5">
+                                                    <TextBlock><Run Text="{local:T 'Pausa longa'}" FontWeight="SemiBold"/><Run Text=" 15" Foreground="{DynamicResource Tertiary}"/></TextBlock>
                                                 </Button>
                                             </StackPanel>
 
                                             <WrapPanel x:Name="TimerChips">
-                                                <Button Style="{StaticResource ChipButton}" Content="1 min" Tag="1" Click="TimerPreset_Click"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="10 min" Tag="10" Click="TimerPreset_Click"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="45 min" Tag="45" Click="TimerPreset_Click"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="1 h" Tag="60" Click="TimerPreset_Click"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="+1" Tag="1" Click="TimerAdd_Click"
+                                                <Button Style="{StaticResource ChipButton}" Content="1" Tag="1" Click="TimerPreset_Click" Padding="9,4" ToolTip="1 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="5" Tag="5" Click="TimerPreset_Click" Padding="9,4" ToolTip="5 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="10" Tag="10" Click="TimerPreset_Click" Padding="9,4" ToolTip="10 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="15" Tag="15" Click="TimerPreset_Click" Padding="9,4" ToolTip="15 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="25" Tag="25" Click="TimerPreset_Click" Padding="9,4" ToolTip="25 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="45" Tag="45" Click="TimerPreset_Click" Padding="9,4" ToolTip="45 min"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="1 h" Tag="60" Click="TimerPreset_Click" Padding="9,4"/>
+                                                <Button Style="{StaticResource ChipButton}" Content="+1" Tag="1" Click="TimerAdd_Click" Padding="9,4"
                                                         ToolTip="{local:T 'Mais 1 minuto'}"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="+5" Tag="5" Click="TimerAdd_Click"
+                                                <Button Style="{StaticResource ChipButton}" Content="+5" Tag="5" Click="TimerAdd_Click" Padding="9,4"
                                                         ToolTip="{local:T 'Mais 5 minutos'}"/>
-                                                <Button Style="{StaticResource ChipButton}" Content="−1" Tag="-1" Click="TimerAdd_Click"
+                                                <Button Style="{StaticResource ChipButton}" Content="−1" Tag="-1" Click="TimerAdd_Click" Padding="9,4"
                                                         ToolTip="{local:T 'Menos 1 minuto'}"/>
                                             </WrapPanel>
                                         </StackPanel>
@@ -952,6 +961,104 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </ScrollViewer>
+                                    </Grid>
+
+                                    <!-- ── Teleprompter: o texto passa logo abaixo da câmera ── -->
+                                    <Grid x:Name="PagePrompter" Visibility="Collapsed"
+                                          MouseEnter="NotesArea_MouseEnter" MouseLeave="NotesArea_MouseLeave">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Topo: roteiro, editar, travar -->
+                                        <DockPanel Margin="0,0,0,6">
+                                            <Button x:Name="PrompterLock" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Width="28" Height="24"
+                                                    Foreground="{DynamicResource Ink_A6}" Click="PrompterLock_Click"
+                                                    ToolTip="{local:T 'Travar: a ilha fica aberta e o texto não rola sem querer'}">
+                                                <local:Glyph x:Name="PrompterLockGlyph" Data="{StaticResource IcoLock}" Size="14"/>
+                                            </Button>
+                                            <Button x:Name="PrompterEdit" DockPanel.Dock="Right" Style="{StaticResource ChipButton}" Margin="0,0,6,0"
+                                                    Padding="10,3" Click="PrompterEdit_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <local:Glyph Data="{StaticResource IcoEdit}" Size="12" Margin="0,0,6,0"/>
+                                                    <TextBlock x:Name="PrompterEditText" Text="{local:T 'Editar'}"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button DockPanel.Dock="Left" Style="{StaticResource IconButton}" Width="24" Height="24"
+                                                    Tag="-1" Click="PrompterPage_Click" ToolTip="{local:T 'Roteiro anterior'}">
+                                                <local:Glyph Data="{StaticResource IcoChevronLeft}" Size="13"/>
+                                            </Button>
+                                            <Button DockPanel.Dock="Left" Style="{StaticResource IconButton}" Width="24" Height="24"
+                                                    Tag="1" Click="PrompterPage_Click" ToolTip="{local:T 'Próximo roteiro'}">
+                                                <local:Glyph Data="{StaticResource IcoChevronRight}" Size="13"/>
+                                            </Button>
+                                            <TextBlock x:Name="PrompterTitle" FontSize="12.5" FontWeight="SemiBold" Margin="6,0,8,0"
+                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+
+                                        <!-- Texto -->
+                                        <Border Grid.Row="1" CornerRadius="12" Background="{DynamicResource Ink_0A}" ClipToBounds="True">
+                                            <Grid>
+                                                <Canvas x:Name="PrompterViewport" ClipToBounds="True">
+                                                    <StackPanel x:Name="PrompterLines" Margin="16,0">
+                                                        <StackPanel.RenderTransform><TranslateTransform x:Name="PrompterShift"/></StackPanel.RenderTransform>
+                                                    </StackPanel>
+                                                </Canvas>
+                                                <TextBox x:Name="PrompterBox" Style="{StaticResource NotesBox}" Margin="14,10" Visibility="Collapsed"
+                                                         PreviewMouseLeftButtonDown="TextInput_PreviewMouseDown"
+                                                         TextChanged="PrompterBox_TextChanged" PreviewKeyDown="NotesBox_PreviewKeyDown"/>
+                                                <!-- Antes de começar -->
+                                                <StackPanel x:Name="PrompterIntro" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                            IsHitTestVisible="False">
+                                                    <local:Glyph Data="{StaticResource IcoPlay}" Filled="True" Size="20" Foreground="{DynamicResource Ink_99}"/>
+                                                    <TextBlock Text="{local:T 'Aperte Iniciar e leia junto'}" FontSize="13.5" FontWeight="SemiBold"
+                                                               HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                                    <TextBlock Text="{local:T 'Uma contagem de 3 segundos te dá tempo de se preparar'}" FontSize="11.5"
+                                                               Foreground="{DynamicResource Tertiary}" HorizontalAlignment="Center" TextAlignment="Center"
+                                                               TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                                <!-- Contagem 3, 2, 1 -->
+                                                <TextBlock x:Name="PrompterCount" FontSize="52" FontWeight="SemiBold" Opacity="0"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
+                                                           RenderTransformOrigin="0.5,0.5">
+                                                    <TextBlock.RenderTransform><ScaleTransform x:Name="PrompterCountScale"/></TextBlock.RenderTransform>
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Rodapé: início, iniciar/pausar, tempo, velocidade, página -->
+                                        <DockPanel Grid.Row="2" Margin="0,6,0,0" LastChildFill="False">
+                                            <Button DockPanel.Dock="Left" Style="{StaticResource IconButton}" Width="26" Height="26"
+                                                    Click="PrompterRestart_Click" ToolTip="{local:T 'Voltar ao início'}">
+                                                <local:Glyph Data="{StaticResource IcoReset}" Size="13"/>
+                                            </Button>
+                                            <Button x:Name="PrompterStart" DockPanel.Dock="Left" Style="{StaticResource ChipButton}" Margin="6,0,0,0"
+                                                    Padding="12,4" Background="{DynamicResource Accent}" Foreground="#111111" Click="PrompterStart_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <local:Glyph x:Name="PrompterStartGlyph" Data="{StaticResource IcoPlay}" Filled="True" Size="10" Margin="0,0,6,0"/>
+                                                    <TextBlock x:Name="PrompterStartText" Text="{local:T 'Iniciar'}" FontWeight="SemiBold"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <TextBlock x:Name="PrompterLeft" DockPanel.Dock="Left" FontSize="11.5" Foreground="{DynamicResource Tertiary}"
+                                                       VerticalAlignment="Center" Margin="10,0,0,0" Typography.NumeralAlignment="Tabular"/>
+
+                                            <TextBlock x:Name="PrompterPageText" DockPanel.Dock="Right" FontSize="11.5" Foreground="{DynamicResource Tertiary}"
+                                                       VerticalAlignment="Center" Margin="8,0,0,0" Typography.NumeralAlignment="Tabular"/>
+                                            <StackPanel x:Name="PrompterSpeedRow" DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Style="{StaticResource IconButton}" Width="24" Height="24" Tag="-0.1" Click="PrompterSpeed_Click"
+                                                        ToolTip="{local:T 'Mais devagar'}">
+                                                    <local:Glyph Data="{StaticResource IcoMinus}" Size="12"/>
+                                                </Button>
+                                                <TextBlock x:Name="PrompterSpeedText" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                                                           MinWidth="34" TextAlignment="Center" Typography.NumeralAlignment="Tabular"/>
+                                                <Button Style="{StaticResource IconButton}" Width="24" Height="24" Tag="0.1" Click="PrompterSpeed_Click"
+                                                        ToolTip="{local:T 'Mais rápido'}">
+                                                    <local:Glyph Data="{StaticResource IcoPlus}" Size="12"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </DockPanel>
                                     </Grid>
 
                                     <!-- ── Espelho (câmera) ── -->

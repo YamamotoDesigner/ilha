@@ -36,8 +36,10 @@ timer e área de transferência, sempre à mão e nunca no caminho.
 | 🌗 **Claro ou escuro, PT ou EN** | Modo claro e escuro, e a interface inteira em português ou inglês. Tudo escolhido numa apresentação animada na primeira vez. |
 | 📂 **Prateleira de arquivos** | Arraste arquivos para a ilha e solte onde quiser depois. Leve coisas entre pastas, e-mails e apps sem perder nada. |
 | 📝 **Notas rápidas** | Um bloco sempre à mão, salvo automaticamente. |
-| ⏱️ **Foco** | Modos Foco, Pausa e Pausa longa em um clique. A contagem aparece na ilha recolhida e ela avisa quando acabar. |
+| ⏱️ **Foco** | Modos Foco, Pausa e Pausa longa, além de atalhos de 1 min a 1 h. A contagem aparece na ilha recolhida e ela avisa quando acabar. |
 | ✅ **Agenda e tarefas** | Calendário do mês inteiro e uma lista de tarefas para o dia, salva automaticamente. |
+| 🎬 **Teleprompter** | Seu roteiro rola logo abaixo da câmera, com contagem 3-2-1, linha atual em destaque, velocidade ajustável e lembretes como [pausa]. |
+| ⬇️ **Downloads** | Quando um download termina, a ilha avisa e o arquivo já vai para a prateleira. |
 | 📈 **Monitor do sistema** | Uso de processador e memória com gráfico dos últimos segundos. |
 | 📋 **Área de transferência** | Histórico do que você copiou; clique para copiar de novo. Fica só na memória. |
 | 🫧 **Vidro ou sólido** | Efeito de vidro com desfoque real do que está atrás (o mesmo do Windows 11), tingido pela sua cor — ou cor sólida, se preferir. |
