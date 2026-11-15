@@ -23,6 +23,7 @@ namespace Ilha
         private WriteableBitmap? _bitmap;
         private byte[]? _pixels;
         private int _busy, _session;
+        private Task _stopping = Task.CompletedTask;
 
         /// <summary>Imagem da câmera (a mesma instância é atualizada a cada quadro).</summary>
         public event Action<ImageSource>? FrameSourceChanged;
@@ -36,6 +37,10 @@ namespace Ilha
             int session = ++_session;
             try
             {
+                // Espera a câmera anterior soltar o dispositivo antes de pedir de novo.
+                try { await _stopping; } catch { }
+                if (session != _session) return null;
+
                 var groups = await MediaFrameSourceGroup.FindAllAsync();
                 var choice = groups
                     .SelectMany(g => g.SourceInfos.Select(info => (Group: g, Info: info)))
@@ -112,10 +117,12 @@ namespace Ilha
             var capture = _capture;
             _reader = null;
             _capture = null;
+            // A tela solta a imagem ao desligar; na próxima vez é preciso entregar uma nova.
+            _bitmap = null;
             if (reader != null)
             {
                 reader.FrameArrived -= OnFrameArrived;
-                _ = reader.StopAsync().AsTask().ContinueWith(_ =>
+                _stopping = reader.StopAsync().AsTask().ContinueWith(_ =>
                 {
                     reader.Dispose();
                     capture?.Dispose();
