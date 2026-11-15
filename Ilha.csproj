@@ -11,10 +11,24 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Ilha</AssemblyName>
     <RootNamespace>Ilha</RootNamespace>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <ApplicationIcon>Ilha.ico</ApplicationIcon>
     <!-- O DPI é definido pelo manifesto (correto para WPF); WinForms só fornece o ícone da bandeja. -->
     <NoWarn>$(NoWarn);WFO0003;WPF0001</NoWarn>
+  </PropertyGroup>
+
+  <!-- Empacotamento: "dotnet publish -c Release -o publish" gera um único Ilha.exe.
+       IncludeNativeLibrariesForSelfExtract é obrigatório: sem ele as DLLs nativas do WPF
+       (wpfgfx_cor3, PresentationNative_cor3...) ficam soltas e o exe instalado não abre. -->
+  <PropertyGroup>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
 </Project>

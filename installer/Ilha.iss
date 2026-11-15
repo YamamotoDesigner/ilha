@@ -2,8 +2,14 @@
 ; Gerar:  ISCC.exe installer\Ilha.iss   (depois de "dotnet publish ... -o publish")
 
 #define AppName "Ilha"
-#define AppVersion "1.1.0"
+#define AppVersion "1.1.1"
 #define AppExe "Ilha.exe"
+
+; O instalador só leva o Ilha.exe. Se houver DLL solta em publish\, o exe depende dela
+; e não abriria depois de instalado — então nem gera o instalador.
+#if FindFirst("..\publish\*.dll", 0) != 0
+  #error Há DLLs soltas em publish\. Apague a pasta publish e rode "dotnet publish -c Release -o publish" (o .csproj já embute tudo no exe).
+#endif
 
 [Setup]
 AppId={{6F2A7C1E-3B5D-4E8A-9C21-7D4F0B8E1A55}
