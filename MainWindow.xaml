@@ -1,4 +1,4 @@
-<Window x:Class="Ilha.MainWindow"
+﻿<Window x:Class="Ilha.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Ilha"
@@ -427,7 +427,7 @@
                                   StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                         </Grid>
                         <!-- Conteúdo: em tamanhos pequenos (ilha flutuante) encolhe por igual, sem cortar -->
-                        <Grid x:Name="ContentRoot" Margin="26,20,26,24" HorizontalAlignment="Left" VerticalAlignment="Top"
+                        <Grid x:Name="ContentRoot" Margin="20,14,20,16" HorizontalAlignment="Left" VerticalAlignment="Top"
                               Width="626" Height="214">
                             <Grid.LayoutTransform>
                                 <ScaleTransform x:Name="ContentScale" ScaleX="1" ScaleY="1"/>
@@ -542,7 +542,7 @@
                                         Visibility="Collapsed"/>
                                 </Grid>
 
-                                <Grid x:Name="Pages" Grid.Row="1" Margin="0,16,0,0" ClipToBounds="True">
+                                <Grid x:Name="Pages" Grid.Row="1" Margin="0,12,0,0" ClipToBounds="True">
 
                                     <!-- ── Início: mídia + sistema + prateleira ── -->
                                     <Grid x:Name="PageHome">
@@ -1101,9 +1101,8 @@
                                                 <!-- Antes de começar -->
                                                 <StackPanel x:Name="PrompterIntro" VerticalAlignment="Center" HorizontalAlignment="Center"
                                                             IsHitTestVisible="False">
-                                                    <local:Glyph Data="{StaticResource IcoPlay}" Filled="True" Size="20" Foreground="{DynamicResource Ink_99}"/>
-                                                    <TextBlock Text="{local:T 'Aperte Iniciar e leia junto'}" FontSize="13.5" FontWeight="Medium"
-                                                               HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                                    <TextBlock Text="{local:T 'Aperte Iniciar e leia junto'}" FontSize="13" FontWeight="Medium"
+                                                               HorizontalAlignment="Center"/>
                                                     <TextBlock Text="{local:T 'Uma contagem de 3 segundos te dá tempo de se preparar'}" FontSize="11.5"
                                                                Foreground="{DynamicResource Tertiary}" HorizontalAlignment="Center" TextAlignment="Center"
                                                                TextWrapping="Wrap" Margin="0,2,0,0"/>

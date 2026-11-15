@@ -663,8 +663,9 @@
                         <TextBlock x:Name="FloatHint" Style="{StaticResource Hint}"
                                    Text="{local:T 'Para mover: segure a ilha pelo cabeçalho (onde fica o relógio) e arraste. Para mudar o tamanho: arraste o cantinho de baixo, à direita. O alfinete na ilha fixa e solta.'}"/>
 
-                        <TextBlock Text="{local:T 'ABAS'}" Style="{StaticResource Section}"/>
-                        <StackPanel Orientation="Horizontal">
+                        <!-- As abas ficam sempre no topo (1.9.2): escolha escondida -->
+                        <TextBlock Text="{local:T 'ABAS'}" Style="{StaticResource Section}" Visibility="Collapsed"/>
+                        <StackPanel Orientation="Horizontal" Visibility="Collapsed">
                             <RadioButton x:Name="SideTabsRadio" Style="{StaticResource ChoiceCard}" GroupName="Tabs"
                                          Checked="Tabs_Checked">
                                 <StackPanel>

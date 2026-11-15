@@ -48,10 +48,10 @@ namespace Ilha
         public int? FloatCenterX { get; set; }
         public int? FloatTop { get; set; }
         /// <summary>Tamanho da ilha aberta (pixels lógicos, antes do "Tamanho geral"), em todos os estilos.</summary>
-        public double OpenWidth { get; set; } = 560;
-        public double OpenHeight { get; set; } = 220;
+        public double OpenWidth { get; set; } = 520;
+        public double OpenHeight { get; set; } = 184;
         /// <summary>"Side" (trilho lateral) ou "Top" (barra no topo).</summary>
-        public string TabPosition { get; set; } = "Side";
+        public string TabPosition { get; set; } = "Top";
 
         // Comportamento
         public int HoverDelayMs { get; set; } = 0;
@@ -169,18 +169,18 @@ namespace Ilha
             return Migrate(new AppSettings());
         }
 
-        private const int CurrentLayout = 3;
+        private const int CurrentLayout = 4;
 
         /// <summary>
-        /// Layout 3 (1.9.1): a ilha aberta ficou menor por padrão (560 × 220). Quem estava no
-        /// padrão anterior (640 × 236) passa para o novo; quem escolheu outro tamanho fica como está.
+        /// Layout 4 (1.9.2): a ilha aberta ficou fina e compacta por padrão (520 × 184). Quem estava num dos
+        /// padrões anteriores (640 × 236 ou 560 × 220) passa para o novo; quem escolheu outro tamanho fica como está.
         /// </summary>
         private static AppSettings Migrate(AppSettings s)
         {
             if (s.LayoutVersion < CurrentLayout)
             {
                 var d = new AppSettings();
-                bool wasDefault = s.LayoutVersion < 2 || (s.OpenWidth == 640 && s.OpenHeight == 236);
+                bool wasDefault = s.LayoutVersion < 2 || (s.OpenWidth == 640 && s.OpenHeight == 236) || (s.OpenWidth == 560 && s.OpenHeight == 220);
                 if (wasDefault)
                 {
                     s.OpenWidth = d.OpenWidth;

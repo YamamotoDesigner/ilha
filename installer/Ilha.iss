@@ -2,7 +2,7 @@
 ; Gerar:  ISCC.exe installer\Ilha.iss   (depois de "dotnet publish ... -o publish")
 
 #define AppName "Ilha"
-#define AppVersion "1.9.1"
+#define AppVersion "1.9.2"
 #define AppExe "Ilha.exe"
 
 ; O instalador só leva o Ilha.exe. Se houver DLL solta em publish\, o exe depende dela

@@ -21,7 +21,7 @@ namespace Ilha
 {
     public partial class MainWindow : Window
     {
-        private const double DefaultOpenWidth = 560, DefaultOpenHeight = 220;
+        private const double DefaultOpenWidth = 520, DefaultOpenHeight = 184;
         // Ilha flutuante redimensionável: limites do tamanho aberto.
         private const double MinFloatWidth = 340, MaxFloatWidth = 1040, MinFloatHeight = 130, MaxFloatHeight = 460;
         private double _expW = DefaultOpenWidth, _expH = DefaultOpenHeight;
@@ -505,7 +505,7 @@ namespace Ilha
         /// <summary>Abas no trilho lateral ou numa barra no topo do cabeçalho.</summary>
         private void ApplyTabPosition()
         {
-            bool top = string.Equals(_settings.TabPosition, "Top", StringComparison.OrdinalIgnoreCase);
+            bool top = true; // abas sempre no topo: a ilha fica mais fina
             var currentHost = TabStrip.Parent as FrameworkElement;
             if (top && currentHost != TopTabsHost)
             {
@@ -560,10 +560,10 @@ namespace Ilha
         // Abaixo deste tamanho de conteúdo, tudo encolhe por igual em vez de cortar.
         private const double ContentMinWidth = 420, ContentMinHeight = 150;
         // Respiro: margens largas em volta do conteúdo (ver Margin de ContentRoot no XAML).
-        private const double ContentPadX = 52, ContentPadY = 44;
-        private const double RailWidth = 36, RailGap = 22, HeaderSide = 30, HeaderTop = 34, PageGap = 16;
+        private const double ContentPadX = 40, ContentPadY = 30;
+        private const double RailWidth = 36, RailGap = 18, HeaderSide = 28, HeaderTop = 32, PageGap = 12;
 
-        private bool TabsOnTop => string.Equals(_settings.TabPosition, "Top", StringComparison.OrdinalIgnoreCase);
+        private bool TabsOnTop => true; // abas sempre no topo
 
         /// <summary>
         /// Encaixa o conteúdo no tamanho atual da ilha aberta: escala quando fica pequeno demais e
