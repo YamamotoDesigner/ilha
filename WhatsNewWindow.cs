@@ -37,7 +37,7 @@ namespace Ilha
             _version = version;
             Title = L.T("Novidades da Ilha");
             Width = PageW;
-            Height = 560;
+            Height = 620;
             ResizeMode = ResizeMode.NoResize;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             FontSize = 13.5;
@@ -62,7 +62,7 @@ namespace Ilha
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(44) });
             root.RowDefinitions.Add(new RowDefinition());
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(84) });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(118) });
 
             // Fechar
             var close = MakeButton(primary: false);
@@ -85,14 +85,24 @@ namespace Ilha
             Grid.SetRow(viewport, 1);
             root.Children.Add(viewport);
 
-            // Rodapé: voltar · pontinhos · continuar
-            var footer = new Grid { Margin = new Thickness(28, 0, 28, 22) };
+            // "Voltar" discreto no alto; embaixo, os pontinhos e um botão largo, centralizado (como nos apps da Apple)
             _back = MakeButton(primary: false);
             _back.Content = L.T("Voltar");
             _back.HorizontalAlignment = HorizontalAlignment.Left;
+            _back.VerticalAlignment = VerticalAlignment.Top;
+            _back.Margin = new Thickness(12, 7, 0, 0);
+            _back.Padding = new Thickness(8, 6, 8, 6);
+            _back.FontWeight = FontWeights.Normal;
+            WindowChrome.SetIsHitTestVisibleInChrome(_back, true);
             _back.Click += (_, _) => Go(_index - 1);
+            root.Children.Add(_back);
+            var footer = new StackPanel { Margin = new Thickness(0, 0, 0, 30), VerticalAlignment = VerticalAlignment.Bottom };
             _next = MakeButton(primary: true);
-            _next.HorizontalAlignment = HorizontalAlignment.Right;
+            _next.HorizontalAlignment = HorizontalAlignment.Center;
+            _next.Width = 260;
+            _next.Height = 44;
+            _next.Padding = new Thickness(0);
+            _next.FontSize = 15;
             _next.Click += (_, _) => { if (_index >= _slides.Length - 1) Close(); else Go(_index + 1); };
             for (int i = 0; i < slides.Length; i++)
             {
@@ -101,7 +111,7 @@ namespace Ilha
                 dot.MouseLeftButtonUp += (_, _) => Go(target);
                 _dots.Children.Add(dot);
             }
-            footer.Children.Add(_back);
+            _dots.Margin = new Thickness(0, 0, 0, 22);
             footer.Children.Add(_dots);
             footer.Children.Add(_next);
             Grid.SetRow(footer, 2);
@@ -165,12 +175,12 @@ namespace Ilha
 
             col.Children.Add(new TextBlock
             {
-                Text = s.Art == "hello" ? L.F("Bom dia, {0}!", WhatsNewArt.UserName) : L.T(s.Title), FontSize = 26, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Center,
+                Text = s.Art == "hello" ? L.F("Bom dia, {0}", WhatsNewArt.UserName) : L.T(s.Title), FontSize = 30, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, first ? 4 : 24, 0, 0),
             });
             var body = new TextBlock
             {
-                Text = L.T(s.Body), FontSize = 14.5, LineHeight = 21, TextAlignment = TextAlignment.Center,
+                Text = L.T(s.Body), FontSize = 15, LineHeight = 22, TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap, Margin = new Thickness(10, 8, 10, 0),
             };
             body.SetResourceReference(TextBlock.ForegroundProperty, "Text2");

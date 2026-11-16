@@ -116,7 +116,7 @@ namespace Ilha
                 : h < 18
                     ? new[] { L.T("Como está indo o dia?"), L.T("Que bom te ver por aqui."), L.T("Uma pausa também conta.") }
                     : new[] { L.T("Hora de ir desacelerando."), L.T("Que bom te ver por aqui."), L.T("Foi um bom dia?") };
-            return ($"{hello}, {first}!", lines[_rng.Next(lines.Length)]);
+            return ($"{hello}, {first}", lines[_rng.Next(lines.Length)]);
         }
 
         // ───── Lembretes de bem-estar ─────

@@ -67,38 +67,23 @@ namespace Ilha
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TAB") is { Length: > 0 }) showOnboarding = false;
             if (Environment.GetEnvironmentVariable("ILHA_TEST_ONBOARD") == "1") showOnboarding = true;
 #endif
-            void Continue()
-            {
-                if (showOnboarding)
-                {
-                    var welcome = new OnboardingWindow(settings, replay: false);
-                    welcome.Finished += StartIsland;
-                    welcome.Show();
-                }
-                else
-                {
-                    StartIsland();
-                }
-            }
-
-            // Primeira abertura (ou atualizou e ainda não tem nome): pede o nome antes de tudo.
+            // Primeira vez: apresentação completa (com o nome). Quem atualizou e ainda não tem nome: só o nome.
             bool askName = string.IsNullOrWhiteSpace(settings.UserName);
 #if DEBUG
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TAB") is { Length: > 0 }) askName = false;
             if (Environment.GetEnvironmentVariable("ILHA_TEST_NAMEWINDOW") == "1") askName = true;
 #endif
-            if (askName)
+            if (showOnboarding || askName)
             {
-                var ask = new NameWindow(settings);
-                ask.Finished += Continue;
-                ask.Show();
+                var setup = new SetupWindow(settings, nameOnly: !showOnboarding);
+                setup.Finished += StartIsland;
+                setup.Show();
             }
             else
             {
-                Continue();
+                StartIsland();
             }
         }
-
         private static void StartIsland()
         {
             // O vidro fica numa janela própria, logo atrás da ilha (ver BackdropWindow).

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -8,209 +9,264 @@ using System.Windows.Shapes;
 namespace Ilha
 {
     /// <summary>
-    /// Ícones animados dos lembretes (carinha, copo d'água, pessoa andando, lua, despertador e escova).
-    /// Desenhados em vetor, 40 × 40, com animação em loop.
+    /// Símbolos dos lembretes e da saudação: traço fino, uma cor só (mais um detalhe na cor de destaque).
+    /// Cada um se desenha na hora em que aparece e depois fica com um movimento bem discreto.
+    /// Cores pelo tema: "Ink_FF" (traço) e "Accent" (detalhe).
     /// </summary>
     public static class NudgeArt
     {
-        public static readonly Color Yellow = Color.FromRgb(0xFF, 0xD6, 0x0A);
-        public static readonly Color Water = Color.FromRgb(0x5A, 0xC8, 0xFA);
-        public static readonly Color Green = Color.FromRgb(0x30, 0xD1, 0x58);
-        public static readonly Color Moon = Color.FromRgb(0xFF, 0xE0, 0x8A);
-        public static readonly Color Orange = Color.FromRgb(0xFF, 0x9F, 0x0A);
-        public static readonly Color Mint = Color.FromRgb(0x63, 0xE6, 0xE2);
+        private const double Size = 40, Stroke = 1.7;
 
         public static FrameworkElement Build(string kind) => kind switch
         {
-            "hello" => Smiley(),
-            "water" => Glass(),
-            "stretch" => Walker(),
-            "late" => Sleepy(),
-            "alarm" => AlarmClock(),
-            "teeth" => Toothbrush(),
-            _ => Smiley(),
+            "sunrise" => Sunrise(),
+            "sun" => Sun(),
+            "moon" or "late" => Moon(),
+            "water" => Drop(),
+            "stretch" => Steps(),
+            "alarm" => Bell(),
+            "teeth" => Sparkle(),
+            "hello" => GreetingFor(DateTime.Now.Hour),
+            _ => Sun(),
         };
 
-        // ── Carinha feliz: pula de leve e dá uma piscadinha ──
-        private static FrameworkElement Smiley()
+        /// <summary>Saudação: sol nascendo de manhã, sol à tarde, lua à noite.</summary>
+        public static FrameworkElement GreetingFor(int hour) =>
+            hour >= 5 && hour < 12 ? Sunrise() : hour >= 12 && hour < 18 ? Sun() : Moon();
+
+        public static string GreetingKind(int hour) =>
+            hour >= 5 && hour < 12 ? "sunrise" : hour >= 12 && hour < 18 ? "sun" : "moon";
+
+        // ── Sol nascendo: a linha do horizonte, o sol sobe e os raios aparecem ──
+        private static FrameworkElement Sunrise()
         {
             var c = Stage();
-            var face = new Ellipse { Width = 34, Height = 34, Fill = new LinearGradientBrush(Color.FromRgb(0xFF, 0xE2, 0x4D), Color.FromRgb(0xFF, 0xB8, 0x00), 90) };
-            Place(c, face, 3, 3);
-            var leftEye = new Ellipse { Width = 4.2, Height = 5.6, Fill = Brush(0x3A, 0x26, 0x00), RenderTransformOrigin = new Point(0.5, 0.5) };
-            var rightEye = new Ellipse { Width = 4.2, Height = 5.6, Fill = Brush(0x3A, 0x26, 0x00), RenderTransformOrigin = new Point(0.5, 0.5) };
-            Place(c, leftEye, 13, 13);
-            Place(c, rightEye, 22.8, 13);
-            var smile = new Path { Data = Geometry.Parse("M12 22.5 Q20 30.5 28 22.5"), Stroke = Brush(0x3A, 0x26, 0x00), StrokeThickness = 2.4, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
-            c.Children.Add(smile);
-            var cheekL = new Ellipse { Width = 5, Height = 3, Fill = new SolidColorBrush(Color.FromArgb(0x66, 0xFF, 0x6B, 0x4A)) };
-            var cheekR = new Ellipse { Width = 5, Height = 3, Fill = new SolidColorBrush(Color.FromArgb(0x66, 0xFF, 0x6B, 0x4A)) };
-            Place(c, cheekL, 8, 21);
-            Place(c, cheekR, 27, 21);
-            // Pulinho
-            var bounce = new TranslateTransform();
-            var scale = new ScaleTransform(1, 1, 20, 36);
-            c.RenderTransform = new TransformGroup { Children = { scale, bounce } };
-            Loop(bounce, TranslateTransform.YProperty, 2.4, (0, 0), (0.12, -4), (0.24, 0), (0.3, -1.5), (0.36, 0), (1, 0));
-            Loop(scale, ScaleTransform.ScaleYProperty, 2.4, (0, 1), (0.1, 1.04), (0.22, 0.94), (0.3, 1), (1, 1));
-            // Piscadinha (olho direito)
-            var wink = new ScaleTransform(1, 1);
-            rightEye.RenderTransform = wink;
-            Loop(wink, ScaleTransform.ScaleYProperty, 2.4, (0, 1), (0.55, 1), (0.6, 0.12), (0.68, 1), (1, 1));
+            var sunHost = new Canvas { Width = Size, Height = 28, ClipToBounds = true };
+            var sun = Line(c: null, "M12 27 A8 8 0 0 1 28 27", accent: true);
+            var rise = new TranslateTransform(0, 10);
+            sun.RenderTransform = rise;
+            sunHost.Children.Add(sun);
+            c.Children.Add(sunHost);
+            var horizon = Line(c, "M5 27.5 H35");
+            var rays = Line(c, "M20 9.5 V12.5 M10.5 13.5 L12.6 15.6 M29.5 13.5 L27.4 15.6");
+            var dashes = Line(c, "M10 32.5 H16 M20 32.5 H30");
+            DrawOn(horizon, 0.5, 0);
+            Animate(rise, TranslateTransform.YProperty, 10, 0, 0.9, 0.25);
+            DrawOn(rays, 0.45, 0.9);
+            DrawOn(dashes, 0.5, 0.4);
+            Breathe(rays, 2.8, 1.4);
             return c;
         }
 
-        // ── Copo d'água: enche devagar e cai uma gotinha ──
-        private static FrameworkElement Glass()
+        // ── Sol: o círculo se desenha e os raios giram devagar ──
+        private static FrameworkElement Sun()
         {
             var c = Stage();
-            var glassShape = Geometry.Parse("M10 9 L30 9 L27.5 35 Q27.3 37 25 37 L15 37 Q12.7 37 12.5 35 Z");
-            var water = new Rectangle { Width = 22, Height = 30, Fill = new LinearGradientBrush(Color.FromRgb(0x8E, 0xE2, 0xFF), Water, 90) };
-            var level = new TranslateTransform(0, 18);
-            water.RenderTransform = level;
-            var waterHost = new Canvas { Width = 40, Height = 40, Clip = glassShape };
-            Place(waterHost, water, 9, 9);
-            c.Children.Add(waterHost);
-            c.Children.Add(new Path { Data = glassShape, Stroke = new SolidColorBrush(Color.FromArgb(0xE6, 0xFF, 0xFF, 0xFF)), StrokeThickness = 1.8, StrokeLineJoin = PenLineJoin.Round });
-            Loop(level, TranslateTransform.YProperty, 3.2, (0, 20), (0.7, 7), (0.9, 7), (1, 20));
-            var drop = new Path { Data = Geometry.Parse("M0 4 Q0 0 2 -2 Q4 0 4 4 A2 2 0 0 1 0 4 Z"), Fill = new SolidColorBrush(Water) };
-            var fall = new TranslateTransform(18, -2);
-            drop.RenderTransform = fall;
-            c.Children.Add(drop);
-            Loop(fall, TranslateTransform.YProperty, 3.2, (0, -4), (0.3, -4), (0.55, 16), (1, 16));
-            Loop(drop, UIElement.OpacityProperty, 3.2, (0, 0), (0.3, 1), (0.52, 1), (0.56, 0), (1, 0));
+            var core = Line(c, "M20 13.5 A6.5 6.5 0 1 1 19.99 13.5", accent: true);
+            var rays = Line(c, "M20 5 V8.5 M20 31.5 V35 M5 20 H8.5 M31.5 20 H35 M9.4 9.4 L11.8 11.8 M28.2 28.2 L30.6 30.6 M9.4 30.6 L11.8 28.2 M28.2 11.8 L30.6 9.4");
+            DrawOn(core, 0.7, 0);
+            DrawOn(rays, 0.6, 0.45);
+            var spin = new RotateTransform(0, 20, 20);
+            rays.RenderTransform = spin;
+            Loop(spin, RotateTransform.AngleProperty, 24, (0, 0), (1, 360), linear: true);
             return c;
         }
 
-        // ── Pessoa andando: pernas e braços balançam ──
-        private static FrameworkElement Walker()
+        // ── Lua: o crescente se desenha e duas estrelas piscam ──
+        private static FrameworkElement Moon()
         {
             var c = Stage();
-            var ink = new SolidColorBrush(Green);
-            Place(c, new Ellipse { Width = 7.5, Height = 7.5, Fill = ink }, 16.5, 4);
-            Line(c, 20, 13, 20, 24, ink, 3.2);
-            var legL = Limb(c, 20, 24, 20, 35, ink);
-            var legR = Limb(c, 20, 24, 20, 35, ink);
-            var armL = Limb(c, 20, 15, 20, 23.5, ink);
-            var armR = Limb(c, 20, 15, 20, 23.5, ink);
-            Swing(legL, 20, 24, 28, 1.0, 0);
-            Swing(legR, 20, 24, 28, 1.0, 0.5);
-            Swing(armL, 20, 15, 34, 1.0, 0.5);
-            Swing(armR, 20, 15, 34, 1.0, 0);
-            var step = new TranslateTransform();
-            c.RenderTransform = step;
-            Loop(step, TranslateTransform.YProperty, 0.5, (0, 0), (0.5, -1.2), (1, 0));
-            return c;
-        }
-
-        // ── Lua sonolenta com "z" subindo ──
-        private static FrameworkElement Sleepy()
-        {
-            var c = Stage();
-            var moon = new Path
+            var moon = Line(c, "M24.5 8.5 A12 12 0 1 0 31.5 26 A9.5 9.5 0 0 1 24.5 8.5 Z");
+            DrawOn(moon, 0.9, 0);
+            foreach (var (x, y, d) in new[] { (30.5, 9.5, 0.9), (34.5, 17.0, 1.4) })
             {
-                Data = Geometry.Parse("M24 6 A14 14 0 1 0 34 26 A11 11 0 1 1 24 6 Z"),
-                Fill = new LinearGradientBrush(Color.FromRgb(0xFF, 0xEC, 0xB0), Moon, 90),
-            };
-            var sway = new RotateTransform(0, 20, 22);
+                var star = Dot(c, x, y, 1.6);
+                star.Opacity = 0;
+                Loop(star, UIElement.OpacityProperty, 2.6, (0, 0), (0.2, 1), (0.6, 0.25), (1, 0), delay: d);
+            }
+            var sway = new RotateTransform(0, 20, 20);
             moon.RenderTransform = sway;
-            c.Children.Add(moon);
-            Loop(sway, RotateTransform.AngleProperty, 3, (0, -6), (0.5, 6), (1, -6));
-            for (int i = 0; i < 3; i++)
+            Loop(sway, RotateTransform.AngleProperty, 4, (0, -3), (0.5, 3), (1, -3), delay: 1);
+            return c;
+        }
+
+        // ── Gota: o contorno se desenha e a água ondula por dentro ──
+        private static FrameworkElement Drop()
+        {
+            var c = Stage();
+            var shape = Geometry.Parse("M20 6 C20 6 10 17.5 10 24 A10 10 0 0 0 30 24 C30 17.5 20 6 20 6 Z");
+            var waterHost = new Canvas { Width = Size, Height = Size, Clip = shape };
+            var wave = new Path
             {
-                var z = new TextBlock { Text = "z", FontSize = 8 + i * 2.5, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0xC7, 0xC7, 0xFF)) };
-                var move = new TranslateTransform(26 + i * 3, 14);
-                z.RenderTransform = move;
-                c.Children.Add(z);
-                double off = i * 0.25;
-                Loop(move, TranslateTransform.YProperty, 2.4, (0, 18 - off * 4), (off, 18 - off * 4), (off + 0.55, -2 - i * 2), (1, -2 - i * 2));
-                Loop(z, UIElement.OpacityProperty, 2.4, (0, 0), (off, 0), (off + 0.1, 1), (off + 0.5, 0), (1, 0));
+                Data = Geometry.Parse("M-20 26 Q-15 23.5 -10 26 T0 26 T10 26 T20 26 T30 26 T40 26 T50 26 T60 26 V40 H-20 Z"),
+                Opacity = 0.9,
+            };
+            wave.SetResourceReference(Shape.FillProperty, "Accent");
+            var flow = new TranslateTransform(0, 6);
+            wave.RenderTransform = flow;
+            waterHost.Children.Add(wave);
+            c.Children.Add(waterHost);
+            var outline = Line(c, "M20 6 C20 6 10 17.5 10 24 A10 10 0 0 0 30 24 C30 17.5 20 6 20 6 Z");
+            DrawOn(outline, 0.8, 0);
+            Animate(flow, TranslateTransform.YProperty, 14, 0, 1.0, 0.5);
+            Loop(flow, TranslateTransform.XProperty, 1.6, (0, 0), (1, 20), linear: true);
+            return c;
+        }
+
+        // ── Passos: pegadas aparecem uma de cada vez, subindo ──
+        private static FrameworkElement Steps()
+        {
+            var c = Stage();
+            var prints = new (double X, double Y)[] { (13, 30), (22, 24), (14, 17), (23, 11) };
+            for (int i = 0; i < prints.Length; i++)
+            {
+                var (x, y) = prints[i];
+                var foot = new Border { Width = 5, Height = 8, CornerRadius = new CornerRadius(2.5) };
+                foot.SetResourceReference(Border.BackgroundProperty, i == prints.Length - 1 ? "Accent" : "Ink_FF");
+                Canvas.SetLeft(foot, x);
+                Canvas.SetTop(foot, y);
+                foot.RenderTransform = new RotateTransform(i % 2 == 0 ? -12 : 12, 2.5, 4);
+                foot.Opacity = 0;
+                c.Children.Add(foot);
+                double at = i * 0.16;
+                Loop(foot, UIElement.OpacityProperty, 2.8, (0, 0), (at, 0), (at + 0.06, 1), (0.78, 1), (0.92, 0), (1, 0));
             }
             return c;
         }
 
-        // ── Despertador que treme ──
-        private static FrameworkElement AlarmClock()
+        // ── Sino: se desenha e balança de leve ──
+        private static FrameworkElement Bell()
         {
             var c = Stage();
-            var body = new Canvas { Width = 40, Height = 40 };
-            var orange = new SolidColorBrush(Orange);
-            Place(body, new Ellipse { Width = 27, Height = 27, Fill = orange }, 6.5, 9);
-            Place(body, new Ellipse { Width = 21, Height = 21, Fill = Brush(0xFF, 0xF7, 0xE8) }, 9.5, 12);
-            body.Children.Add(new Path { Data = Geometry.Parse("M8 9 A6 6 0 0 1 15 6 Z M32 9 A6 6 0 0 0 25 6 Z"), Fill = orange });
-            Line(body, 20, 22.5, 20, 15.5, Brush(0x33, 0x22, 0x10), 2);
-            Line(body, 20, 22.5, 24.5, 24.5, Brush(0x33, 0x22, 0x10), 2);
-            Line(body, 12, 34, 10, 37, orange, 2.4);
-            Line(body, 28, 34, 30, 37, orange, 2.4);
-            var shake = new RotateTransform(0, 20, 22);
-            body.RenderTransform = shake;
-            c.Children.Add(body);
-            Loop(shake, RotateTransform.AngleProperty, 1.6, (0, 0), (0.05, -14), (0.1, 14), (0.15, -12), (0.2, 12), (0.25, -8), (0.3, 8), (0.36, 0), (1, 0));
+            var bell = Line(c, "M12.5 27 V19.5 A7.5 7.5 0 0 1 27.5 19.5 V27 L29.5 29.5 H10.5 Z M20 9 V11.8");
+            var clapper = Dot(c, 20, 32.4, 2.1, accent: true);
+            DrawOn(bell, 0.8, 0);
+            clapper.Opacity = 0;
+            Animate(clapper, UIElement.OpacityProperty, 0, 1, 0.3, 0.7);
+            var swing = new RotateTransform(0, 20, 10);
+            bell.RenderTransform = swing;
+            clapper.RenderTransform = swing;
+            Loop(swing, RotateTransform.AngleProperty, 2.2, (0, 0), (0.08, -9), (0.18, 8), (0.28, -5), (0.36, 3), (0.44, 0), (1, 0), delay: 0.9);
             return c;
         }
 
-        // ── Escova indo e voltando, com bolhinhas ──
-        private static FrameworkElement Toothbrush()
+        // ── Brilho: limpinho. Uma estrela de quatro pontas e outra menor piscando ──
+        private static FrameworkElement Sparkle()
         {
             var c = Stage();
-            var brush = new Canvas { Width = 40, Height = 40 };
-            var handle = new Border { Width = 30, Height = 6, CornerRadius = new CornerRadius(3), Background = new SolidColorBrush(Mint) };
-            Place(brush, handle, 5, 22);
-            var head = new Border { Width = 11, Height = 7, CornerRadius = new CornerRadius(1.5), Background = Brush(0xF2, 0xF2, 0xF7) };
-            Place(brush, head, 24, 15);
-            var move = new TranslateTransform();
-            brush.RenderTransform = new TransformGroup { Children = { new RotateTransform(-18, 20, 22), move } };
-            c.Children.Add(brush);
-            Loop(move, TranslateTransform.XProperty, 0.7, (0, -3), (0.5, 3), (1, -3));
-            for (int i = 0; i < 3; i++)
-            {
-                var b = new Ellipse { Width = 4 + i, Height = 4 + i, Stroke = new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF)), StrokeThickness = 1 };
-                var up = new TranslateTransform(28 + i * 3, 10);
-                b.RenderTransform = up;
-                c.Children.Add(b);
-                double off = i * 0.3;
-                Loop(up, TranslateTransform.YProperty, 1.8, (0, 12), (off, 12), (off + 0.5, 0), (1, 0));
-                Loop(b, UIElement.OpacityProperty, 1.8, (0, 0), (off, 0), (off + 0.1, 1), (off + 0.5, 0), (1, 0));
-            }
+            var big = Line(c, "M18 8 Q19 18 28 19 Q19 20 18 30 Q17 20 8 19 Q17 18 18 8 Z");
+            var small = Line(c, "M29 7 Q29.4 10.6 33 11 Q29.4 11.4 29 15 Q28.6 11.4 25 11 Q28.6 10.6 29 7 Z", accent: true);
+            DrawOn(big, 0.8, 0);
+            DrawOn(small, 0.5, 0.6);
+            var pulse = new ScaleTransform(1, 1, 18, 19);
+            big.RenderTransform = pulse;
+            Loop(pulse, ScaleTransform.ScaleXProperty, 2.4, (0, 1), (0.5, 1.08), (1, 1), delay: 0.9);
+            Loop(pulse, ScaleTransform.ScaleYProperty, 2.4, (0, 1), (0.5, 1.08), (1, 1), delay: 0.9);
+            Loop(small, UIElement.OpacityProperty, 1.8, (0, 1), (0.5, 0.3), (1, 1), delay: 1.2);
             return c;
         }
 
         // ── Peças ──
 
-        private static Canvas Stage() => new() { Width = 40, Height = 40, ClipToBounds = false };
+        private static Canvas Stage() => new() { Width = Size, Height = Size };
 
-        private static void Place(Canvas c, UIElement e, double x, double y)
+        private static Path Line(Canvas? c, string data, bool accent = false)
         {
-            Canvas.SetLeft(e, x);
-            Canvas.SetTop(e, y);
+            var p = new Path
+            {
+                Data = Geometry.Parse(data), StrokeThickness = Stroke,
+                StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round,
+            };
+            p.SetResourceReference(Shape.StrokeProperty, accent ? "Accent" : "Ink_FF");
+            c?.Children.Add(p);
+            return p;
+        }
+
+        private static Ellipse Dot(Canvas c, double x, double y, double r, bool accent = false)
+        {
+            var e = new Ellipse { Width = r * 2, Height = r * 2 };
+            e.SetResourceReference(Shape.FillProperty, accent ? "Accent" : "Ink_FF");
+            Canvas.SetLeft(e, x - r);
+            Canvas.SetTop(e, y - r);
             c.Children.Add(e);
+            return e;
         }
 
-        private static void Line(Canvas c, double x1, double y1, double x2, double y2, Brush b, double t) =>
-            c.Children.Add(new Line { X1 = x1, Y1 = y1, X2 = x2, Y2 = y2, Stroke = b, StrokeThickness = t, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round });
-
-        private static Line Limb(Canvas c, double x1, double y1, double x2, double y2, Brush b)
+        /// <summary>O traço "se desenha" do começo ao fim.</summary>
+        private static void DrawOn(Path p, double seconds, double delay)
         {
-            var l = new Line { X1 = x1, Y1 = y1, X2 = x2, Y2 = y2, Stroke = b, StrokeThickness = 3, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
-            c.Children.Add(l);
-            return l;
+            double len = Length(p.Data) / p.StrokeThickness + 2;
+            p.StrokeDashArray = new DoubleCollection { len, len };
+            p.StrokeDashOffset = len;
+            if (!SystemParameters.ClientAreaAnimation) { p.StrokeDashOffset = 0; return; }
+            p.BeginAnimation(Shape.StrokeDashOffsetProperty, new DoubleAnimation(len, 0, TimeSpan.FromSeconds(seconds))
+            {
+                BeginTime = TimeSpan.FromSeconds(delay),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+                FillBehavior = FillBehavior.HoldEnd,
+            });
         }
 
-        private static void Swing(UIElement e, double cx, double cy, double angle, double seconds, double phase)
+        private static double Length(Geometry g)
         {
-            var r = new RotateTransform(0, cx, cy);
-            e.RenderTransform = r;
-            double a = phase < 0.25 ? angle : -angle;
-            Loop(r, RotateTransform.AngleProperty, seconds, (0, a), (0.5, -a), (1, a));
+            var flat = g.GetFlattenedPathGeometry(0.1, ToleranceType.Absolute);
+            double total = 0;
+            foreach (var fig in flat.Figures)
+            {
+                var prev = fig.StartPoint;
+                var start = prev;
+                foreach (var seg in fig.Segments)
+                {
+                    var pts = seg switch
+                    {
+                        PolyLineSegment pl => pl.Points.ToArray(),
+                        LineSegment l => new[] { l.Point },
+                        _ => Array.Empty<Point>(),
+                    };
+                    foreach (var pt in pts) { total += (pt - prev).Length; prev = pt; }
+                }
+                if (fig.IsClosed) total += (start - prev).Length;
+            }
+            return total;
         }
 
-        private static SolidColorBrush Brush(byte r, byte g, byte b) => new(Color.FromRgb(r, g, b));
+        private static void Animate(IAnimatable t, DependencyProperty p, double from, double to, double seconds, double delay) =>
+            t.BeginAnimation(p, new DoubleAnimation(from, to, TimeSpan.FromSeconds(SystemParameters.ClientAreaAnimation ? seconds : 0))
+            {
+                BeginTime = TimeSpan.FromSeconds(delay),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            });
 
-        private static void Loop(IAnimatable target, DependencyProperty p, double seconds, params (double T, double V)[] keys)
+        private static void Breathe(UIElement e, double seconds, double delay) =>
+            Loop(e, UIElement.OpacityProperty, seconds, (0, 1), (0.5, 0.45), (1, 1), delay: delay);
+
+        private static void Loop(IAnimatable target, DependencyProperty p, double seconds, params (double T, double V)[] keys) =>
+            Loop(target, p, seconds, keys, false, 0);
+
+        private static void Loop(IAnimatable target, DependencyProperty p, double seconds, (double, double) k1, (double, double) k2, bool linear) =>
+            Loop(target, p, seconds, new[] { k1, k2 }, linear, 0);
+
+        private static void Loop(IAnimatable target, DependencyProperty p, double seconds, (double, double) k1, (double, double) k2, (double, double) k3, double delay) =>
+            Loop(target, p, seconds, new[] { k1, k2, k3 }, false, delay);
+
+        private static void Loop(IAnimatable target, DependencyProperty p, double seconds, (double, double) k1, (double, double) k2, (double, double) k3, (double, double) k4, double delay) =>
+            Loop(target, p, seconds, new[] { k1, k2, k3, k4 }, false, delay);
+
+        private static void Loop(IAnimatable target, DependencyProperty p, double seconds, (double, double) k1, (double, double) k2, (double, double) k3,
+                                 (double, double) k4, (double, double) k5, (double, double) k6, (double, double) k7, double delay) =>
+            Loop(target, p, seconds, new[] { k1, k2, k3, k4, k5, k6, k7 }, false, delay);
+
+        private static void Loop(IAnimatable target, DependencyProperty p, double seconds, (double T, double V)[] keys, bool linear, double delay)
         {
-            var a = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromSeconds(seconds), RepeatBehavior = RepeatBehavior.Forever };
+            if (!SystemParameters.ClientAreaAnimation) return;
+            var a = new DoubleAnimationUsingKeyFrames
+            {
+                Duration = TimeSpan.FromSeconds(seconds), RepeatBehavior = RepeatBehavior.Forever, BeginTime = TimeSpan.FromSeconds(delay),
+            };
             foreach (var (t, v) in keys)
-                a.KeyFrames.Add(new EasingDoubleKeyFrame(v, KeyTime.FromPercent(Math.Clamp(t, 0, 1)), new SineEase { EasingMode = EasingMode.EaseInOut }));
+                a.KeyFrames.Add(linear
+                    ? new LinearDoubleKeyFrame(v, KeyTime.FromPercent(t))
+                    : new EasingDoubleKeyFrame(v, KeyTime.FromPercent(t), new SineEase { EasingMode = EasingMode.EaseInOut }));
             target.BeginAnimation(p, a);
         }
     }

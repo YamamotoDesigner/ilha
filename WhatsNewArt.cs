@@ -47,9 +47,14 @@ namespace Ilha
             {
                 Center = new Point(0.5, 0.35), GradientOrigin = new Point(0.5, 0.35), RadiusX = 0.6, RadiusY = 0.8,
             };
-            var stage = new Border { Width = W, Height = H, CornerRadius = new CornerRadius(22), ClipToBounds = true, BorderThickness = new Thickness(1) };
-            stage.SetResourceReference(Border.BackgroundProperty, "CardBg");
-            stage.SetResourceReference(Border.BorderBrushProperty, "Line");
+            // Sem moldura: a cena flutua sobre o fundo da janela, só com um brilho suave.
+            var stage = new Border { Width = W, Height = H, ClipToBounds = true };
+            // As bordas somem suavemente no fundo (nada de "caixa" em volta da cena).
+            stage.OpacityMask = new RadialGradientBrush
+            {
+                Center = new Point(0.5, 0.42), GradientOrigin = new Point(0.5, 0.42), RadiusX = 0.62, RadiusY = 0.78,
+                GradientStops = { new GradientStop(Colors.Black, 0.72), new GradientStop(Colors.Transparent, 1) },
+            };
             stage.Child = new Grid { Children = { new Border { Background = glow }, art } };
             return stage;
         }
@@ -427,7 +432,7 @@ namespace Ilha
             Anim(island, FrameworkElement.WidthProperty, d, (0, 130), (0.12, 130), (0.26, 300), (0.82, 300), (0.94, 130), (1, 130));
             Anim(island, FrameworkElement.HeightProperty, d, (0, 30), (0.12, 30), (0.26, 64), (0.82, 64), (0.94, 30), (1, 30));
             var name = UserName;
-            var row = Nudge("hello", L.F("Bom dia, {0}!", name), L.T("Que o seu dia seja leve."));
+            var row = Nudge("sunrise", L.F("Bom dia, {0}", name), L.T("Que o seu dia seja leve."));
             Anim(row, UIElement.OpacityProperty, d, (0, 0), (0.24, 0), (0.32, 1), (0.78, 1), (0.84, 0), (1, 0));
             island.Child = row;
             stage.Children.Add(island);
@@ -478,6 +483,7 @@ namespace Ilha
         private static FrameworkElement Nudge(string kind, string title, string text)
         {
             var grid = new Grid { Margin = new Thickness(14, 0, 14, 0), Height = 64, VerticalAlignment = VerticalAlignment.Top };
+            grid.Resources["Ink_FF"] = Brushes.White; // a mini ilha é sempre escura
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition());
             grid.Children.Add(new Border { Width = 40, Height = 40, Margin = new Thickness(0, 0, 12, 0), Child = NudgeArt.Build(kind), VerticalAlignment = VerticalAlignment.Center });

@@ -990,7 +990,7 @@ namespace Ilha
         {
             _settingsWindow?.Close();
             string langBefore = L.Lang;
-            var welcome = new OnboardingWindow(_settings, replay: true);
+            var welcome = new SetupWindow(_settings, replay: true);
             welcome.Finished += () =>
             {
                 if (L.Lang != langBefore) App.Restart(ExitApp);
