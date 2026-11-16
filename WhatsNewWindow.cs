@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -137,27 +137,17 @@ namespace Ilha
             }
         }
 
+        private readonly System.Collections.Generic.Dictionary<int, Border> _artHosts = new();
+        private int _shownArt = -1;
+
         private FrameworkElement BuildPage(ReleaseNotes.Slide s, bool first)
         {
-            var col = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Width = PageW - 96 };
+            var col = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Width = WhatsNewArt.W };
 
-            // Ícone num bloco da cor de destaque, com brilho suave
-            var tile = new Border
-            {
-                Width = 76, Height = 76, CornerRadius = new CornerRadius(22),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Child = new Glyph
-                {
-                    Data = (Geometry)FindResource(s.Icon), Size = 36, Filled = s.Filled, Thickness = s.Filled ? 0 : 2.2,
-                    HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-                },
-            };
-            var accent = ((SolidColorBrush)Resources["Accent"]).Color;
-            tile.Background = new LinearGradientBrush(Color.FromArgb(0x4D, accent.R, accent.G, accent.B), Color.FromArgb(0x1A, accent.R, accent.G, accent.B), 90);
-            tile.BorderBrush = new SolidColorBrush(Color.FromArgb(0x55, accent.R, accent.G, accent.B));
-            tile.BorderThickness = new Thickness(1);
-            ((Glyph)tile.Child).SetResourceReference(ForegroundProperty, "Accent");
-            col.Children.Add(tile);
+            // A ilustração animada entra quando a página aparece (e recomeça do início).
+            var host = new Border { Width = WhatsNewArt.W, Height = WhatsNewArt.H };
+            _artHosts[_artHosts.Count] = host;
+            col.Children.Add(host);
 
             if (first)
             {
@@ -165,7 +155,7 @@ namespace Ilha
                 {
                     Text = L.F("VERSÃO {0}", _version.EndsWith(".0") ? _version[..^2] : _version),
                     FontSize = 11, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 18, 0, 0),
+                    Margin = new Thickness(0, 22, 0, 0),
                 };
                 badge.SetResourceReference(TextBlock.ForegroundProperty, "Accent");
                 col.Children.Add(badge);
@@ -173,37 +163,18 @@ namespace Ilha
 
             col.Children.Add(new TextBlock
             {
-                Text = L.T(s.Title), FontSize = 27, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Center,
-                TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, first ? 6 : 22, 0, 0),
+                Text = L.T(s.Title), FontSize = 26, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, first ? 4 : 24, 0, 0),
             });
             var body = new TextBlock
             {
                 Text = L.T(s.Body), FontSize = 14.5, LineHeight = 21, TextAlignment = TextAlignment.Center,
-                TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 10, 0, 0),
+                TextWrapping = TextWrapping.Wrap, Margin = new Thickness(10, 8, 10, 0),
             };
             body.SetResourceReference(TextBlock.ForegroundProperty, "Text2");
             col.Children.Add(body);
-
-            if (s.Bullets is { Length: > 0 })
-            {
-                var list = new StackPanel();
-                foreach (var b in s.Bullets)
-                {
-                    var check = new Glyph { Data = (Geometry)FindResource("IcoCheck"), Size = 15, Thickness = 2.6, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
-                    check.SetResourceReference(ForegroundProperty, "Accent");
-                    var text = new TextBlock { Text = L.T(b), FontSize = 13.5, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
-                    DockPanel.SetDock(check, Dock.Left);
-                    list.Children.Add(new DockPanel { Margin = new Thickness(0, 4, 0, 4), Children = { check, text } });
-                }
-                var card = new Border { CornerRadius = new CornerRadius(14), Padding = new Thickness(16, 10, 16, 10), Margin = new Thickness(0, 18, 0, 0), BorderThickness = new Thickness(1), Child = list };
-                card.SetResourceReference(Border.BackgroundProperty, "CardBg");
-                card.SetResourceReference(Border.BorderBrushProperty, "Line");
-                col.Children.Add(card);
-            }
-
             return new Grid { Width = PageW, Children = { col } };
         }
-
         private void Go(int index)
         {
             index = Math.Clamp(index, 0, _slides.Length - 1);
@@ -219,7 +190,18 @@ namespace Ilha
             };
             _shift.BeginAnimation(TranslateTransform.XProperty, slide);
 
-            // A página que entra: o conteúdo sobe de leve e aparece.
+            // A página que entra: a cena começa do zero; a anterior para (economiza CPU).
+            int previous = _shownArt;
+            _shownArt = index;
+            foreach (var (i, h) in _artHosts) if (i != index && i != previous) h.Child = null;
+            if (previous >= 0 && previous != index)
+            {
+                var clear = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+                clear.Tick += (_, _) => { clear.Stop(); if (_shownArt != previous) _artHosts[previous].Child = null; };
+                clear.Start();
+            }
+            var accentColor = ((SolidColorBrush)Resources["Accent"]).Color;
+            _artHosts[index].Child = WhatsNewArt.Build(_slides[index].Art, accentColor);
             var page = _pages[index];
             if (SystemParameters.ClientAreaAnimation)
             {
