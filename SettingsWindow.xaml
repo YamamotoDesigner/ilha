@@ -1,4 +1,4 @@
-<Window x:Class="Ilha.SettingsWindow"
+﻿<Window x:Class="Ilha.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Ilha"
@@ -663,45 +663,53 @@
                         <TextBlock x:Name="FloatHint" Style="{StaticResource Hint}"
                                    Text="{local:T 'Para mover: segure a ilha pelo cabeçalho (onde fica o relógio) e arraste. Para mudar o tamanho: arraste o cantinho de baixo, à direita. O alfinete na ilha fixa e solta.'}"/>
 
-                        <!-- As abas ficam sempre no topo (1.9.2): escolha escondida -->
-                        <TextBlock Text="{local:T 'ABAS'}" Style="{StaticResource Section}" Visibility="Collapsed"/>
-                        <StackPanel Orientation="Horizontal" Visibility="Collapsed">
-                            <RadioButton x:Name="SideTabsRadio" Style="{StaticResource ChoiceCard}" GroupName="Tabs"
-                                         Checked="Tabs_Checked">
+                        <!-- 1.10: ilha aberta em abas (um recurso por vez) ou completa (tudo lado a lado) -->
+                        <TextBlock Text="{local:T 'ILHA ABERTA'}" Style="{StaticResource Section}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton x:Name="TabsLayoutRadio" Style="{StaticResource ChoiceCard}" GroupName="OpenLayout"
+                                         Checked="Layout_Checked">
                                 <StackPanel>
                                     <Border Style="{StaticResource Preview}">
-                                        <Border Width="120" Height="52" CornerRadius="9" Background="#0A0A0C" Padding="7">
-                                            <StackPanel HorizontalAlignment="Left">
-                                                <Border Width="9" Height="7" CornerRadius="2" Background="{DynamicResource Accent}" Margin="0,0,0,3"/>
-                                                <Border Width="9" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}" Margin="0,0,0,3"/>
-                                                <Border Width="9" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}" Margin="0,0,0,3"/>
-                                                <Border Width="9" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}"/>
+                                        <Border Width="84" Height="52" CornerRadius="9" Background="#0A0A0C" Padding="7">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <Border Width="8" Height="6" CornerRadius="2" Background="{DynamicResource Accent}" Margin="0,0,3,0"/>
+                                                    <Border Width="8" Height="6" CornerRadius="2" Background="{DynamicResource Ink_4D}" Margin="0,0,3,0"/>
+                                                    <Border Width="8" Height="6" CornerRadius="2" Background="{DynamicResource Ink_4D}" Margin="0,0,3,0"/>
+                                                    <Border Width="8" Height="6" CornerRadius="2" Background="{DynamicResource Ink_4D}"/>
+                                                </StackPanel>
+                                                <Border Height="24" CornerRadius="4" Background="{DynamicResource Ink_26}" Margin="0,5,0,0"/>
                                             </StackPanel>
                                         </Border>
                                     </Border>
-                                    <TextBlock Text="{local:T 'Na lateral'}" Style="{StaticResource ChoiceLabel}"/>
-                                    <TextBlock Text="{local:T 'Coluna de ícones à esquerda'}" Style="{StaticResource ChoiceHint}"/>
+                                    <TextBlock Text="{local:T 'Separada por abas'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Um recurso por vez, ilha menor'}" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
-                            <RadioButton x:Name="TopTabsRadio" Style="{StaticResource ChoiceCard}" GroupName="Tabs"
-                                         Checked="Tabs_Checked">
+                            <RadioButton x:Name="FullLayoutRadio" Style="{StaticResource ChoiceCard}" GroupName="OpenLayout"
+                                         Checked="Layout_Checked">
                                 <StackPanel>
                                     <Border Style="{StaticResource Preview}">
-                                        <Border Width="120" Height="52" CornerRadius="9" Background="#0A0A0C" Padding="7">
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top">
-                                                <Border Width="10" Height="7" CornerRadius="2" Background="{DynamicResource Accent}" Margin="0,0,3,0"/>
-                                                <Border Width="10" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}" Margin="0,0,3,0"/>
-                                                <Border Width="10" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}" Margin="0,0,3,0"/>
-                                                <Border Width="10" Height="7" CornerRadius="2" Background="{DynamicResource Ink_4D}"/>
-                                            </StackPanel>
+                                        <Border Width="140" Height="40" CornerRadius="9" Background="#0A0A0C" Padding="6">
+                                            <UniformGrid Rows="1" Columns="5">
+                                                <Border CornerRadius="3" Background="{DynamicResource Accent}" Opacity="0.85" Margin="0,0,3,0"/>
+                                                <Border CornerRadius="3" Background="{DynamicResource Ink_26}" Margin="0,0,3,0"/>
+                                                <Border CornerRadius="3" Background="{DynamicResource Ink_26}" Margin="0,0,3,0"/>
+                                                <Border CornerRadius="3" Background="{DynamicResource Ink_26}" Margin="0,0,3,0"/>
+                                                <Border CornerRadius="3" Background="{DynamicResource Ink_26}"/>
+                                            </UniformGrid>
                                         </Border>
                                     </Border>
-                                    <TextBlock Text="{local:T 'No topo'}" Style="{StaticResource ChoiceLabel}"/>
-                                    <TextBlock Text="{local:T 'Barra de ícones no cabeçalho'}" Style="{StaticResource ChoiceHint}"/>
+                                    <TextBlock Text="{local:T 'Completa'}" Style="{StaticResource ChoiceLabel}"/>
+                                    <TextBlock Text="{local:T 'Música, agenda, tarefas, notas e timer juntos'}" Style="{StaticResource ChoiceHint}"/>
                                 </StackPanel>
                             </RadioButton>
                         </StackPanel>
-
+                        <!-- As abas ficam sempre no topo (1.9.2): escolha escondida -->
+                        <StackPanel Visibility="Collapsed">
+                            <RadioButton x:Name="SideTabsRadio" GroupName="Tabs" Checked="Tabs_Checked"/>
+                            <RadioButton x:Name="TopTabsRadio" GroupName="Tabs" Checked="Tabs_Checked"/>
+                        </StackPanel>
                         <TextBlock Text="{local:T 'TAMANHO'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
@@ -815,6 +823,14 @@
                                     </StackPanel>
                                 </CheckBox>
                                 <Border Style="{StaticResource Divider}"/>
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding ShowShuffleRepeat}">
+                                    <StackPanel>
+                                        <TextBlock Text="{local:T 'Aleatório e repetir'}"/>
+                                        <TextBlock Text="{local:T 'Botões ao lado dos controles da música.'}"
+                                                   FontSize="12" Foreground="{DynamicResource Text3}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </CheckBox>
+                                <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Monitor do sistema (CPU e memória)'}" IsChecked="{Binding ShowStats}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Prateleira de arquivos'}" IsChecked="{Binding ShowShelf}"/>
@@ -826,7 +842,9 @@
                         <TextBlock Text="{local:T 'PRODUTIVIDADE'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
-                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Agenda e tarefas'}" IsChecked="{Binding ShowCalendar}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Agenda e lembretes'}" IsChecked="{Binding ShowCalendar}"/>
+                                <Border Style="{StaticResource Divider}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Tarefas do dia'}" IsChecked="{Binding ShowTasks}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Notas'}" IsChecked="{Binding ShowNotes}"/>
                                 <Border Style="{StaticResource Divider}"/>

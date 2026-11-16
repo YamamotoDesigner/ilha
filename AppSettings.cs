@@ -52,6 +52,11 @@ namespace Ilha
         public double OpenHeight { get; set; } = 184;
         /// <summary>"Side" (trilho lateral) ou "Top" (barra no topo).</summary>
         public string TabPosition { get; set; } = "Top";
+        /// <summary>
+        /// "Tabs" (cada recurso na sua aba) ou "Full" (ilha aberta por completo: música, agenda,
+        /// tarefas, notas e timer lado a lado, numa ilha larga).
+        /// </summary>
+        public string OpenLayout { get; set; } = "Tabs";
 
         // Comportamento
         public int HoverDelayMs { get; set; } = 0;
@@ -70,6 +75,9 @@ namespace Ilha
         public bool ShowMedia { get; set; } = true;
         public bool ShowShelf { get; set; } = true;
         public bool ShowNotes { get; set; } = true;
+        public bool ShowTasks { get; set; } = true;
+        /// <summary>Música: botões de aleatório e repetir.</summary>
+        public bool ShowShuffleRepeat { get; set; } = true;
         public bool ShowTimer { get; set; } = true;
         public bool ShowClipboard { get; set; } = true;
         public int ClipboardMax { get; set; } = 25;
@@ -95,6 +103,10 @@ namespace Ilha
         public List<string> Shelf { get; set; } = new();
         public string Notes { get; set; } = "";
         public List<TodoItem> Todos { get; set; } = new();
+        /// <summary>Páginas das Notas. As notas antigas (texto único) viram a primeira página.</summary>
+        public List<NotePage> NotePages { get; set; } = new();
+        /// <summary>Tarefas do dia (com check). As concluídas somem no dia seguinte; as pendentes continuam.</summary>
+        public List<TodoItem> DailyTasks { get; set; } = new();
         /// <summary>Roteiros do teleprompter.</summary>
         public List<string> Scripts { get; set; } = new();
         public int ScriptIndex { get; set; }
@@ -123,6 +135,9 @@ namespace Ilha
             OpenWidth = d.OpenWidth;
             OpenHeight = d.OpenHeight;
             TabPosition = d.TabPosition;
+            OpenLayout = d.OpenLayout;
+            ShowTasks = d.ShowTasks;
+            ShowShuffleRepeat = d.ShowShuffleRepeat;
             HoverDelayMs = d.HoverDelayMs;
             CollapseDelayMs = d.CollapseDelayMs;
             HotkeyEnabled = d.HotkeyEnabled;
@@ -187,6 +202,17 @@ namespace Ilha
                     s.OpenHeight = d.OpenHeight;
                 }
                 s.LayoutVersion = CurrentLayout;
+            }
+            // Notas antigas (um texto só) viram a primeira página.
+            if (s.NotePages.Count == 0 && !string.IsNullOrWhiteSpace(s.Notes))
+            {
+                s.NotePages.Add(new NotePage
+                {
+                    Title = s.Language == "en" ? "Notes" : "Notas",
+                    Color = "yellow",
+                    Content = NoteText.FromPlain(s.Notes),
+                    Preview = NoteText.PreviewOf(s.Notes),
+                });
             }
             return s;
         }

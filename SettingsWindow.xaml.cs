@@ -165,6 +165,9 @@ namespace Ilha
             bool top = string.Equals(_settings.TabPosition, "Top", StringComparison.OrdinalIgnoreCase);
             SideTabsRadio.IsChecked = !top;
             TopTabsRadio.IsChecked = top;
+            bool full = string.Equals(_settings.OpenLayout, "Full", StringComparison.OrdinalIgnoreCase);
+            TabsLayoutRadio.IsChecked = !full;
+            FullLayoutRadio.IsChecked = full;
             bool light = string.Equals(_settings.Theme, "Light", StringComparison.OrdinalIgnoreCase);
             DarkRadio.IsChecked = !light;
             LightRadio.IsChecked = light;
@@ -282,6 +285,12 @@ namespace Ilha
         {
             if (!IsInitialized || _syncing) return;
             _settings.TabPosition = sender == TopTabsRadio ? "Top" : "Side";
+        }
+
+        private void Layout_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized || _syncing) return;
+            _settings.OpenLayout = sender == FullLayoutRadio ? "Full" : "Tabs";
         }
 
         private void CenterIsland_Click(object sender, RoutedEventArgs e)

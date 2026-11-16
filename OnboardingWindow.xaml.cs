@@ -238,7 +238,8 @@ namespace Ilha
         {
             var s = _settings;
             Add("Música", s.ShowMedia, v => s.ShowMedia = v);
-            Add("Agenda e tarefas", s.ShowCalendar, v => s.ShowCalendar = v);
+            Add("Agenda e lembretes", s.ShowCalendar, v => s.ShowCalendar = v);
+            Add("Tarefas do dia", s.ShowTasks, v => s.ShowTasks = v);
             Add("Notas", s.ShowNotes, v => s.ShowNotes = v);
             Add("Foco (timer)", s.ShowTimer, v => s.ShowTimer = v);
             Add("Teleprompter", s.ShowPrompter, v => s.ShowPrompter = v);
@@ -428,7 +429,8 @@ namespace Ilha
         {
             ("Música", "home", "FillHome", true),
             ("Prateleira", "shelf", "IcoTray", false),
-            ("Agenda e tarefas", "agenda", "FillCalendar", true),
+            ("Agenda e lembretes", "agenda", "FillCalendar", true),
+            ("Tarefas do dia", "tasks", "FillTasks", true),
             ("Notas", "notes", "FillNotes", true),
             ("Foco (timer)", "timer", "FillTimer", true),
             ("Copiados", "clip", "FillClip", true),
@@ -560,43 +562,54 @@ namespace Ilha
                 }
                 case "agenda":
                 {
-                    var g = new Grid();
-                    g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
-                    g.ColumnDefinitions.Add(new ColumnDefinition());
-                    var todo = new StackPanel();
-                    todo.Children.Add(new TextBlock { Text = L.T("Hoje").ToUpperInvariant(), FontSize = 9.5, FontWeight = FontWeights.SemiBold, Foreground = accent });
-                    todo.Children.Add(Txt(L.T("Revisar a apresentação"), 11.5));
-                    todo.Children.Add(Txt(L.T("Caminhar 30 minutos"), 11.5, 0xA6));
-                    g.Children.Add(Card(todo));
-                    var weeks = new StackPanel { Margin = new Thickness(14, 2, 0, 0) };
-                    int today = DateTime.Today.Day;
-                    var start = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
-                    for (int w = 0; w < 2; w++)
+                    // Dias que passam de lado, o de hoje maior, e o lembrete embaixo.
+                    var col = new StackPanel();
+                    var top = new StackPanel { Orientation = Orientation.Horizontal };
+                    var culture = System.Globalization.CultureInfo.CurrentCulture;
+                    var month = Txt(culture.TextInfo.ToTitleCase(DateTime.Today.ToString("MMM", culture).TrimEnd('.')), 19, bold: true);
+                    month.Margin = new Thickness(0, 0, 14, 0);
+                    month.VerticalAlignment = VerticalAlignment.Center;
+                    top.Children.Add(month);
+                    for (int i = -3; i <= 3; i++)
                     {
-                        var r = new System.Windows.Controls.Primitives.UniformGrid { Rows = 1, Columns = 7, Margin = new Thickness(0, 0, 0, 6) };
-                        for (int i = 0; i < 7; i++)
-                        {
-                            var d = start.AddDays(w * 7 + i);
-                            bool isToday = d == DateTime.Today;
-                            r.Children.Add(new Border
-                            {
-                                Width = 28, Height = 24, CornerRadius = new CornerRadius(8),
-                                Background = isToday ? accent : Brushes.Transparent,
-                                Child = new TextBlock
-                                {
-                                    Text = d.Day.ToString(), FontSize = 11.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-                                    FontWeight = isToday ? FontWeights.SemiBold : FontWeights.Normal,
-                                    Foreground = isToday ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11)) : Ink(0xE6),
-                                },
-                            });
-                        }
-                        weeks.Children.Add(r);
+                        var d = DateTime.Today.AddDays(i);
+                        bool sel = i == 0;
+                        var day = new StackPanel { Width = 34, Opacity = 1 - Math.Abs(i) * 0.18 };
+                        day.Children.Add(new TextBlock { Text = culture.DateTimeFormat.GetAbbreviatedDayName(d.DayOfWeek).TrimEnd('.').ToUpper(culture),
+                            FontSize = 8.5, HorizontalAlignment = HorizontalAlignment.Center, Foreground = sel ? accent : Ink(0x80) });
+                        day.Children.Add(new TextBlock { Text = d.Day.ToString(), FontSize = sel ? 18 : 13, HorizontalAlignment = HorizontalAlignment.Center,
+                            FontWeight = sel ? FontWeights.SemiBold : FontWeights.Normal, Foreground = sel ? accent : Ink(0xBF) });
+                        top.Children.Add(day);
                     }
-                    Grid.SetColumn(weeks, 1);
-                    g.Children.Add(weeks);
-                    return g;
+                    col.Children.Add(top);
+                    var reminder = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
+                    reminder.Children.Add(new Border { Width = 6, Height = 6, CornerRadius = new CornerRadius(3), Background = accent,
+                        Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center });
+                    reminder.Children.Add(Txt(L.T("Revisar a apresentação"), 11.5));
+                    var c = Card(reminder); c.Margin = new Thickness(0, 8, 0, 0); c.Padding = new Thickness(12, 8, 12, 8);
+                    col.Children.Add(c);
+                    return col;
                 }
-                case "notes":
+                case "tasks":
+                {
+                    var col = new StackPanel();
+                    col.Children.Add(Txt(L.T("TAREFAS DE HOJE"), 9.5, 0x80, bold: true));
+                    foreach (var (text, done) in new[] { (L.T("Responder e-mails"), true), (L.T("Revisar a apresentação"), false), (L.T("Caminhar 30 minutos"), false) })
+                    {
+                        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
+                        row.Children.Add(new Border
+                        {
+                            Width = 13, Height = 13, CornerRadius = new CornerRadius(4), Margin = new Thickness(0, 0, 8, 0),
+                            Background = done ? accent : Brushes.Transparent, BorderBrush = done ? accent : Ink(0x73), BorderThickness = new Thickness(1.3),
+                        });
+                        var label = Txt(text, 11.5, (byte)(done ? 0x73 : 0xF2));
+                        if (done) label.TextDecorations = TextDecorations.Strikethrough;
+                        row.Children.Add(label);
+                        col.Children.Add(row);
+                    }
+                    var c = Card(col); c.Padding = new Thickness(14, 10, 14, 10);
+                    return c;
+                }                case "notes":
                 {
                     var col = new StackPanel();
                     col.Children.Add(Txt(L.T("Ideias para o fim de semana"), 12, bold: true));

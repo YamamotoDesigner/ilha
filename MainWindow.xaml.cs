@@ -45,7 +45,6 @@ namespace Ilha
         private string _lastTrackKey = "";
         private DateTime _ignoreTrackUntil = DateTime.Now.AddSeconds(4);
         private DateTime _calendarDate;
-        private int _monthOffset;
         /// <summary>Dia escolhido no calendário; as tarefas mostradas e as novas são desse dia.</summary>
         private DateTime _selectedDate = DateTime.Today;
         private bool _agendaCompact;
@@ -118,6 +117,26 @@ namespace Ilha
                 };
                 restart.Start();
             }
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_LAYOUT") is { Length: > 0 } testLayout) _settings.OpenLayout = testLayout;
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_DEMO") == "1")
+            {
+                // Dados de exemplo (só na memória do teste).
+                _settings.ShowMedia = _settings.ShowCalendar = _settings.ShowTasks = _settings.ShowNotes = _settings.ShowTimer = true;
+                _settings.DailyTasks = new List<TodoItem>
+                {
+                    new() { Text = "Responder e-mails", Done = true, Date = DateTime.Today.ToString("yyyy-MM-dd") },
+                    new() { Text = "Revisar a apresentação", Date = DateTime.Today.ToString("yyyy-MM-dd") },
+                    new() { Text = "Caminhar 30 minutos", Date = DateTime.Today.ToString("yyyy-MM-dd") },
+                };
+                _settings.Todos.Add(new TodoItem { Text = "Reunião com o time · 15h", Date = DateTime.Today.ToString("yyyy-MM-dd") });
+                _settings.Todos.Add(new TodoItem { Text = "Dentista", Date = DateTime.Today.AddDays(2).ToString("yyyy-MM-dd") });
+                _settings.NotePages = new List<NotePage>
+                {
+                    new() { Title = "Ideias", Color = "yellow", Content = "<b>Fim de semana</b>\nFeira de sábado cedo\nTerminar o <i>livro</i>", Preview = "Fim de semana · Feira de sábado cedo" },
+                    new() { Title = "Mercado", Color = "green", Content = "Café\nPão\nFrutas", Preview = "Café · Pão · Frutas" },
+                    new() { Title = "Projeto Ilha", Color = "purple", Content = "Testar a ilha completa", Preview = "Testar a ilha completa" },
+                };
+            }
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TABSTOP") == "1") _settings.TabPosition = "Top";
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TABSTOP") == "0") _settings.TabPosition = "Side";
             if (Environment.GetEnvironmentVariable("ILHA_TEST_MATERIAL") is { Length: > 0 } testMaterial)
@@ -149,13 +168,13 @@ namespace Ilha
             _clips.CollectionChanged += (_, _) =>
                 ClipboardEmpty.Visibility = _clips.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-            NotesBox.Text = _settings.Notes;
-            UpdateNotesPlaceholder();
+            InitNotes();
 
             foreach (var todo in _settings.Todos) _todos.Add(todo);
             TodoItems.ItemsSource = _todos;
             _todos.CollectionChanged += (_, _) => SaveTodos();
             RefreshTodoFilter();
+            InitTasks();
             _stats.Sample();
 
             _expandTimer.Tick += (_, _) =>
@@ -168,12 +187,7 @@ namespace Ilha
                 _collapseTimer.Stop();
                 if (!ShouldStayOpen()) Collapse();
             };
-            _notesSave.Tick += (_, _) =>
-            {
-                _notesSave.Stop();
-                _settings.Notes = NotesBox.Text;
-                _settings.Save();
-            };
+            _notesSave.Tick += (_, _) => SaveOpenNote();
             _tick.Tick += (_, _) => OnTick();
             _watch.Tick += (_, _) => WatchFullscreen();
             _media.Changed += UpdateMedia;
@@ -189,7 +203,7 @@ namespace Ilha
                 UpdateGlassRegion();
             };
             LocationChanged += (_, _) => _glassWindow?.Follow(_hwnd); // inclusive enquanto arrasta
-            CalScroll.SizeChanged += (_, _) => UpdateCalendarMonthLabel();
+            DayStrip.SizeChanged += (_, _) => CenterDayStrip(animate: false);
             _downloads.Completed += OnDownloadCompleted;
             TabStrip.SizeChanged += (_, _) => MoveTabIndicator(animate: false);
             PrompterViewport.SizeChanged += (_, _) => SizePrompterLines();
@@ -295,6 +309,8 @@ namespace Ilha
                     Expand();
                     foreach (var tabButton in TabBar.Children.OfType<RadioButton>())
                         if ((string)tabButton.Tag == testTab) tabButton.IsChecked = true;
+                    if (testTab == "notes" && Environment.GetEnvironmentVariable("ILHA_TEST_NOTE") == "open" && _settings.NotePages.Count > 0)
+                        OpenNote(_settings.NotePages[0]);
                     if (testTab == "prompter" && Environment.GetEnvironmentVariable("ILHA_TEST_PROMPTER") == "start")
                         PrompterStart_Click(this, new RoutedEventArgs());
                     // Agenda: escolhe um dia daqui a N dias e cria um lembrete nele.
@@ -576,8 +592,9 @@ namespace Ilha
         {
             "home" => (460, 176),
             "shelf" => (460, 188),
-            "agenda" => (620, 300),
-            "notes" => (480, 220),
+            "agenda" => (540, 268),
+            "tasks" => (440, 236),
+            "notes" => (500, 236),
             "timer" => (580, 250),
             "clipboard" => (480, 250),
             "prompter" => (580, 236),
@@ -591,10 +608,26 @@ namespace Ilha
             var (bw, bh) = BaseTabSize(_currentTab);
             double kw = Math.Clamp(_settings.OpenWidth / DefaultOpenWidth, 0.7, 1.6);
             double kh = Math.Clamp(_settings.OpenHeight / DefaultOpenHeight, 0.7, 1.6);
-            _expW = Math.Clamp(bw * kw, MinFloatWidth, MaxFloatWidth);
-            _expH = Math.Clamp(bh * kh, MinFloatHeight, MaxFloatHeight);
+            _overviewK = 1;
+            if (InOverview)
+            {
+                // Ilha completa: tudo lado a lado. Se não couber na tela, encolhe tudo por igual.
+                double natural = OverviewContentWidth() + ContentPadX;
+                double avail = AvailableIslandWidth();
+                _overviewK = Math.Min(1, avail / natural);
+                double h = OverviewHeight * Math.Clamp(kh, 0.9, 1.3);
+                _expW = ContentPadX + (natural - ContentPadX) * _overviewK;
+                _expH = ContentPadY + (h - ContentPadY) * _overviewK;
+            }
+            else
+            {
+                _expW = Math.Clamp(bw * kw, MinFloatWidth, MaxFloatWidth);
+                _expH = Math.Clamp(bh * kh, MinFloatHeight, MaxFloatHeight);
+            }
             ExpandedView.Width = _expW;
             ExpandedView.Height = _expH;
+            // O brilho da capa cobre a ilha inteira, mesmo a completa (bem larga).
+            AmbientArt.Width = Math.Max(1100, _expW + 300);
             UpdateResponsiveLayout();
             if (_expanded) AnimateSize(_expW, _expH, animate && _settings.SpringAnimation);
         }
@@ -608,7 +641,7 @@ namespace Ilha
         {
             var s = _settings;
             double cw = _expW - ContentPadX, ch = _expH - ContentPadY;
-            double k = Math.Min(1, Math.Min(cw / ContentMinWidth, ch / ContentMinHeight));
+            double k = InOverview ? _overviewK : Math.Min(1, Math.Min(cw / ContentMinWidth, ch / ContentMinHeight));
             ContentScale.ScaleX = ContentScale.ScaleY = k;
             double vw = cw / k, vh = ch / k; // tamanho "virtual" em que o layout é montado
             ContentRoot.Width = vw;
@@ -640,51 +673,58 @@ namespace Ilha
             DateText.Visibility = (top ? vw >= 660 : pageW >= 330) ? visible : hidden;
             BatteryText.Visibility = !top || vw >= 580 ? visible : hidden;
 
-            // Início: no tamanho normal, só a música e a prateleira, com um bom espaço entre elas.
-            // O monitor do sistema entra quando a ilha é mais larga.
-            const double gap1 = 24, gap2 = 16, statsW = 124;
+            // Na ilha completa cada bloco tem a sua largura; nas abas, cada página usa a largura toda.
+            double W(string tab) => InOverview && _overview.Contains(tab) ? OverviewWidth(tab) : pageW;
+
+            // Início: a música; o monitor do sistema entra quando a ilha é mais larga.
+            const double gap1 = 24, statsW = 124;
+            double homeW = W("home");
             bool media = s.ShowMedia;
-            double used = media ? 230 : 0;
-            double shelfW = 168;
-            bool shelf = false; // a prateleira tem aba própria
-            if (shelf) used += (media ? gap1 : 0) + shelfW;
-            bool stats = s.ShowStats && pageH >= 120 && pageW >= used + gap2 + statsW + (media ? 60 : 0);
-            if (shelf && !stats && media) shelfW = Math.Min(200, pageW * 0.36);
+            bool stats = s.ShowStats && pageH >= 120 && (!media || (!InOverview && homeW >= 230 + gap1 + statsW + 60));
             MediaArea.Visibility = media ? visible : hidden;
             ShelfZone.Visibility = visible; // na aba própria, sempre inteira
             StatsCard.Visibility = stats ? visible : hidden;
             var star = new GridLength(1, GridUnitType.Star);
             HomeMediaCol.Width = media ? star : new GridLength(0);
-            HomeStatsCol.Width = !stats ? new GridLength(0) : media || shelf ? new GridLength(statsW) : star;
-            HomeShelfCol.Width = !shelf ? new GridLength(0) : media ? new GridLength(shelfW) : star;
-            HomeGap1.Width = new GridLength(media && (stats || shelf) ? gap1 : 0);
-            HomeGap2.Width = new GridLength(stats && shelf ? gap2 : 0);
+            HomeStatsCol.Width = !stats ? new GridLength(0) : media ? new GridLength(statsW) : star;
+            HomeShelfCol.Width = new GridLength(0);
+            HomeGap1.Width = new GridLength(media && stats ? gap1 : 0);
+            HomeGap2.Width = new GridLength(0);
             // Capa: o maior quadrado que cabe na altura, deixando espaço para os controles ao lado
-            double mediaW = pageW - (shelf ? shelfW + gap1 : 0) - (stats ? statsW + (shelf ? gap2 : gap1) : 0);
-            double artSize = Math.Round(Math.Clamp(Math.Min(pageH - 16, mediaW - 184), 40, 132));
+            double mediaW = homeW - (stats ? statsW + gap1 : 0);
+            bool shuffleRow = s.ShowShuffleRepeat;
+            double controlsW = shuffleRow ? 214 : 160;
+            double artSize = Math.Round(Math.Clamp(Math.Min(pageH - 16, mediaW - controlsW - 26), 40, 132));
             ArtBox.Width = ArtBox.Height = artSize;
             ArtBox.CornerRadius = new CornerRadius(Math.Round(artSize * 0.17));
             SourceText.Visibility = pageH >= 118 ? visible : hidden;
+            // Pouco espaço ao lado da capa: botões um pouco menores.
+            bool tight = mediaW - artSize - 22 < 236;
+            PrevButton.Width = NextButton.Width = tight ? 32 : 40;
+            PlayPauseButton.Margin = new Thickness(tight ? 4 : 8, 0, tight ? 4 : 8, 0);
+            ShuffleButton.Margin = new Thickness(0, 0, tight ? 2 : 6, 0);
+            RepeatButton.Margin = new Thickness(tight ? 2 : 6, 0, 0, 0);
+            UpdateShuffleRepeatUi();
 
-            // Agenda: os lembretes do dia escolhido e o mês. Só numa ilha bem estreita a lista sai.
-            bool todo = pageW >= 380 && pageH >= 96;
-            // Com pouca altura, a data vai para a linha de cima e sobra espaço para os lembretes.
-            bool compact = pageH < 150;
-            if (compact != _agendaCompact)
-            {
-                _agendaCompact = compact;
-                AgendaDate.Visibility = compact ? hidden : visible;
-                UpdateCalendar(force: true);
-            }
-            TodoPanel.Visibility = todo ? visible : hidden;
-            CalWeekNumber.Visibility = !todo || pageW >= 540 ? visible : hidden;
-            AgendaTodoCol.Width = new GridLength(todo ? Math.Min(232, Math.Round(pageW * 0.46)) : 0);
-            AgendaGapCol.Width = new GridLength(todo ? 20 : 0);
+            // Agenda: a faixa de dias e os lembretes; com pouca altura, sai o título do dia.
+            TodoHeader.Visibility = pageH >= 150 ? visible : hidden;
 
-            // Foco: o quadrado encolhe com a altura; modos e atalhos só se couber
-            TimerModes.Visibility = pageW >= 300 && pageH >= 96 ? visible : hidden;
-            TimerChips.Visibility = pageH >= 126 && pageW >= 300 ? visible : hidden;
-
+            // Foco: o quadrado encolhe com a altura; modos e atalhos só se couber.
+            // Estreito (ilha completa): só o quadrado e dois botões redondos ao lado.
+            double timerW = W("timer");
+            bool timerNarrow = timerW < 330;
+            TimerModes.Visibility = !timerNarrow && pageH >= 96 ? visible : hidden;
+            TimerChips.Visibility = !timerNarrow && pageH >= 126 ? visible : hidden;
+            TimerButtonsRow.Orientation = timerNarrow ? Orientation.Vertical : Orientation.Horizontal;
+            TimerButtonsRow.Margin = new Thickness(0, 0, 0, timerNarrow ? 0 : 12);
+            TimerStartText.Visibility = TimerResetText.Visibility = timerNarrow ? hidden : visible;
+            TimerStartGlyph.Margin = new Thickness(0, 0, timerNarrow ? 0 : 7, 0);
+            TimerResetGlyph.Margin = new Thickness(0, 0, timerNarrow ? 0 : 6, 0);
+            TimerStartButton.Padding = timerNarrow ? new Thickness(11) : new Thickness(16, 8, 16, 8);
+            TimerResetButton.Padding = timerNarrow ? new Thickness(11) : new Thickness(14, 8, 14, 8);
+            TimerStartButton.Margin = timerNarrow ? new Thickness(0, 0, 0, 8) : new Thickness(0, 0, 8, 0);
+            TimerRingBox.Margin = new Thickness(0, 0, timerNarrow ? 14 : 28, 0);
+            TimerRingBox.MaxWidth = timerNarrow ? Math.Max(60, timerW - 14 - 42) : double.PositiveInfinity;
             // Espelho
             double mirror = Math.Max(80, Math.Min(pageH, pageW));
             MirrorFrame.Width = MirrorFrame.Height = mirror;
@@ -790,7 +830,7 @@ namespace Ilha
         private void ExitApp()
         {
             _notesSave.Stop();
-            _settings.Notes = NotesBox.Text;
+            SaveOpenNote();
             _settings.Save();
             if (_hotkeyRegistered) Native.UnregisterHotKey(_hwnd, HotkeyId);
             if (_clipboardListening) Native.RemoveClipboardFormatListener(_hwnd);
@@ -950,7 +990,8 @@ namespace Ilha
             RootScale.ScaleX = RootScale.ScaleY = scale;
             // Tamanho da ilha aberta (o mesmo em todos os estilos; na "Livre" o canto também muda).
             // A janela (transparente) já comporta o máximo, para redimensionar sem mover a ilha.
-            Width = (MaxFloatWidth + 60) * scale;
+            RefreshOverviewList();
+            Width = (Math.Max(MaxFloatWidth, FullLayout ? MaxOverviewWidth : 0) + 60) * scale;
             Height = (MaxFloatHeight + 56) * scale;
             ApplyTabSize(animate: false);
 
@@ -962,11 +1003,17 @@ namespace Ilha
             _downloads.Enabled = s.LiveDownloads || (s.DownloadsToShelf && s.ShowShelf);
 
             // Abas
-            TabHome.Visibility = s.ShowMedia || s.ShowStats ? Visibility.Visible : Visibility.Collapsed;
-            TabShelf.Visibility = s.ShowShelf ? Visibility.Visible : Visibility.Collapsed;
-            TabAgenda.Visibility = s.ShowCalendar ? Visibility.Visible : Visibility.Collapsed;
-            TabNotes.Visibility = s.ShowNotes ? Visibility.Visible : Visibility.Collapsed;
-            TabTimer.Visibility = s.ShowTimer ? Visibility.Visible : Visibility.Collapsed;
+            // Ilha completa: a primeira aba ("Tudo") mostra música, agenda, tarefas, notas e timer juntos.
+            bool full = FullLayout;
+            static Visibility Vis(bool on) => on ? Visibility.Visible : Visibility.Collapsed;
+            TabHome.Visibility = Vis(full ? _overview.Count > 0 : s.ShowMedia || s.ShowStats);
+            HomeTabGlyph.Data = (Geometry)FindResource(full ? "FillLayout" : "FillHome");
+            TabHome.ToolTip = L.T(full ? "Tudo" : "Início");
+            TabShelf.Visibility = Vis(s.ShowShelf);
+            TabAgenda.Visibility = Vis(s.ShowCalendar && !full);
+            TabTasks.Visibility = Vis(s.ShowTasks && !full);
+            TabNotes.Visibility = Vis(s.ShowNotes && !full);
+            TabTimer.Visibility = Vis(s.ShowTimer && !full);
             TabClipboard.Visibility = s.ShowClipboard ? Visibility.Visible : Visibility.Collapsed;
             TabMirror.Visibility = s.ShowMirror ? Visibility.Visible : Visibility.Collapsed;
             TabPrompter.Visibility = s.ShowPrompter ? Visibility.Visible : Visibility.Collapsed;
@@ -979,6 +1026,10 @@ namespace Ilha
                 SelectTab("home");
             else if (!visibleTabs.Any(t => t.IsChecked == true))
                 visibleTabs[0].IsChecked = true;
+            // Trocou entre abas e ilha completa: refaz as colunas e o tamanho da aba atual.
+            ApplyOverviewColumns();
+            SelectTab(_currentTab);
+            ApplyTabSize(animate: false);
 
             // Atalho global e área de transferência
             if (_hwnd != IntPtr.Zero)
@@ -1027,7 +1078,7 @@ namespace Ilha
         private bool ShouldStayOpen() =>
             _draggingOut || _pinned || _timerAlerting || Island.IsMouseOver ||
             _prompterLocked || _prompterRunning || _prompterCounting ||
-            (IsForeground && Keyboard.FocusedElement is TextBox);
+            (IsForeground && Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase);
 
         /// <summary>
         /// Se a ilha é de fato a janela em primeiro plano. Window.IsActive do WPF não serve aqui:
@@ -1291,11 +1342,11 @@ namespace Ilha
             if (sender is RadioButton { Tag: string tab }) SelectTab(tab);
         }
 
-        private static readonly string[] TabOrder = { "home", "shelf", "agenda", "notes", "timer", "clipboard", "mirror", "prompter" };
+        private static readonly string[] TabOrder = { "home", "shelf", "agenda", "tasks", "notes", "timer", "clipboard", "mirror", "prompter" };
 
         private (string Tab, FrameworkElement Page)[] AllPages => new (string, FrameworkElement)[]
         {
-            ("home", PageHome), ("shelf", PageShelf), ("agenda", PageAgenda), ("notes", PageNotes), ("timer", PageTimer),
+            ("home", PageHome), ("shelf", PageShelf), ("agenda", PageAgenda), ("tasks", PageTasks), ("notes", PageNotes), ("timer", PageTimer),
             ("clipboard", PageClipboard), ("mirror", PageMirror), ("prompter", PagePrompter),
         };
 
@@ -1308,6 +1359,9 @@ namespace Ilha
             string previous = _currentTab;
             bool changed = tab != previous;
             _currentTab = tab;
+            // Entrar ou sair da ilha completa muda as colunas: aí a troca é direta, sem cruzar as páginas.
+            bool layoutChanged = changed && FullLayout && (tab == "home" || previous == "home");
+            if (layoutChanged) ApplyOverviewColumns();
 
             // Direção: para frente desliza de um lado, para trás do outro (vertical com abas na lateral).
             int dir = Math.Sign(Array.IndexOf(TabOrder, tab) - Array.IndexOf(TabOrder, previous));
@@ -1315,7 +1369,7 @@ namespace Ilha
             var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
             foreach (var (name, page) in AllPages)
             {
-                bool show = name == tab;
+                bool show = Shown(name, tab);
                 if (show)
                 {
                     page.Visibility = Visibility.Visible;
@@ -1339,7 +1393,7 @@ namespace Ilha
                     grow.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(1, dur) { EasingFunction = ease });
                     grow.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(1, dur) { EasingFunction = ease });
                 }
-                else if (changed && name == previous && page.Visibility == Visibility.Visible && !ReduceMotion)
+                else if (changed && !layoutChanged && Shown(name, previous) && page.Visibility == Visibility.Visible && !ReduceMotion)
                 {
                     // Sai: some rápido para o lado oposto enquanto a nova entra (troca cruzada).
                     Panel.SetZIndex(page, 0);
@@ -1350,7 +1404,7 @@ namespace Ilha
                     var leaving = page;
                     fade.Completed += (_, _) =>
                     {
-                        if (_currentTab == name) return; // voltou para ela no meio da troca
+                        if (Shown(name, _currentTab)) return; // voltou para ela no meio da troca
                         leaving.Visibility = Visibility.Collapsed;
                         leaving.BeginAnimation(OpacityProperty, null);
                         leaving.Opacity = 1;
@@ -1369,12 +1423,9 @@ namespace Ilha
             if (changed) ApplyTabSize(animate: _expanded);
             if (changed && _expanded && CurrentPage is { } entering) StaggerIn(entering);
             if (tab != "prompter" && previous == "prompter" && _prompterRunning) PrompterStop(resetToStart: false);
-            if (tab != "notes" && tab != "agenda" && tab != "prompter") ReleaseKeyboard();
-            if (tab == "agenda" && changed)
-            {
-                _monthOffset = 0;
-                SelectDay(DateTime.Today);
-            }
+            if (changed && !Shown("notes", tab) && !Shown("agenda", tab) && !Shown("tasks", tab) && tab != "prompter") ReleaseKeyboard();
+            if (changed && Shown("agenda", tab) && !Shown("agenda", previous)) SelectDay(DateTime.Today);
+            if (changed && Shown("notes", previous) && !Shown("notes", tab)) SaveOpenNote();
             if (tab == "mirror" && _expanded) StartMirror();
             else StopMirror();
         }
@@ -1470,177 +1521,6 @@ namespace Ilha
             area.Data = fill;
         }
 
-        private void UpdateCalendar(bool force = false)
-        {
-            var today = DateTime.Today;
-            if (!force && today == _calendarDate) return;
-            // Virou o dia com "hoje" escolhido: acompanha o novo hoje.
-            if (_selectedDate == _calendarDate) _selectedDate = today;
-            _calendarDate = today;
-            var culture = CultureInfo.CurrentCulture;
-
-            // Dia escolhido (painel das tarefas)
-            var sel = _selectedDate;
-            string dayLabel = _agendaCompact
-                ? sel.ToString(L.English ? "ddd, MMM d" : "ddd, d 'de' MMM", culture)
-                : sel.ToString("dddd", culture);
-            AgendaWeekday.Text = ((sel == today ? L.T("Hoje") + " · " : "") + dayLabel).ToUpper(culture);
-            AgendaDate.Text = sel.ToString(L.English ? "MMMM d" : "d 'de' MMMM", culture);
-            RefreshTodoFilter();
-
-            // Semanas em lista que rola: dias grandes e arredondados, e o mês muda conforme a rolagem.
-            CalWeekNumber.Text = L.F("SEMANA {0}", ISOWeek.GetWeekOfYear(today));
-            var firstDay = culture.DateTimeFormat.FirstDayOfWeek;
-            CalHeader.Children.Clear();
-            for (int i = 0; i < 7; i++)
-            {
-                var dow = (DayOfWeek)(((int)firstDay + i) % 7);
-                CalHeader.Children.Add(new TextBlock
-                {
-                    Text = culture.DateTimeFormat.GetAbbreviatedDayName(dow).TrimEnd('.').Substring(0, 1).ToUpper(culture),
-                    FontSize = 10,
-                    FontWeight = FontWeights.Medium,
-                    Foreground = (Brush)FindResource("Tertiary"),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                });
-            }
-            BuildCalendarWeeks(today, sel, culture, firstDay);
-        }
-
-        private const double CalRowH = 34, CalLabelH = 24;
-        private readonly List<(double Top, DateTime Month)> _calRows = new();
-        private bool _calScrollToSelected = true;
-
-        private void BuildCalendarWeeks(DateTime today, DateTime sel, CultureInfo culture, DayOfWeek firstDay)
-        {
-            double keep = CalScroll.VerticalOffset;
-            CalWeeks.Children.Clear();
-            _calRows.Clear();
-            var accent = (Brush)Resources["Accent"];
-            var dark = new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11));
-            var pending = new HashSet<string>(_todos.Where(t => !t.Done && !string.IsNullOrEmpty(t.Date)).Select(t => t.Date!));
-
-            // De 2 meses atrás até 1 ano à frente.
-            var anchor = new DateTime(today.Year, today.Month, 1).AddMonths(-2);
-            var start = anchor.AddDays(-(((int)anchor.DayOfWeek - (int)firstDay + 7) % 7));
-            double y = 0, selTop = 0;
-            for (int w = 0; w < 66; w++)
-            {
-                var weekStart = start.AddDays(w * 7);
-                var newMonth = Enumerable.Range(0, 7).Select(i => weekStart.AddDays(i)).FirstOrDefault(d => d.Day == 1);
-                if (w == 0 || newMonth != default)
-                {
-                    var m = w == 0 ? weekStart.AddDays(6) : newMonth;
-                    CalWeeks.Children.Add(new TextBlock
-                    {
-                        Text = culture.TextInfo.ToTitleCase(m.ToString(m.Year == today.Year ? "MMMM" : "MMMM yyyy", culture)),
-                        FontSize = 11, FontWeight = FontWeights.SemiBold,
-                        Foreground = (Brush)FindResource("Secondary"),
-                        Height = CalLabelH, Padding = new Thickness(6, 6, 0, 0),
-                    });
-                    y += CalLabelH;
-                }
-                var monthOfRow = new DateTime(weekStart.AddDays(6).Year, weekStart.AddDays(6).Month, 1);
-                _calRows.Add((y, monthOfRow));
-                var row = new System.Windows.Controls.Primitives.UniformGrid { Rows = 1, Columns = 7, Height = CalRowH };
-                for (int i = 0; i < 7; i++)
-                {
-                    var day = weekStart.AddDays(i);
-                    bool isToday = day == today;
-                    bool isSelected = day == sel && !isToday;
-                    if (day == sel) selTop = y;
-                    bool weekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
-                    bool hasTasks = pending.Contains(DayKey(day));
-                    var cell = new Border
-                    {
-                        Width = 32, Height = 28,
-                        CornerRadius = new CornerRadius(9),
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Background = isToday ? accent : isSelected ? Ink(0x2E) : Brushes.Transparent,
-                        Cursor = Cursors.Hand,
-                        Tag = day,
-                        ToolTip = hasTasks ? L.T("Tem lembretes neste dia") : null,
-                        Child = new TextBlock
-                        {
-                            Text = day.Day.ToString(culture),
-                            FontSize = 12.5,
-                            FontWeight = isToday || isSelected || hasTasks ? FontWeights.SemiBold : FontWeights.Normal,
-                            // Dia com lembrete pendente: número na cor de destaque.
-                            Foreground = isToday ? dark : hasTasks ? accent
-                                : weekend ? (Brush)FindResource("Tertiary") : Ink(0xFF),
-                            HorizontalAlignment = HorizontalAlignment.Center,
-                            VerticalAlignment = VerticalAlignment.Center,
-                            Typography = { NumeralAlignment = FontNumeralAlignment.Tabular },
-                        },
-                    };
-                    cell.MouseLeftButtonUp += (s, _) =>
-                    {
-                        if (s is Border { Tag: DateTime d }) { _calScrollToSelected = false; SelectDay(d); }
-                    };
-                    if (!isToday && !isSelected)
-                    {
-                        cell.MouseEnter += (s, _) => ((Border)s).Background = Ink(0x14);
-                        cell.MouseLeave += (s, _) => ((Border)s).Background = Brushes.Transparent;
-                    }
-                    row.Children.Add(cell);
-                }
-                CalWeeks.Children.Add(row);
-                y += CalRowH;
-            }
-
-            // Ao abrir (ou em "Hoje"), a semana escolhida aparece logo no topo; ao clicar num dia, a lista fica onde está.
-            double target = _calScrollToSelected ? Math.Max(0, selTop - CalLabelH) : keep;
-            _calScrollToSelected = true;
-            Dispatcher.BeginInvoke(() => { CalScroll.ScrollToVerticalOffset(target); UpdateCalendarMonthLabel(); },
-                                   DispatcherPriority.Loaded);
-        }
-
-        /// <summary>O título mostra o mês que está no topo da lista.</summary>
-        private void UpdateCalendarMonthLabel()
-        {
-            if (_calRows.Count == 0) return;
-            double top = CalScroll.VerticalOffset + CalLabelH;
-            var month = _calRows[0].Month;
-            foreach (var (rowTop, m) in _calRows)
-            {
-                if (rowTop > top) break;
-                month = m;
-            }
-            var culture = CultureInfo.CurrentCulture;
-            CalMonth.Text = culture.TextInfo.ToTitleCase(month.ToString("MMMM yyyy", culture));
-        }
-
-        private void CalScroll_ScrollChanged(object sender, ScrollChangedEventArgs e) => UpdateCalendarMonthLabel();
-
-        /// <summary>Setas: rolam quatro semanas; o pontinho volta para hoje.</summary>
-        private void CalendarMonth_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is not Button { Tag: string tag } || !int.TryParse(tag, out int delta)) return;
-            if (delta == 0) { _calScrollToSelected = true; SelectDay(DateTime.Today); return; }
-            CalScroll.ScrollToVerticalOffset(Math.Max(0, CalScroll.VerticalOffset + delta * CalRowH * 4));
-        }
-        private static string DayKey(DateTime d) => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-
-        private void SelectDay(DateTime day)
-        {
-            _selectedDate = day.Date;
-            UpdateCalendar(force: true);
-        }
-
-        /// <summary>Tarefas do dia escolhido; as sem dia (antigas) aparecem no dia de hoje.</summary>
-        private bool TodoVisible(object o) =>
-            o is TodoItem t && (t.Date == DayKey(_selectedDate) ||
-                                (string.IsNullOrEmpty(t.Date) && _selectedDate == DateTime.Today));
-
-        private void RefreshTodoFilter()
-        {
-            var view = CollectionViewSource.GetDefaultView(_todos);
-            if (view.Filter == null) view.Filter = TodoVisible;
-            else view.Refresh();
-            UpdateTodoSummary();
-        }
-
         private void UpdateClock()
         {
             var now = DateTime.Now;
@@ -1728,6 +1608,7 @@ namespace Ilha
             ArtGlow.Visibility = _media.Art == null ? Visibility.Hidden : Visibility.Visible;
             PlayPauseGlyph.Data = _media.IsPlaying ? GlyphPause : GlyphPlay;
             UpdateLikeUi();
+            UpdateShuffleRepeatUi();
             UpdateAmbient();
 
             // Pausado, a capa encolhe um pouco; tocando, volta com mola (como num toca-discos que "respira").
@@ -1774,6 +1655,60 @@ namespace Ilha
             scale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
             scale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
         }
+        // Aleatório e repetir: pelos controles de mídia do Windows quando o app aceita; no Spotify,
+        // que não aceita por ali, pelos atalhos do próprio app (aí o Ilha lembra o estado que pediu).
+        private bool _shuffleGuess;
+        private int _repeatGuess;
+
+        private bool ShuffleActive => _media.CanShuffle ? _media.ShuffleOn : _shuffleGuess;
+        private int RepeatActive => _media.CanRepeat ? _media.RepeatMode : _repeatGuess;
+
+        private async void Shuffle_Click(object sender, RoutedEventArgs e)
+        {
+            if (_media.CanShuffle) await _media.SetShuffleAsync(!_media.ShuffleOn);
+            else if (LikeService.IsSpotify(_media.SourceAppId) && LikeService.ToggleSpotifyShuffle()) _shuffleGuess = !_shuffleGuess;
+            UpdateShuffleRepeatUi();
+            Pop(ShuffleButton);
+        }
+
+        private async void Repeat_Click(object sender, RoutedEventArgs e)
+        {
+            int next = (RepeatActive + 1) % 3; // desligado → lista → música
+            if (_media.CanRepeat) await _media.SetRepeatAsync(next);
+            else if (LikeService.IsSpotify(_media.SourceAppId) && LikeService.CycleSpotifyRepeat()) _repeatGuess = next;
+            UpdateShuffleRepeatUi();
+            Pop(RepeatButton);
+        }
+
+        private void UpdateShuffleRepeatUi()
+        {
+            bool spotify = LikeService.IsSpotify(_media.SourceAppId);
+            bool on = _settings.ShowShuffleRepeat && _media.HasSession;
+            ShuffleButton.Visibility = on && (_media.CanShuffle || spotify) ? Visibility.Visible : Visibility.Collapsed;
+            RepeatButton.Visibility = on && (_media.CanRepeat || spotify) ? Visibility.Visible : Visibility.Collapsed;
+            bool shuffle = ShuffleActive;
+            int repeat = RepeatActive;
+            ShuffleButton.SetResourceReference(ForegroundProperty, shuffle ? "Accent" : "Ink_73");
+            ShuffleDot.Visibility = shuffle ? Visibility.Visible : Visibility.Hidden;
+            RepeatButton.SetResourceReference(ForegroundProperty, repeat > 0 ? "Accent" : "Ink_73");
+            RepeatDot.Visibility = repeat > 0 ? Visibility.Visible : Visibility.Hidden;
+            RepeatGlyph.Data = (Geometry)FindResource(repeat == 2 ? "IcoRepeatOne" : "IcoRepeat");
+            ShuffleButton.ToolTip = L.T(shuffle ? "Aleatório: ligado" : "Aleatório: desligado");
+            RepeatButton.ToolTip = L.T(repeat == 2 ? "Repetir: esta música" : repeat == 1 ? "Repetir: playlist" : "Repetir: desligado");
+        }
+
+        /// <summary>Pulinho rápido no botão para confirmar o toque.</summary>
+        private static void Pop(FrameworkElement element)
+        {
+            if (ReduceMotion) return;
+            var scale = new ScaleTransform(1, 1);
+            element.RenderTransformOrigin = new Point(0.5, 0.5);
+            element.RenderTransform = scale;
+            var pop = new DoubleAnimation(1.2, 1, TimeSpan.FromMilliseconds(320)) { EasingFunction = new BackEase { Amplitude = 0.6 } };
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+        }
+
         private async void Next_Click(object sender, RoutedEventArgs e) => await _media.NextAsync();
         private async void Previous_Click(object sender, RoutedEventArgs e) => await _media.PreviousAsync();
 
@@ -1886,14 +1821,14 @@ namespace Ilha
 
         private void NotesArea_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (Keyboard.FocusedElement is not TextBox) Native.SetNoActivate(_hwnd, true);
+            if (Keyboard.FocusedElement is not System.Windows.Controls.Primitives.TextBoxBase) Native.SetNoActivate(_hwnd, true);
         }
 
         private void TextInput_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             // O clique já ativou a janela (WS_EX_NOACTIVATE está desligado sobre as áreas de texto);
             // aqui só garantimos o foco do teclado na caixa.
-            if (sender is TextBox box && !box.IsKeyboardFocusWithin) box.Focus();
+            if (sender is System.Windows.Controls.Primitives.TextBoxBase box && !box.IsKeyboardFocusWithin) box.Focus();
         }
 
         private void NotesBox_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -1904,25 +1839,16 @@ namespace Ilha
             RestartCollapseTimer();
         }
 
-        private void NotesBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            UpdateNotesPlaceholder();
-            _notesSave.Stop();
-            _notesSave.Start();
-        }
-
-        private void UpdateNotesPlaceholder() =>
-            NotesPlaceholder.Visibility = NotesBox.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-
         /// <summary>Sai da edição das notas e devolve o foco ao app que estava em uso antes.</summary>
         private void ReleaseKeyboard()
         {
             if (_hwnd == IntPtr.Zero) return;
-            if (Keyboard.FocusedElement is TextBox) Keyboard.ClearFocus();
+            if (Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase) Keyboard.ClearFocus();
             if (IsForeground && _previousForeground != IntPtr.Zero && Native.IsWindow(_previousForeground))
                 Native.SetForegroundWindow(_previousForeground);
             _previousForeground = IntPtr.Zero;
-            if (!PageNotes.IsMouseOver && !TodoPanel.IsMouseOver && !PagePrompter.IsMouseOver) Native.SetNoActivate(_hwnd, true);
+            if (!PageNotes.IsMouseOver && !TodoPanel.IsMouseOver && !PageTasks.IsMouseOver && !PagePrompter.IsMouseOver)
+                Native.SetNoActivate(_hwnd, true);
         }
 
         // ───────────── Tarefas ─────────────
@@ -1940,9 +1866,7 @@ namespace Ilha
             var shown = _todos.Where(t => TodoVisible(t)).ToList();
             int open = shown.Count(t => !t.Done);
             TodoCount.Text = shown.Count == 0 ? "" : open == 0 ? L.T("TUDO FEITO") : L.F("{0} A FAZER", open);
-            TodoEmpty.Text = _selectedDate == DateTime.Today
-                ? L.T("Nenhuma tarefa. Que tal planejar o dia?")
-                : L.T("Nada marcado para este dia. Escreva abaixo para criar um lembrete.");
+            TodoEmpty.Text = L.T("Nada marcado para este dia.");
             TodoEmpty.Visibility = shown.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 

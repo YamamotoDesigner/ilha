@@ -45,7 +45,42 @@ namespace Ilha
             return true;
         }
 
-        private const ushort VK_MENU = 0x12, VK_SHIFT = 0x10, VK_B = 0x42;
+        /// <summary>Aleatório no Spotify (atalho Ctrl + S do próprio app).</summary>
+        public static bool ToggleSpotifyShuffle() => SendCtrlShortcut(0x53);
+
+        /// <summary>Repetir no Spotify (atalho Ctrl + R: desligado → playlist → música → desligado).</summary>
+        public static bool CycleSpotifyRepeat() => SendCtrlShortcut(0x52);
+
+        /// <summary>
+        /// Ctrl + tecla na janela do Spotify. O Alt pressionado libera a troca de janela; ele é solto
+        /// com o Ctrl já apertado, para não abrir o menu do app.
+        /// </summary>
+        private static bool SendCtrlShortcut(ushort key)
+        {
+            var spotify = Process.GetProcessesByName("Spotify")
+                .Select(p => p.MainWindowHandle)
+                .FirstOrDefault(h => h != IntPtr.Zero);
+            if (spotify == IntPtr.Zero) return false;
+
+            IntPtr previous = GetForegroundWindow();
+            bool wasMinimized = IsIconic(spotify);
+            Key(VK_MENU, down: true);
+            if (wasMinimized) ShowWindow(spotify, SW_SHOWNOACTIVATE);
+            SetForegroundWindow(spotify);
+            Thread.Sleep(60);
+            Key(VK_CONTROL, down: true);
+            Key(VK_MENU, down: false);
+            Key(key, down: true);
+            Key(key, down: false);
+            Key(VK_CONTROL, down: false);
+            Thread.Sleep(80);
+
+            if (wasMinimized) ShowWindow(spotify, SW_MINIMIZE);
+            if (previous != IntPtr.Zero && previous != spotify) SetForegroundWindow(previous);
+            return true;
+        }
+
+        private const ushort VK_MENU = 0x12, VK_SHIFT = 0x10, VK_CONTROL = 0x11, VK_B = 0x42;
         private const int SW_SHOWNOACTIVATE = 4, SW_MINIMIZE = 6;
 
         private static void Key(ushort vk, bool down)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,6 +35,12 @@ namespace Ilha
         public ImageSource? Art { get; private set; }
         public bool IsPlaying { get; private set; }
         public TimeSpan Duration { get; private set; }
+        /// <summary>O app aceita aleatório / repetir pelos controles de mídia do Windows.</summary>
+        public bool CanShuffle { get; private set; }
+        public bool CanRepeat { get; private set; }
+        public bool ShuffleOn { get; private set; }
+        /// <summary>0 = não repete, 1 = repete a lista, 2 = repete a música.</summary>
+        public int RepeatMode { get; private set; }
 
         public TimeSpan Position
         {
@@ -97,12 +103,22 @@ namespace Ilha
         {
             try
             {
-                IsPlaying = _session?.GetPlaybackInfo()?.PlaybackStatus ==
-                            GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+                var info = _session?.GetPlaybackInfo();
+                IsPlaying = info?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+                CanShuffle = info?.Controls?.IsShuffleEnabled == true;
+                CanRepeat = info?.Controls?.IsRepeatEnabled == true;
+                ShuffleOn = info?.IsShuffleActive == true;
+                RepeatMode = info?.AutoRepeatMode switch
+                {
+                    Windows.Media.MediaPlaybackAutoRepeatMode.Track => 2,
+                    Windows.Media.MediaPlaybackAutoRepeatMode.List => 1,
+                    _ => 0,
+                };
             }
             catch
             {
                 IsPlaying = false;
+                CanShuffle = CanRepeat = false;
             }
         }
 
@@ -217,6 +233,30 @@ namespace Ilha
                 }
             }
             catch { }
+        }
+
+        public async Task<bool> SetShuffleAsync(bool on)
+        {
+            try { return _session != null && await _session.TryChangeShuffleActiveAsync(on); } catch { return false; }
+        }
+
+        /// <summary>0 = não repete, 1 = lista, 2 = música.</summary>
+        public async Task<bool> SetRepeatAsync(int mode)
+        {
+            try
+            {
+                var m = mode switch
+                {
+                    2 => Windows.Media.MediaPlaybackAutoRepeatMode.Track,
+                    1 => Windows.Media.MediaPlaybackAutoRepeatMode.List,
+                    _ => Windows.Media.MediaPlaybackAutoRepeatMode.None,
+                };
+                return _session != null && await _session.TryChangeAutoRepeatModeAsync(m);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public async Task NextAsync()

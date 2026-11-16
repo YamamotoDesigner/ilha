@@ -295,6 +295,26 @@
             <Setter Property="AcceptsTab" Value="False"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
         </Style>
+
+        <!-- Texto das páginas das Notas (com negrito, itálico e sublinhado) -->
+        <Style x:Key="NoteBodyBox" TargetType="RichTextBox">
+            <Setter Property="Foreground" Value="{DynamicResource Ink_FF}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource Ink_FF}"/>
+            <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="AcceptsTab" Value="True"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Hidden"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RichTextBox">
+                        <ScrollViewer x:Name="PART_ContentHost" Background="Transparent" Focusable="False"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -449,14 +469,19 @@
                                 <StackPanel x:Name="TabBar">
                                     <RadioButton x:Name="TabHome" Style="{StaticResource TabButton}" Tag="home"
                                                  ToolTip="{local:T 'Início'}" IsChecked="True" Checked="Tab_Checked">
-                                        <local:Glyph Data="{StaticResource FillHome}" Size="17" Filled="True" Thickness="0"/>
+                                        <local:Glyph x:Name="HomeTabGlyph" Data="{StaticResource FillHome}" Size="17" Filled="True" Thickness="0"/>
                                     </RadioButton>
                                     <RadioButton x:Name="TabShelf" Style="{StaticResource TabButton}" Tag="shelf"
                                                  ToolTip="{local:T 'Prateleira'}" Checked="Tab_Checked">
                                         <local:Glyph Data="{StaticResource IcoTray}" Size="16" Thickness="1.9"/>
-                                    </RadioButton>                                    <RadioButton x:Name="TabAgenda" Style="{StaticResource TabButton}" Tag="agenda"
-                                                 ToolTip="{local:T 'Agenda e tarefas'}" Checked="Tab_Checked">
+                                    </RadioButton>
+                                    <RadioButton x:Name="TabAgenda" Style="{StaticResource TabButton}" Tag="agenda"
+                                                 ToolTip="{local:T 'Agenda'}" Checked="Tab_Checked">
                                         <local:Glyph Data="{StaticResource FillCalendar}" Size="17" Filled="True" Thickness="0"/>
+                                    </RadioButton>
+                                    <RadioButton x:Name="TabTasks" Style="{StaticResource TabButton}" Tag="tasks"
+                                                 ToolTip="{local:T 'Tarefas do dia'}" Checked="Tab_Checked">
+                                        <local:Glyph Data="{StaticResource FillTasks}" Size="17" Filled="True" Thickness="0"/>
                                     </RadioButton>
                                     <RadioButton x:Name="TabNotes" Style="{StaticResource TabButton}" Tag="notes"
                                                  ToolTip="{local:T 'Notas'}" Checked="Tab_Checked">
@@ -663,21 +688,41 @@
                                                     </Grid>
 
                                                     <StackPanel x:Name="MediaButtons" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
-                                                        <Button Style="{StaticResource IconButton}" Width="40" Height="36"
+                                                        <Button x:Name="ShuffleButton" Style="{StaticResource IconButton}" Width="30" Height="30"
+                                                                Margin="0,0,6,0" Foreground="{DynamicResource Ink_73}"
+                                                                Click="Shuffle_Click" ToolTip="{local:T 'Aleatório'}">
+                                                            <Grid>
+                                                                <local:Glyph Data="{StaticResource IcoShuffle}" Size="15" Thickness="1.9"/>
+                                                                <Border x:Name="ShuffleDot" Width="3.5" Height="3.5" CornerRadius="1.75"
+                                                                        Background="{DynamicResource Accent}" VerticalAlignment="Bottom"
+                                                                        HorizontalAlignment="Center" Margin="0,0,0,-6" Visibility="Hidden"/>
+                                                            </Grid>
+                                                        </Button>
+                                                        <Button x:Name="PrevButton" Style="{StaticResource IconButton}" Width="40" Height="36"
                                                                 Foreground="{DynamicResource Ink_D9}"
                                                                 Click="Previous_Click" ToolTip="{local:T 'Anterior'}">
                                                             <local:Glyph Data="{StaticResource IcoPrev}" Filled="True" Size="18"/>
                                                         </Button>
                                                         <Button x:Name="PlayPauseButton" Style="{StaticResource IconButton}"
-                                                                Width="46" Height="40" Margin="12,0" Click="PlayPause_Click"
+                                                                Width="46" Height="40" Margin="8,0" Click="PlayPause_Click"
                                                                 ToolTip="{local:T 'Tocar/Pausar'}">
                                                             <local:Glyph x:Name="PlayPauseGlyph" Data="{StaticResource IcoPlay}"
                                                                          Filled="True" Size="25"/>
                                                         </Button>
-                                                        <Button Style="{StaticResource IconButton}" Width="40" Height="36"
+                                                        <Button x:Name="NextButton" Style="{StaticResource IconButton}" Width="40" Height="36"
                                                                 Foreground="{DynamicResource Ink_D9}"
                                                                 Click="Next_Click" ToolTip="{local:T 'Próxima'}">
                                                             <local:Glyph Data="{StaticResource IcoNext}" Filled="True" Size="18"/>
+                                                        </Button>
+                                                        <Button x:Name="RepeatButton" Style="{StaticResource IconButton}" Width="30" Height="30"
+                                                                Margin="6,0,0,0" Foreground="{DynamicResource Ink_73}"
+                                                                Click="Repeat_Click" ToolTip="{local:T 'Repetir'}">
+                                                            <Grid>
+                                                                <local:Glyph x:Name="RepeatGlyph" Data="{StaticResource IcoRepeat}" Size="15" Thickness="1.9"/>
+                                                                <Border x:Name="RepeatDot" Width="3.5" Height="3.5" CornerRadius="1.75"
+                                                                        Background="{DynamicResource Accent}" VerticalAlignment="Bottom"
+                                                                        HorizontalAlignment="Center" Margin="0,0,0,-6" Visibility="Hidden"/>
+                                                            </Grid>
                                                         </Button>
                                                     </StackPanel>
                                                 </Grid>
@@ -810,37 +855,66 @@
                                         </Border>
                                     </Grid>
 
-                                    <!-- ── Agenda: hoje + tarefas + mês ── -->
+                                    <!-- ── Agenda: dias que deslizam de lado + lembretes do dia ── -->
                                     <Grid x:Name="PageAgenda" Visibility="Collapsed">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition x:Name="AgendaTodoCol" Width="230"/>
-                                            <ColumnDefinition x:Name="AgendaGapCol" Width="14"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
 
-                                        <Border x:Name="TodoPanel" Style="{StaticResource Card}" Padding="16,13,14,12"
+                                        <Grid Height="58">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center" Margin="2,0,12,0" MinWidth="50">
+                                                <TextBlock x:Name="CalMonth" FontSize="24" FontWeight="SemiBold"/>
+                                                <Grid Margin="1,2,0,0">
+                                                    <TextBlock x:Name="CalYear" Style="{StaticResource Label}"/>
+                                                    <Button x:Name="TodayButton" Style="{StaticResource ChipButton}" Margin="-1,0,0,0"
+                                                            Padding="7,1" FontSize="10.5" HorizontalAlignment="Left"
+                                                            Visibility="Collapsed" Click="AgendaToday_Click"
+                                                            Content="{local:T 'Hoje'}"/>
+                                                </Grid>
+                                            </StackPanel>
+                                            <!-- Os dias passam de lado: rolar o mouse ou clicar num dia -->
+                                            <Canvas x:Name="DayStrip" Grid.Column="1" ClipToBounds="True" Background="Transparent"
+                                                    MouseWheel="DayStrip_MouseWheel">
+                                                <Canvas.OpacityMask>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                        <GradientStop Color="#00000000" Offset="0"/>
+                                                        <GradientStop Color="#FF000000" Offset="0.18"/>
+                                                        <GradientStop Color="#FF000000" Offset="0.82"/>
+                                                        <GradientStop Color="#00000000" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Canvas.OpacityMask>
+                                                <StackPanel x:Name="DayStripItems" Orientation="Horizontal" Height="58">
+                                                    <StackPanel.RenderTransform><TranslateTransform x:Name="DayStripShift"/></StackPanel.RenderTransform>
+                                                </StackPanel>
+                                            </Canvas>
+                                        </Grid>
+
+                                        <Border x:Name="TodoPanel" Grid.Row="1" Margin="0,10,0,0" Style="{StaticResource Card}"
+                                                Padding="14,10,12,10"
                                                 MouseEnter="NotesArea_MouseEnter" MouseLeave="NotesArea_MouseLeave">
                                             <DockPanel>
-                                                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                                                <DockPanel x:Name="TodoHeader" DockPanel.Dock="Top" Margin="0,0,0,4">
                                                     <TextBlock x:Name="TodoCount" DockPanel.Dock="Right" Style="{StaticResource Label}"
                                                                VerticalAlignment="Bottom" Typography.NumeralAlignment="Tabular"/>
-                                                    <StackPanel>
-                                                        <TextBlock x:Name="AgendaWeekday" Style="{StaticResource Label}"
-                                                                   Foreground="{DynamicResource Accent}"/>
-                                                        <TextBlock x:Name="AgendaDate" FontSize="15" FontWeight="Medium" Margin="0,2,0,0"/>
-                                                    </StackPanel>
+                                                    <TextBlock x:Name="AgendaWeekday" Style="{StaticResource Label}"
+                                                               Foreground="{DynamicResource Accent}" TextTrimming="CharacterEllipsis"/>
                                                 </DockPanel>
 
                                                 <Border DockPanel.Dock="Bottom" CornerRadius="9" Background="{DynamicResource Ink_12}"
-                                                        Padding="10,0,3,0" Height="30" Margin="0,6,0,0">
+                                                        Padding="10,0,3,0" Height="28" Margin="0,6,0,0">
                                                     <DockPanel>
                                                         <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}"
-                                                                Width="24" Height="24" Click="TodoAdd_Click" ToolTip="{local:T 'Adicionar tarefa'}">
+                                                                Width="24" Height="24" Click="TodoAdd_Click" ToolTip="{local:T 'Adicionar lembrete'}">
                                                             <local:Glyph Data="{StaticResource IcoPlus}" Size="14"
                                                                          Foreground="{DynamicResource Accent}"/>
                                                         </Button>
                                                         <Grid VerticalAlignment="Center">
-                                                            <TextBlock x:Name="TodoPlaceholder" Text="{local:T 'Nova tarefa…'}" FontSize="12.5"
+                                                            <TextBlock x:Name="TodoPlaceholder" Text="{local:T 'Novo lembrete…'}" FontSize="12.5"
                                                                        Foreground="{DynamicResource Tertiary}" IsHitTestVisible="False"
                                                                        Margin="2,0,0,0"/>
                                                             <TextBox x:Name="TodoInput" Style="{StaticResource LineBox}"
@@ -852,15 +926,15 @@
                                                 </Border>
 
                                                 <Grid>
-                                                    <TextBlock x:Name="TodoEmpty" Text="{local:T 'Nenhuma tarefa. Que tal planejar o dia?'}"
+                                                    <TextBlock x:Name="TodoEmpty" Text="{local:T 'Nada marcado para este dia.'}"
                                                                FontSize="12" Foreground="{DynamicResource Tertiary}"
                                                                TextWrapping="Wrap" VerticalAlignment="Center"
-                                                               HorizontalAlignment="Center" TextAlignment="Center" Margin="10,0"/>
+                                                               HorizontalAlignment="Left" Margin="2,0"/>
                                                     <ScrollViewer VerticalScrollBarVisibility="Hidden">
                                                         <ItemsControl x:Name="TodoItems">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <Border x:Name="Row" CornerRadius="7" Padding="4,4,2,4"
+                                                                    <Border x:Name="Row" CornerRadius="7" Padding="4,3,2,3"
                                                                             Background="Transparent">
                                                                         <DockPanel>
                                                                             <Button x:Name="Remove" DockPanel.Dock="Right"
@@ -870,12 +944,11 @@
                                                                                 <local:Glyph Data="{StaticResource IcoClose}" Size="10"
                                                                                              Thickness="2.6" Foreground="{DynamicResource Ink_A6}"/>
                                                                             </Button>
-                                                                            <CheckBox Style="{StaticResource TodoCheck}"
-                                                                                      IsChecked="{Binding Done, Mode=TwoWay}"
-                                                                                      Click="TodoCheck_Click">
-                                                                                <TextBlock x:Name="Text" Text="{Binding Text}" FontSize="12.5"
-                                                                                           TextTrimming="CharacterEllipsis"/>
-                                                                            </CheckBox>
+                                                                            <Border x:Name="Dot" Width="6" Height="6" CornerRadius="3"
+                                                                                    Background="{DynamicResource Accent}" Margin="2,0,10,0"
+                                                                                    VerticalAlignment="Center"/>
+                                                                            <TextBlock x:Name="Text" Text="{Binding Text}" FontSize="12.5"
+                                                                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                                                                         </DockPanel>
                                                                     </Border>
                                                                     <DataTemplate.Triggers>
@@ -886,6 +959,7 @@
                                                                         <DataTrigger Binding="{Binding Done}" Value="True">
                                                                             <Setter TargetName="Text" Property="TextDecorations" Value="Strikethrough"/>
                                                                             <Setter TargetName="Text" Property="Foreground" Value="{DynamicResource Ink_73}"/>
+                                                                            <Setter TargetName="Dot" Property="Background" Value="{DynamicResource Ink_4D}"/>
                                                                         </DataTrigger>
                                                                     </DataTemplate.Triggers>
                                                                 </DataTemplate>
@@ -895,51 +969,189 @@
                                                 </Grid>
                                             </DockPanel>
                                         </Border>
-
-                                        <!-- Mês -->
-                                        <DockPanel Grid.Column="2">
-                                            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
-                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                                    <Button Style="{StaticResource IconButton}" Width="24" Height="22"
-                                                            Tag="-1" Click="CalendarMonth_Click" ToolTip="{local:T 'Mês anterior'}">
-                                                        <local:Glyph Data="{StaticResource IcoChevronLeft}" Size="13"/>
-                                                    </Button>
-                                                    <Button Style="{StaticResource IconButton}" Width="24" Height="22"
-                                                            Tag="0" Click="CalendarMonth_Click" ToolTip="{local:T 'Hoje'}">
-                                                        <Border Width="6" Height="6" CornerRadius="2" Background="{DynamicResource Accent}"/>
-                                                    </Button>
-                                                    <Button Style="{StaticResource IconButton}" Width="24" Height="22"
-                                                            Tag="1" Click="CalendarMonth_Click" ToolTip="{local:T 'Próximo mês'}">
-                                                        <local:Glyph Data="{StaticResource IcoChevronRight}" Size="13"/>
-                                                    </Button>
-                                                </StackPanel>
-                                                <TextBlock x:Name="CalMonth" FontSize="13.5" FontWeight="Medium"
-                                                           VerticalAlignment="Center"/>
-                                                <TextBlock x:Name="CalWeekNumber" Style="{StaticResource Label}" Margin="8,1,0,0"
-                                                           VerticalAlignment="Center"/>
-                                            </DockPanel>
-                                            <UniformGrid x:Name="CalHeader" DockPanel.Dock="Top" Rows="1" Columns="7" Margin="0,0,0,2"/>
-                                            <ScrollViewer x:Name="CalScroll" VerticalScrollBarVisibility="Hidden"
-                                                          HorizontalScrollBarVisibility="Disabled" CanContentScroll="False"
-                                                          ScrollChanged="CalScroll_ScrollChanged">
-                                                <StackPanel x:Name="CalWeeks"/>
-                                            </ScrollViewer>
-                                        </DockPanel>
                                     </Grid>
 
-                                    <!-- ── Notas ── -->
-                                    <Border x:Name="PageNotes" Visibility="Collapsed" Style="{StaticResource Card}" Padding="14,10"
+                                    <!-- ── Tarefas do dia: lista com check ── -->
+                                    <Border x:Name="PageTasks" Visibility="Collapsed" Style="{StaticResource Card}" Padding="14,11,12,10"
                                             MouseEnter="NotesArea_MouseEnter" MouseLeave="NotesArea_MouseLeave">
-                                        <Grid>
-                                            <TextBlock x:Name="NotesPlaceholder" Text="{local:T 'Escreva uma anotação…'}" FontSize="13.5"
-                                                       Foreground="{DynamicResource Tertiary}" IsHitTestVisible="False"
-                                                       Margin="2,0,0,0"/>
-                                            <TextBox x:Name="NotesBox" Style="{StaticResource NotesBox}"
-                                                     PreviewMouseLeftButtonDown="TextInput_PreviewMouseDown"
-                                                     TextChanged="NotesBox_TextChanged"
-                                                     PreviewKeyDown="NotesBox_PreviewKeyDown"/>
-                                        </Grid>
+                                        <DockPanel>
+                                            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,7">
+                                                <TextBlock x:Name="TasksCount" DockPanel.Dock="Right" Style="{StaticResource Label}"
+                                                           Typography.NumeralAlignment="Tabular"/>
+                                                <TextBlock x:Name="TasksTitle" Text="{local:T 'TAREFAS DE HOJE'}" Style="{StaticResource Label}"/>
+                                            </DockPanel>
+                                            <Grid DockPanel.Dock="Top" Height="3" Margin="0,0,0,7">
+                                                <Border CornerRadius="1.5" Background="{DynamicResource Ink_17}"/>
+                                                <Border x:Name="TasksProgress" CornerRadius="1.5" Background="{DynamicResource Accent}"
+                                                        HorizontalAlignment="Left" Width="0"/>
+                                            </Grid>
+
+                                            <Border DockPanel.Dock="Bottom" CornerRadius="9" Background="{DynamicResource Ink_12}"
+                                                    Padding="10,0,3,0" Height="28" Margin="0,6,0,0">
+                                                <DockPanel>
+                                                    <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}"
+                                                            Width="24" Height="24" Click="TaskAdd_Click" ToolTip="{local:T 'Adicionar tarefa'}">
+                                                        <local:Glyph Data="{StaticResource IcoPlus}" Size="14"
+                                                                     Foreground="{DynamicResource Accent}"/>
+                                                    </Button>
+                                                    <Grid VerticalAlignment="Center">
+                                                        <TextBlock x:Name="TaskPlaceholder" Text="{local:T 'Nova tarefa…'}" FontSize="12.5"
+                                                                   Foreground="{DynamicResource Tertiary}" IsHitTestVisible="False"
+                                                                   Margin="2,0,0,0"/>
+                                                        <TextBox x:Name="TaskInput" Style="{StaticResource LineBox}"
+                                                                 PreviewMouseLeftButtonDown="TextInput_PreviewMouseDown"
+                                                                 TextChanged="TaskInput_TextChanged"
+                                                                 PreviewKeyDown="TaskInput_PreviewKeyDown"/>
+                                                    </Grid>
+                                                </DockPanel>
+                                            </Border>
+
+                                            <Grid>
+                                                <TextBlock x:Name="TasksEmpty" Text="{local:T 'O que precisa sair hoje? Escreva abaixo.'}"
+                                                           FontSize="12" Foreground="{DynamicResource Tertiary}"
+                                                           TextWrapping="Wrap" VerticalAlignment="Center"
+                                                           HorizontalAlignment="Left" Margin="2,0"/>
+                                                <ScrollViewer VerticalScrollBarVisibility="Hidden">
+                                                    <ItemsControl x:Name="TaskItems">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border x:Name="Row" CornerRadius="7" Padding="4,3,2,3"
+                                                                        Background="Transparent">
+                                                                    <DockPanel>
+                                                                        <Button x:Name="Remove" DockPanel.Dock="Right"
+                                                                                Style="{StaticResource IconButton}"
+                                                                                Width="20" Height="20" Visibility="Hidden"
+                                                                                Click="TaskRemove_Click" ToolTip="{local:T 'Apagar'}">
+                                                                            <local:Glyph Data="{StaticResource IcoClose}" Size="10"
+                                                                                         Thickness="2.6" Foreground="{DynamicResource Ink_A6}"/>
+                                                                        </Button>
+                                                                        <CheckBox Style="{StaticResource TodoCheck}"
+                                                                                  IsChecked="{Binding Done, Mode=TwoWay}"
+                                                                                  Click="TaskCheck_Click">
+                                                                            <TextBlock x:Name="Text" Text="{Binding Text}" FontSize="12.5"
+                                                                                       TextTrimming="CharacterEllipsis"/>
+                                                                        </CheckBox>
+                                                                    </DockPanel>
+                                                                </Border>
+                                                                <DataTemplate.Triggers>
+                                                                    <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="Row" Property="Background" Value="{DynamicResource Ink_0F}"/>
+                                                                        <Setter TargetName="Remove" Property="Visibility" Value="Visible"/>
+                                                                    </Trigger>
+                                                                    <DataTrigger Binding="{Binding Done}" Value="True">
+                                                                        <Setter TargetName="Text" Property="TextDecorations" Value="Strikethrough"/>
+                                                                        <Setter TargetName="Text" Property="Foreground" Value="{DynamicResource Ink_73}"/>
+                                                                    </DataTrigger>
+                                                                </DataTemplate.Triggers>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+                                            </Grid>
+                                        </DockPanel>
                                     </Border>
+
+                                    <!-- ── Notas: páginas (como no Notion), cada uma com a sua cor ── -->
+                                    <Grid x:Name="PageNotes" Visibility="Collapsed"
+                                          MouseEnter="NotesArea_MouseEnter" MouseLeave="NotesArea_MouseLeave">
+                                        <!-- Lista de páginas -->
+                                        <DockPanel x:Name="NotesListView">
+                                            <DockPanel DockPanel.Dock="Top" Margin="2,0,0,8">
+                                                <Button DockPanel.Dock="Right" Click="NewNotePage_Click" Cursor="Hand" Focusable="False"
+                                                        ToolTip="{local:T 'Nova página'}">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Grid x:Name="Root" Width="26" Height="26" RenderTransformOrigin="0.5,0.5">
+                                                                <Ellipse x:Name="Bg" Fill="{DynamicResource Ink_1F}"/>
+                                                                <local:Glyph Data="{StaticResource IcoPlus}" Size="13" Thickness="2.6"/>
+                                                            </Grid>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="Bg" Property="Fill" Value="{DynamicResource Ink_33}"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsPressed" Value="True">
+                                                                    <Setter TargetName="Root" Property="RenderTransform">
+                                                                        <Setter.Value><ScaleTransform ScaleX="0.9" ScaleY="0.9"/></Setter.Value>
+                                                                    </Setter>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                                <TextBlock Text="{local:T 'PÁGINAS'}" Style="{StaticResource Label}" VerticalAlignment="Center"/>
+                                            </DockPanel>
+                                            <Grid>
+                                                <StackPanel x:Name="NotesEmpty" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                    <local:Glyph Data="{StaticResource IcoNotes}" Size="22" Thickness="1.6"
+                                                                 Foreground="{DynamicResource Ink_4D}" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="{local:T 'Nenhuma página ainda. Toque no + para criar.'}" FontSize="12"
+                                                               Foreground="{DynamicResource Tertiary}" Margin="0,8,0,0"
+                                                               TextAlignment="Center" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                                <ScrollViewer x:Name="NotePagesScroll" VerticalScrollBarVisibility="Hidden">
+                                                    <WrapPanel x:Name="NotePagesPanel"/>
+                                                </ScrollViewer>
+                                            </Grid>
+                                        </DockPanel>
+
+                                        <!-- Página aberta -->
+                                        <Border x:Name="NoteEditor" Visibility="Collapsed" Style="{StaticResource Card}" Padding="8,6,8,6">
+                                            <DockPanel>
+                                                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,2">
+                                                    <Button Style="{StaticResource IconButton}" Width="26" Height="26" Click="NoteBack_Click"
+                                                            ToolTip="{local:T 'Voltar às páginas'}" Foreground="{DynamicResource Ink_A6}">
+                                                        <local:Glyph Data="{StaticResource IcoChevronLeft}" Size="15" Thickness="2.2"/>
+                                                    </Button>
+                                                    <Button x:Name="NoteDeleteButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}"
+                                                            Width="26" Height="26" Click="NoteDelete_Click"
+                                                            ToolTip="{local:T 'Apagar página'}" Foreground="{DynamicResource Ink_73}">
+                                                        <local:Glyph Data="{StaticResource IcoTrash}" Size="13"/>
+                                                    </Button>
+                                                    <Border x:Name="NoteColorMark" Width="10" Height="10" CornerRadius="3" Margin="4,0,8,0"
+                                                            VerticalAlignment="Center"/>
+                                                    <Grid VerticalAlignment="Center">
+                                                        <TextBlock x:Name="NoteTitlePlaceholder" Text="{local:T 'Sem título'}" FontSize="14"
+                                                                   FontWeight="SemiBold" Foreground="{DynamicResource Tertiary}"
+                                                                   IsHitTestVisible="False" Margin="2,0,0,0"/>
+                                                        <TextBox x:Name="NoteTitle" Style="{StaticResource LineBox}" FontSize="14" FontWeight="SemiBold"
+                                                                 PreviewMouseLeftButtonDown="TextInput_PreviewMouseDown"
+                                                                 TextChanged="NoteTitle_TextChanged"
+                                                                 PreviewKeyDown="NoteTitle_PreviewKeyDown"/>
+                                                    </Grid>
+                                                </DockPanel>
+
+                                                <!-- Cores e formatação -->
+                                                <DockPanel DockPanel.Dock="Bottom" Margin="2,4,0,0">
+                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                        <Button x:Name="BoldButton" Style="{StaticResource IconButton}" Width="26" Height="24"
+                                                                Margin="2,0,0,0" Click="NoteFormat_Click" Tag="b" ToolTip="{local:T 'Negrito (Ctrl+B)'}">
+                                                            <TextBlock Text="B" FontSize="13" FontWeight="Bold"/>
+                                                        </Button>
+                                                        <Button x:Name="ItalicButton" Style="{StaticResource IconButton}" Width="26" Height="24"
+                                                                Margin="2,0,0,0" Click="NoteFormat_Click" Tag="i" ToolTip="{local:T 'Itálico (Ctrl+I)'}">
+                                                            <TextBlock Text="I" FontSize="13" FontStyle="Italic" FontFamily="Georgia"/>
+                                                        </Button>
+                                                        <Button x:Name="UnderlineButton" Style="{StaticResource IconButton}" Width="26" Height="24"
+                                                                Margin="2,0,0,0" Click="NoteFormat_Click" Tag="u" ToolTip="{local:T 'Sublinhado (Ctrl+U)'}">
+                                                            <TextBlock Text="U" FontSize="13" TextDecorations="Underline"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                    <StackPanel x:Name="NoteColors" Orientation="Horizontal" VerticalAlignment="Center"/>
+                                                </DockPanel>
+
+                                                <Grid Margin="4,2,2,0">
+                                                    <TextBlock x:Name="NoteBodyPlaceholder" Text="{local:T 'Escreva aqui…'}" FontSize="13.5"
+                                                               Foreground="{DynamicResource Tertiary}" IsHitTestVisible="False"
+                                                               Margin="2,0,0,0"/>
+                                                    <RichTextBox x:Name="NoteBody" Style="{StaticResource NoteBodyBox}"
+                                                                 PreviewMouseLeftButtonDown="TextInput_PreviewMouseDown"
+                                                                 TextChanged="NoteBody_TextChanged"
+                                                                 SelectionChanged="NoteBody_SelectionChanged"
+                                                                 PreviewKeyDown="NotesBox_PreviewKeyDown"/>
+                                                </Grid>
+                                            </DockPanel>
+                                        </Border>
+                                    </Grid>
 
                                     <!-- ── Foco (timer) ── -->
                                     <Grid x:Name="PageTimer" Visibility="Collapsed">
@@ -949,7 +1161,7 @@
                                         </Grid.ColumnDefinitions>
 
                                         <!-- Contorno quadrado de cantos suaves que se esvazia com o tempo (encolhe se faltar altura) -->
-                                        <Viewbox StretchDirection="DownOnly" Stretch="Uniform" Margin="0,0,28,0"
+                                        <Viewbox x:Name="TimerRingBox" StretchDirection="DownOnly" Stretch="Uniform" Margin="0,0,28,0"
                                                  HorizontalAlignment="Left" VerticalAlignment="Center">
                                         <Grid Width="156" Height="156">
                                             <Path x:Name="TimerTrack" Stroke="{DynamicResource Ink_17}" StrokeThickness="4"/>
@@ -968,7 +1180,7 @@
                                         </Viewbox>
 
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                            <StackPanel x:Name="TimerButtonsRow" Orientation="Horizontal" Margin="0,0,0,12">
                                                 <Button x:Name="TimerStartButton" Style="{StaticResource ChipButton}"
                                                         Padding="16,8" Margin="0,0,8,0" Click="TimerStartPause_Click"
                                                         Background="{DynamicResource Ink_F2}" Foreground="{DynamicResource InkInverse}">
@@ -978,11 +1190,11 @@
                                                         <TextBlock x:Name="TimerStartText" Text="{local:T 'Iniciar'}" FontSize="13" FontWeight="Medium"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource ChipButton}" Padding="14,8" Margin="0"
-                                                        Click="TimerReset_Click">
+                                                <Button x:Name="TimerResetButton" Style="{StaticResource ChipButton}" Padding="14,8" Margin="0"
+                                                        Click="TimerReset_Click" ToolTip="{local:T 'Zerar'}">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <local:Glyph Data="{StaticResource IcoReset}" Size="13" Margin="0,0,6,0"/>
-                                                        <TextBlock Text="{local:T 'Zerar'}" FontSize="13"/>
+                                                        <local:Glyph x:Name="TimerResetGlyph" Data="{StaticResource IcoReset}" Size="13" Margin="0,0,6,0"/>
+                                                        <TextBlock x:Name="TimerResetText" Text="{local:T 'Zerar'}" FontSize="13"/>
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
