@@ -14,7 +14,25 @@ namespace Ilha
 
         public static readonly Dictionary<string, Slide[]> ByVersion = new()
         {
-            ["1.10.0"] = new[]
+            ["1.11.0"] = new[]
+            {
+                new Slide("hello", "Bom dia, você!",
+                    "Na primeira vez do dia que você passa o mouse, a ilha te cumprimenta pelo nome."),
+                new Slide("wellness", "Um cuidado no meio do dia",
+                    "Água, uma esticada nas pernas, os dentes, o despertador e a hora de dormir: a ilha lembra no horário certo."),
+                new Slide("music", "No tempo certo",
+                    "A barra da música acompanha cada segundo, sem atraso. E dá para segurar e arrastar até o ponto exato."),
+                new Slide("full", "Tudo à vista, se quiser",
+                    "Em Configurações → Ilha, escolha \"Completa\" para ver música, agenda, tarefas, notas e timer juntos."),
+                new Slide("notes", "Uma página para cada ideia",
+                    "Toque no +, escolha uma cor e escreva. Dá para usar negrito, itálico e sublinhado."),
+                new Slide("agenda", "Gire pelos dias",
+                    "Passe a rodinha do mouse sobre a agenda. O dia escolhido mostra os seus lembretes."),
+                new Slide("tasks", "Feito, feito, feito",
+                    "Uma lista só para hoje. O que você marcou sai amanhã; o que ficou, continua."),
+                new Slide("dynamic", "Do tamanho do que tem dentro",
+                    "Copiou mais? A ilha cresce. Apagou um item? Ela encolhe junto."),
+            },            ["1.10.0"] = new[]
             {
                 new Slide("intro", "A ilha cresceu",
                     "Mais coisas cabem nela, e ela muda de tamanho conforme o que você está fazendo."),

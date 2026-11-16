@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -15,6 +15,9 @@ namespace Ilha
     public static class WhatsNewArt
     {
         public const double W = 440, H = 216;
+
+        /// <summary>Nome usado na cena da saudação.</summary>
+        public static string UserName { get; set; } = "";
 
         private static readonly Brush IslandFill = Frozen(new SolidColorBrush(Color.FromRgb(0x0A, 0x0A, 0x0C)));
         private static readonly Brush IslandRim = Frozen(new SolidColorBrush(Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF)));
@@ -35,6 +38,8 @@ namespace Ilha
                 "tasks" => Tasks(a),
                 "music" => Music(a),
                 "dynamic" => Dynamic(a),
+                "hello" => Hello(),
+                "wellness" => Wellness(),
                 _ => Icon(a),
             };
             // Palco: um cartão suave com um brilho da cor de destaque atrás da ilha.
@@ -412,6 +417,79 @@ namespace Ilha
             return stage;
         }
 
+        /// <summary>A ilha cresce e diz bom dia pelo nome, com a carinha.</summary>
+        private static FrameworkElement Hello()
+        {
+            const double d = 4.6;
+            var stage = new Grid();
+            var island = Island(130, 30, top: 0);
+            island.CornerRadius = new CornerRadius(0, 0, 18, 18);
+            Anim(island, FrameworkElement.WidthProperty, d, (0, 130), (0.12, 130), (0.26, 300), (0.82, 300), (0.94, 130), (1, 130));
+            Anim(island, FrameworkElement.HeightProperty, d, (0, 30), (0.12, 30), (0.26, 64), (0.82, 64), (0.94, 30), (1, 30));
+            var name = UserName;
+            var row = Nudge("hello", L.F("Bom dia, {0}!", name), L.T("Que o seu dia seja leve."));
+            Anim(row, UIElement.OpacityProperty, d, (0, 0), (0.24, 0), (0.32, 1), (0.78, 1), (0.84, 0), (1, 0));
+            island.Child = row;
+            stage.Children.Add(island);
+            stage.Children.Add(Cursor(d, (0, 300, 170), (0.1, 222, 14), (0.85, 222, 30), (1, 300, 170)));
+            return stage;
+        }
+
+        /// <summary>Lembretes passando: água, esticar as pernas e hora de dormir.</summary>
+        private static FrameworkElement Wellness()
+        {
+            const double d = 7.2;
+            var stage = new Grid();
+            var island = Island(340, 64, top: 0);
+            island.CornerRadius = new CornerRadius(0, 0, 20, 20);
+            var host = new Grid();
+            var items = new (string Kind, string Title, string Text)[]
+            {
+                ("water", L.T("Já tomou água hoje?"), L.T("Um copo agora faz bem.")),
+                ("stretch", L.T("Que tal esticar um pouco as pernas?"), L.T("Levante e dê uma volta rapidinho.")),
+                ("late", L.T("Já não está tarde?"), L.T("Será que não é hora de dormir?")),
+            };
+            for (int i = 0; i < items.Length; i++)
+            {
+                var row = Nudge(items[i].Kind, items[i].Title, items[i].Text);
+                double a = i / 3.0, b = (i + 1) / 3.0;
+                if (i == 0) Anim(row, UIElement.OpacityProperty, d, (0, 1), (b - 0.03, 1), (b, 0), (0.97, 0), (1, 1));
+                else Anim(row, UIElement.OpacityProperty, d, (0, 0), (a, 0), (a + 0.04, 1), (b - 0.03, 1), (b, 0), (1, 0));
+                host.Children.Add(row);
+            }
+            island.Child = host;
+            stage.Children.Add(island);
+            // Relógio do dia passando embaixo
+            var times = new Grid { VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 34) };
+            string[] labels = { "11:00", "15:30", "01:20" };
+            for (int i = 0; i < 3; i++)
+            {
+                var t = Txt(labels[i], 22, Line2, true, center: true);
+                t.VerticalAlignment = VerticalAlignment.Bottom;
+                double a = i / 3.0, b = (i + 1) / 3.0;
+                if (i == 0) Anim(t, UIElement.OpacityProperty, d, (0, 1), (b - 0.03, 1), (b, 0), (0.97, 0), (1, 1));
+                else Anim(t, UIElement.OpacityProperty, d, (0, 0), (a, 0), (a + 0.04, 1), (b - 0.03, 1), (b, 0), (1, 0));
+                times.Children.Add(t);
+            }
+            stage.Children.Add(times);
+            return stage;
+        }
+
+        private static FrameworkElement Nudge(string kind, string title, string text)
+        {
+            var grid = new Grid { Margin = new Thickness(14, 0, 14, 0), Height = 64, VerticalAlignment = VerticalAlignment.Top };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition());
+            grid.Children.Add(new Border { Width = 40, Height = 40, Margin = new Thickness(0, 0, 12, 0), Child = NudgeArt.Build(kind), VerticalAlignment = VerticalAlignment.Center });
+            var col = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            col.Children.Add(Txt(title, 13, Line1, true));
+            var sub = Txt(text, 11, Line2, false);
+            sub.Margin = new Thickness(0, 2, 0, 0);
+            col.Children.Add(sub);
+            Grid.SetColumn(col, 1);
+            grid.Children.Add(col);
+            return grid;
+        }
         /// <summary>O ícone novo, flutuando com um brilho.</summary>
         private static FrameworkElement Icon(Brush accent)
         {

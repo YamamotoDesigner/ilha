@@ -895,6 +895,33 @@
                         </Border>
                         <TextBlock Style="{StaticResource Hint}" Text="{local:T 'A ilha recolhida cresce por um instante para mostrar o aviso.'}"/>
 
+                        <TextBlock Text="{local:T 'BEM-ESTAR'}" Style="{StaticResource Section}"/>
+                        <Border Style="{StaticResource Group}">
+                            <StackPanel>
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Greeting}">
+                                    <StackPanel>
+                                        <TextBlock Text="{local:T 'Saudação do dia'}"/>
+                                        <TextBlock Text="{local:T 'Na primeira vez do dia que você passa o mouse, a ilha diz bom dia pelo seu nome.'}"
+                                                   FontSize="12" Foreground="{DynamicResource Text3}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </CheckBox>
+                                <Border Style="{StaticResource Divider}"/>
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding WellnessNudges}">
+                                    <StackPanel>
+                                        <TextBlock Text="{local:T 'Lembretes de bem-estar'}"/>
+                                        <TextBlock Text="{local:T 'Beber água e esticar as pernas durante o dia, escovar os dentes, pôr o despertador e ir dormir quando fica tarde.'}"
+                                                   FontSize="12" Foreground="{DynamicResource Text3}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </CheckBox>
+                                <Border Style="{StaticResource Divider}"/>
+                                <DockPanel Margin="16,10">
+                                    <TextBox x:Name="UserNameBox" DockPanel.Dock="Right" Style="{StaticResource HexBox}" Width="160" CharacterCasing="Normal" MaxLength="30"
+                                             Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Text="{local:T 'Seu nome'}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
                         <TextBlock Text="{local:T 'ILHA RECOLHIDA'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>

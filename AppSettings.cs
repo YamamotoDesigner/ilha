@@ -17,6 +17,16 @@ namespace Ilha
         public string? Language { get; set; }
         /// <summary>"Dark" ou "Light".</summary>
         public string Theme { get; set; } = "Dark";
+        /// <summary>Como a pessoa quer ser chamada (pedido na primeira abertura).</summary>
+        public string UserName { get; set; } = "";
+        /// <summary>Dia ("yyyy-MM-dd") em que a saudação já apareceu.</summary>
+        public string LastGreeting { get; set; } = "";
+        /// <summary>Saudação na primeira vez do dia.</summary>
+        public bool Greeting { get; set; } = true;
+        /// <summary>Lembretes de bem-estar (água, esticar as pernas, dormir, despertador, dentes).</summary>
+        public bool WellnessNudges { get; set; } = true;
+        /// <summary>Quando cada lembrete apareceu pela última vez.</summary>
+        public Dictionary<string, DateTime> NudgeLog { get; set; } = new();
 
         // Posição
         public string? MonitorDevice { get; set; }
@@ -165,6 +175,8 @@ namespace Ilha
             LiveVolume = d.LiveVolume;
             LiveCharging = d.LiveCharging;
             LiveTrack = d.LiveTrack;
+            Greeting = d.Greeting;
+            WellnessNudges = d.WellnessNudges;
         }
 
         private static string Folder =>

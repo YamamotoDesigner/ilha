@@ -137,6 +137,7 @@ namespace Ilha
                 Duration = t.EndTime - t.StartTime;
                 _position = t.Position - t.StartTime;
                 _positionAt = t.LastUpdatedTime.Year < 2000 ? DateTimeOffset.Now : t.LastUpdatedTime;
+                if (_positionAt > DateTimeOffset.Now) _positionAt = DateTimeOffset.Now;
             }
             catch
             {
@@ -144,6 +145,31 @@ namespace Ilha
             }
         }
 
+        /// <summary>
+        /// Confere a posição com o app uma vez por segundo. Alguns apps só avisam a posição de vez em
+        /// quando; se a estimativa local se afastou mais de meio segundo, volta a seguir o app.
+        /// </summary>
+        public void Resync()
+        {
+            try
+            {
+                var t = _session?.GetTimelineProperties();
+                if (t == null || !IsPlaying) return;
+                var updated = t.LastUpdatedTime.Year < 2000 ? DateTimeOffset.Now : t.LastUpdatedTime;
+                if (updated > DateTimeOffset.Now) updated = DateTimeOffset.Now;
+                var reported = (t.Position - t.StartTime) + (DateTimeOffset.Now - updated);
+                if (Math.Abs((reported - Position).TotalSeconds) > 0.5)
+                {
+                    _position = t.Position - t.StartTime;
+                    _positionAt = updated;
+                    Duration = t.EndTime - t.StartTime;
+                }
+            }
+            catch
+            {
+                // Sessão fechou no meio da leitura.
+            }
+        }
         private async Task RefreshPropertiesAsync()
         {
             var session = _session;

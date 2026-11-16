@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -32,6 +32,8 @@ namespace Ilha
         public WhatsNewWindow(AppSettings settings, string version, ReleaseNotes.Slide[] slides)
         {
             _slides = slides;
+            string first = (settings.UserName ?? "").Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "";
+            WhatsNewArt.UserName = first.Length > 0 ? first : L.T("você");
             _version = version;
             Title = L.T("Novidades da Ilha");
             Width = PageW;
@@ -163,7 +165,7 @@ namespace Ilha
 
             col.Children.Add(new TextBlock
             {
-                Text = L.T(s.Title), FontSize = 26, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Center,
+                Text = s.Art == "hello" ? L.F("Bom dia, {0}!", WhatsNewArt.UserName) : L.T(s.Title), FontSize = 26, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, first ? 4 : 24, 0, 0),
             });
             var body = new TextBlock

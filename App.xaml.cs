@@ -67,15 +67,35 @@ namespace Ilha
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TAB") is { Length: > 0 }) showOnboarding = false;
             if (Environment.GetEnvironmentVariable("ILHA_TEST_ONBOARD") == "1") showOnboarding = true;
 #endif
-            if (showOnboarding)
+            void Continue()
             {
-                var welcome = new OnboardingWindow(settings, replay: false);
-                welcome.Finished += StartIsland;
-                welcome.Show();
+                if (showOnboarding)
+                {
+                    var welcome = new OnboardingWindow(settings, replay: false);
+                    welcome.Finished += StartIsland;
+                    welcome.Show();
+                }
+                else
+                {
+                    StartIsland();
+                }
+            }
+
+            // Primeira abertura (ou atualizou e ainda não tem nome): pede o nome antes de tudo.
+            bool askName = string.IsNullOrWhiteSpace(settings.UserName);
+#if DEBUG
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_TAB") is { Length: > 0 }) askName = false;
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_NAMEWINDOW") == "1") askName = true;
+#endif
+            if (askName)
+            {
+                var ask = new NameWindow(settings);
+                ask.Finished += Continue;
+                ask.Show();
             }
             else
             {
-                StartIsland();
+                Continue();
             }
         }
 

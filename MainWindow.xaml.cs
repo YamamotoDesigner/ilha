@@ -61,6 +61,8 @@ namespace Ilha
         private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromMilliseconds(250) };
         private readonly DispatcherTimer _watch = new() { Interval = TimeSpan.FromSeconds(1.5) };
         private readonly DispatcherTimer _notesSave = new() { Interval = TimeSpan.FromMilliseconds(600) };
+        /// <summary>Barra da música: atualiza 10 vezes por segundo com a ilha aberta (o segundo vira na hora certa).</summary>
+        private readonly DispatcherTimer _progressTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
         private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromHours(6) };
         private readonly UpdateService _updates = new();
         private UpdateService.UpdateInfo? _availableUpdate;
@@ -175,6 +177,8 @@ namespace Ilha
             ClipboardEmpty.Visibility = _clips.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
             InitNotes();
+            InitNudges();
+            _progressTimer.Tick += (_, _) => UpdateProgress();
 
             foreach (var todo in _settings.Todos) _todos.Add(todo);
             TodoItems.ItemsSource = _todos;
@@ -312,6 +316,13 @@ namespace Ilha
                     {
                         ShowPeek((Geometry)FindResource("IcoSpeaker"), true, (Geometry)FindResource("IcoWaves"),
                                  null, "Volume", 0.62, "62", seconds: 30);
+                        return;
+                    }
+                    if (Environment.GetEnvironmentVariable("ILHA_TEST_NUDGE") is { Length: > 0 } nudge)
+                    {
+                        if (nudge == "hello") { _settings.UserName = Environment.GetEnvironmentVariable("ILHA_TEST_NAME") ?? "Lucas"; _settings.LastGreeting = ""; TryGreet(); }
+                        else ShowWellness(nudge);
+                        _nudgeTimer.Interval = TimeSpan.FromSeconds(60);
                         return;
                     }
                     if (testTab == "idle") return; // só a ilha recolhida, esperando avisos
@@ -1130,6 +1141,7 @@ namespace Ilha
         private void Island_MouseEnter(object sender, MouseEventArgs e)
         {
             _collapseTimer.Stop();
+            if (TryGreet()) return; // primeira vez do dia: "Bom dia, Nome!" e depois abre
             if (_settings.HoverDelayMs <= 0) Expand();
             else _expandTimer.Start();
         }
@@ -1168,6 +1180,8 @@ namespace Ilha
             if (_expanded) return;
             _expanded = true;
             if (_peeking) EndPeek(animate: false);
+            if (_nudging) EndNudge(runAfter: false);
+            _progressTimer.Start();
 
             AnimateSize(_expW, _expH, _settings.SpringAnimation);
             Fade(CollapsedView, 0, 100);
@@ -1194,6 +1208,7 @@ namespace Ilha
             if (!_expanded) return;
             _expanded = false;
             _pinned = false;
+            _progressTimer.Stop();
             ExpandedView.IsHitTestVisible = false;
             Fade(ExpandedView, 0, 110);
             UpdateAmbientVisibility(animate: true);
@@ -1217,6 +1232,7 @@ namespace Ilha
             Bars.Visibility = showBars ? Visibility.Visible : Visibility.Collapsed;
             CollapsedTimerText.Visibility = showTimer ? Visibility.Visible : Visibility.Collapsed;
             SetBarsAnimating(showBars && !_expanded);
+            if (_nudging && !_expanded) return; // a saudação/lembrete está ocupando a ilha
 
             string key = $"{any}|{_peeking}|{s.CollapsedWidth}|{s.CollapsedHeight}";
             if (_expanded || (!force && key == _collapsedKey)) return;
@@ -1250,7 +1266,7 @@ namespace Ilha
         private void ShowPeek(Geometry? icon, bool filled, Geometry? icon2, ImageSource? art, string text,
                               double? level, string value, Brush? accent = null, double seconds = 1.8)
         {
-            if (_expanded || _hiddenForFullscreen) return;
+            if (_expanded || _hiddenForFullscreen || _nudging) return;
             PeekGlyph.Data = icon;
             PeekGlyph.Filled = filled;
             PeekGlyph2.Data = icon2;
@@ -1509,11 +1525,13 @@ namespace Ilha
         {
             UpdateTimer();
             WatchVolume();
+            if (_tickCount % 4 == 0) CheckNudges();
             bool everySecond = ++_tickCount % 4 == 0;
             if (everySecond)
             {
                 WatchCharging();
                 _stats.Sample();
+                _media.Resync();
             }
             if (!_expanded) return;
             UpdateClock();
