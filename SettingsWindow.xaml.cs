@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -285,6 +285,12 @@ namespace Ilha
         {
             if (!IsInitialized || _syncing) return;
             _settings.TabPosition = sender == TopTabsRadio ? "Top" : "Side";
+        }
+
+        /// <summary>Abre uma página das configurações (General, Look, Island, Features, Alerts, Updates, About).</summary>
+        public void ShowPage(string name)
+        {
+            if (FindName("Nav" + name) is System.Windows.Controls.RadioButton nav) nav.IsChecked = true;
         }
 
         private void Layout_Checked(object sender, RoutedEventArgs e)

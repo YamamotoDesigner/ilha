@@ -1,4 +1,4 @@
-<Window x:Class="Ilha.OnboardingWindow"
+﻿<Window x:Class="Ilha.OnboardingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Ilha"
@@ -6,7 +6,7 @@
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WinBg}" Foreground="{DynamicResource WinFg}"
         FontFamily="{DynamicResource UiFont}" FontSize="13.5"
-        TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="Grayscale">
+        TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="Grayscale" TextOptions.TextHintingMode="Fixed">
 
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="40" GlassFrameThickness="0" ResizeBorderThickness="0"

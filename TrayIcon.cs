@@ -64,6 +64,20 @@ namespace Ilha
 
         private static Icon CreateIcon()
         {
+            // O ícone do app, no tamanho certo para a bandeja (nítido em qualquer escala de tela).
+            try
+            {
+                var info = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Ilha.ico"));
+                if (info != null)
+                {
+                    using var stream = info.Stream;
+                    return new Icon(stream, Forms.SystemInformation.SmallIconSize);
+                }
+            }
+            catch
+            {
+                // Sem o recurso: desenha o ícone simples abaixo.
+            }
             using var bmp = new Bitmap(32, 32);
             using (var g = Graphics.FromImage(bmp))
             {

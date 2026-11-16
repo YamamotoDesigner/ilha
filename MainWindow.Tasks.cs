@@ -46,6 +46,7 @@ namespace Ilha
             int total = _tasks.Count, done = _tasks.Count(t => t.Done);
             TasksCount.Text = total == 0 ? "" : done == total ? L.T("TUDO FEITO") : L.F("{0} DE {1}", done, total);
             TasksEmpty.Visibility = total == 0 ? Visibility.Visible : Visibility.Collapsed;
+            QueueDynamicResize();
             double full = ((FrameworkElement)TasksProgress.Parent).ActualWidth;
             double to = total == 0 ? 0 : full * done / total;
             if (animate && !ReduceMotion)

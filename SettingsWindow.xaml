@@ -6,7 +6,7 @@
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WinBg}" Foreground="{DynamicResource WinFg}"
         FontFamily="{DynamicResource UiFont}" FontSize="13.5"
-        TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="Grayscale">
+        TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="Grayscale" TextOptions.TextHintingMode="Fixed">
 
     <!-- Sem a barra de título do Windows: a janela inteira é desenhada pelo Ilha -->
     <WindowChrome.WindowChrome>
@@ -352,7 +352,7 @@
         <Border Background="{DynamicResource SideBg}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
             <DockPanel Margin="14,16,14,16">
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,2,0,22">
-                    <Image Source="pack://application:,,,/Ilha.ico" Width="34" Height="34"
+                    <Image Source="pack://application:,,,/Assets/icon.png" Width="34" Height="34"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                     <StackPanel Margin="11,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="{local:T 'Ilha'}" FontSize="16" FontWeight="SemiBold"/>
@@ -931,7 +931,7 @@
                     <StackPanel x:Name="PageAbout" Visibility="Collapsed" Tag="{local:T 'O topo da sua tela, finalmente útil.'}">
                         <Border Style="{StaticResource Group}" Margin="0,22,0,0" Padding="20">
                             <DockPanel>
-                                <Image Source="pack://application:,,,/Ilha.ico" Width="56" Height="56"
+                                <Image Source="pack://application:,,,/Assets/icon.png" Width="56" Height="56"
                                        RenderOptions.BitmapScalingMode="HighQuality"/>
                                 <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
                                     <TextBlock Text="{local:T 'Ilha'}" FontSize="20" FontWeight="SemiBold"/>

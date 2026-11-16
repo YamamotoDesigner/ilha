@@ -37,6 +37,7 @@
     <!-- Inter (SIL Open Font License, ver Fonts\Inter-LICENSE.txt) -->
     <Resource Include="Fonts\*.ttf" />
     <Resource Include="Ilha.ico" />
+    <Resource Include="Assets\icon.png" />
   </ItemGroup>
 
 </Project>

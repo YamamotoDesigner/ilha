@@ -193,6 +193,7 @@ namespace Ilha
             if (_finished) return;
             _finished = true;
             _settings.OnboardingDone = true;
+            _settings.LastSeenVersion = WhatsNewWindow.CurrentVersion; // instalação nova: sem tela de novidades
             _settings.Language = L.Lang;
             _settings.Save();
             _demo.Stop();

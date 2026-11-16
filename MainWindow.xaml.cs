@@ -122,6 +122,8 @@ namespace Ilha
             {
                 // Dados de exemplo (só na memória do teste).
                 _settings.ShowMedia = _settings.ShowCalendar = _settings.ShowTasks = _settings.ShowNotes = _settings.ShowTimer = true;
+                foreach (var c in new[] { "Rua das Flores, 120", "https://yamamotodesigner.github.io/ilha", "Reunião às 15h na sala 2" })
+                    _clips.Add(new ClipItem(c));
                 _settings.DailyTasks = new List<TodoItem>
                 {
                     new() { Text = "Responder e-mails", Done = true, Date = DateTime.Today.ToString("yyyy-MM-dd") },
@@ -166,7 +168,11 @@ namespace Ilha
 
             ClipboardItems.ItemsSource = _clips;
             _clips.CollectionChanged += (_, _) =>
+            {
                 ClipboardEmpty.Visibility = _clips.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+                QueueDynamicResize();
+            };
+            ClipboardEmpty.Visibility = _clips.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
             InitNotes();
 
@@ -248,6 +254,10 @@ namespace Ilha
                 AutoCheckUpdates();
             };
             firstCheck.Start();
+            // Primeira abertura depois de atualizar: mostra as novidades desta versão.
+            var whatsNew = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.2) };
+            whatsNew.Tick += (_, _) => { whatsNew.Stop(); ShowWhatsNewIfUpdated(); };
+            whatsNew.Start();
 #if DEBUG
             // Captura de tela de desenvolvimento: abre a ilha já fixada numa aba.
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TAB") is { Length: > 0 } testTab)
@@ -609,6 +619,7 @@ namespace Ilha
             double kw = Math.Clamp(_settings.OpenWidth / DefaultOpenWidth, 0.7, 1.6);
             double kh = Math.Clamp(_settings.OpenHeight / DefaultOpenHeight, 0.7, 1.6);
             _overviewK = 1;
+            _dynamicHeight = false;
             if (InOverview)
             {
                 // Ilha completa: tudo lado a lado. Se não couber na tela, encolhe tudo por igual.
@@ -623,6 +634,15 @@ namespace Ilha
             {
                 _expW = Math.Clamp(bw * kw, MinFloatWidth, MaxFloatWidth);
                 _expH = Math.Clamp(bh * kh, MinFloatHeight, MaxFloatHeight);
+                // Ilha dinâmica: copiados, tarefas, lembretes e páginas ditam a altura.
+                // Nunca mais estreita que a barra de abas (centralizada) com o relógio e os botões dos lados.
+                int tabs = TabBar.Children.OfType<RadioButton>().Count(t => t.Visibility == Visibility.Visible);
+                double tabsW = TabBar.Visibility == Visibility.Visible ? tabs * 38 + 34 : 0;
+                _expW = Math.Min(MaxFloatWidth, Math.Max(_expW, ContentPadX + tabsW + 2 * 92));
+                var dynamic = DynamicPageHeight(_currentTab);
+                _dynamicHeight = dynamic != null;
+                if (dynamic is double ph)
+                    _expH = Math.Clamp(ContentPadY + HeaderTop + PageGap + ph, 120, MaxFloatHeight);
             }
             ExpandedView.Width = _expW;
             ExpandedView.Height = _expH;
@@ -641,7 +661,9 @@ namespace Ilha
         {
             var s = _settings;
             double cw = _expW - ContentPadX, ch = _expH - ContentPadY;
-            double k = InOverview ? _overviewK : Math.Min(1, Math.Min(cw / ContentMinWidth, ch / ContentMinHeight));
+            double k = InOverview ? _overviewK
+                : _dynamicHeight ? Math.Min(1, cw / ContentMinWidth) // a altura já é a do conteúdo
+                : Math.Min(1, Math.Min(cw / ContentMinWidth, ch / ContentMinHeight));
             ContentScale.ScaleX = ContentScale.ScaleY = k;
             double vw = cw / k, vh = ch / k; // tamanho "virtual" em que o layout é montado
             ContentRoot.Width = vw;
@@ -966,6 +988,25 @@ namespace Ilha
             welcome.Show();
         }
 
+        /// <summary>Uma vez por versão: a tela "Novidades" (se a versão tiver notas).</summary>
+        private void ShowWhatsNewIfUpdated()
+        {
+            string version = WhatsNewWindow.CurrentVersion;
+            bool force = false;
+#if DEBUG
+            force = Environment.GetEnvironmentVariable("ILHA_TEST_WHATSNEW") == "1";
+            if (!force && Environment.GetEnvironmentVariable("ILHA_TEST_TAB") is { Length: > 0 }) return;
+#endif
+            if (!force && _settings.LastSeenVersion == version) return;
+            _settings.LastSeenVersion = version;
+            _settings.Save();
+            if (ReleaseNotes.For(version) is not { } slides) return;
+            // Na frente das outras janelas (o app abre sozinho depois da atualização, sem foco).
+            var window = new WhatsNewWindow(_settings, version, slides) { Topmost = true };
+            window.Show();
+            window.Activate();
+        }
+
         private void ApplySettings()
         {
             var s = _settings;
@@ -1076,7 +1117,7 @@ namespace Ilha
         // ───────────── Expandir / recolher ─────────────
 
         private bool ShouldStayOpen() =>
-            _draggingOut || _pinned || _timerAlerting || Island.IsMouseOver ||
+            _draggingOut || _pinned || _timerAlerting || _scrubbing || Island.IsMouseOver ||
             _prompterLocked || _prompterRunning || _prompterCounting ||
             (IsForeground && Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase);
 
@@ -1561,24 +1602,62 @@ namespace Ilha
             }
 
             ProgressRow.Visibility = Visibility.Visible;
+            DurationText.Text = FormatTime(duration);
+            if (_scrubbing) return; // enquanto arrasta, a barra segue o dedo, não a música
             var position = _media.Position;
             double ratio = Math.Clamp(position.TotalSeconds / duration.TotalSeconds, 0, 1);
             ProgressFill.Width = ProgressTrack.ActualWidth * ratio;
             PositionText.Text = FormatTime(position);
-            DurationText.Text = FormatTime(duration);
         }
 
-        private async void Progress_MouseDown(object sender, MouseButtonEventArgs e)
+        // Barra da música: segurar e arrastar escolhe o ponto exato; a música só pula ao soltar.
+        private bool _scrubbing;
+        private double _scrubRatio;
+
+        private void Progress_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (ProgressTrack.ActualWidth <= 0) return;
-            double ratio = Math.Clamp(e.GetPosition(ProgressTrack).X / ProgressTrack.ActualWidth, 0, 1);
+            if (ProgressTrack.ActualWidth <= 0 || _media.Duration <= TimeSpan.Zero) return;
             e.Handled = true;
+            _scrubbing = true;
+            ProgressHit.CaptureMouse();
+            ScrubTo(e.GetPosition(ProgressTrack).X);
+        }
+
+        private void Progress_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_scrubbing) ScrubTo(e.GetPosition(ProgressTrack).X);
+        }
+
+        private void Progress_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (!_scrubbing) return;
+            ScrubTo(e.GetPosition(ProgressTrack).X);
+            ProgressHit.ReleaseMouseCapture(); // LostMouseCapture faz o resto
+        }
+
+        private async void Progress_LostCapture(object sender, MouseEventArgs e)
+        {
+            if (!_scrubbing) return;
+            double ratio = _scrubRatio;
             await _media.SeekAsync(TimeSpan.FromSeconds(_media.Duration.TotalSeconds * ratio));
+            _scrubbing = false;
+            if (!ProgressHit.IsMouseOver) SetProgressThickness(3);
             UpdateProgress();
         }
 
-        private void Progress_MouseEnter(object sender, MouseEventArgs e) => SetProgressThickness(6);
-        private void Progress_MouseLeave(object sender, MouseEventArgs e) => SetProgressThickness(3);
+        private void ScrubTo(double x)
+        {
+            double w = ProgressTrack.ActualWidth;
+            _scrubRatio = Math.Clamp(x / w, 0, 1);
+            ProgressFill.Width = w * _scrubRatio;
+            PositionText.Text = FormatTime(TimeSpan.FromSeconds(_media.Duration.TotalSeconds * _scrubRatio));
+        }
+
+        private void Progress_MouseEnter(object sender, MouseEventArgs e) => SetProgressThickness(7);
+        private void Progress_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (!_scrubbing) SetProgressThickness(3);
+        }
 
         private void SetProgressThickness(double h)
         {
@@ -1867,6 +1946,7 @@ namespace Ilha
             int open = shown.Count(t => !t.Done);
             TodoCount.Text = shown.Count == 0 ? "" : open == 0 ? L.T("TUDO FEITO") : L.F("{0} A FAZER", open);
             TodoEmpty.Text = L.T("Nada marcado para este dia.");
+            QueueDynamicResize();
             TodoEmpty.Visibility = shown.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 

@@ -59,6 +59,7 @@ namespace Ilha
             NotePagesPanel.Children.Clear();
             var pages = _settings.NotePages.OrderByDescending(p => p.Updated).ToList();
             NotesEmpty.Visibility = pages.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            QueueDynamicResize();
             double avail = NotePagesScroll.ActualWidth;
             if (avail <= 0) return;
             int cols = avail >= 330 ? 2 : 1;
@@ -142,6 +143,7 @@ namespace Ilha
             UpdateNoteChrome();
             SwapNoteViews(NoteEditor, NotesListView, forward: true);
             NoteBody.CaretPosition = NoteBody.Document.ContentEnd;
+            QueueDynamicResize();
         }
 
         private void NoteBack_Click(object sender, RoutedEventArgs e) => CloseNote();

@@ -93,6 +93,8 @@ namespace Ilha
         public bool LiveUpdate { get; set; } = true;
         /// <summary>Botão de curtir a música do Spotify.</summary>
         public bool EnableLike { get; set; } = true;
+        /// <summary>Última versão cuja tela de novidades já foi vista.</summary>
+        public string LastSeenVersion { get; set; } = "";
 
         // Avisos rápidos na ilha recolhida
         public bool LiveVolume { get; set; } = true;

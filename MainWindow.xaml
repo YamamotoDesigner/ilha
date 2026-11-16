@@ -7,7 +7,7 @@
         ResizeMode="NoResize" Topmost="True" ShowInTaskbar="False" ShowActivated="False"
         FontFamily="{DynamicResource UiFont}" FontSize="13" Foreground="{DynamicResource Ink_FF}"
         UseLayoutRounding="False"
-        TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="Grayscale">
+        TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="Grayscale" TextOptions.TextHintingMode="Fixed">
 
     <Window.Resources>
         <SolidColorBrush x:Key="Accent" Color="#7CE3A1"/>
@@ -674,6 +674,8 @@
                                                                    Typography.NumeralAlignment="Tabular"/>
                                                         <Grid x:Name="ProgressHit" Grid.Column="1" Height="14" Background="Transparent"
                                                               Cursor="Hand" MouseLeftButtonDown="Progress_MouseDown"
+                                                              MouseMove="Progress_MouseMove" MouseLeftButtonUp="Progress_MouseUp"
+                                                              LostMouseCapture="Progress_LostCapture"
                                                               MouseEnter="Progress_MouseEnter" MouseLeave="Progress_MouseLeave">
                                                             <Border x:Name="ProgressTrack" Height="3" CornerRadius="1.5"
                                                                     Background="{DynamicResource Ink_1F}" VerticalAlignment="Center"/>
@@ -779,8 +781,6 @@
                                                 </DockPanel>
                                             </Border>
                                         </Grid>
-
-
                                     </Grid>
 
                                     <!-- ── Prateleira (aba própria) ── -->
@@ -1262,9 +1262,17 @@
                                                                 ToolTip="{Binding Text}"
                                                                 MouseLeftButtonUp="ClipItem_Click">
                                                             <DockPanel>
-                                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Time}"
-                                                                           FontSize="11" Foreground="{DynamicResource Tertiary}"
-                                                                           Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                                <Grid DockPanel.Dock="Right" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                                    <TextBlock x:Name="Time" Text="{Binding Time}" FontSize="11"
+                                                                               Foreground="{DynamicResource Tertiary}" HorizontalAlignment="Right"
+                                                                               VerticalAlignment="Center"/>
+                                                                    <Button x:Name="Remove" Style="{StaticResource IconButton}" Width="22" Height="20"
+                                                                            Margin="0,-3,-6,-3" HorizontalAlignment="Right" Visibility="Hidden"
+                                                                            Click="ClipRemove_Click" ToolTip="{local:T 'Excluir este item'}">
+                                                                        <local:Glyph Data="{StaticResource IcoClose}" Size="10" Thickness="2.6"
+                                                                                     Foreground="{DynamicResource Ink_A6}"/>
+                                                                    </Button>
+                                                                </Grid>
                                                                 <TextBlock Text="{Binding Preview}" FontSize="12.5"
                                                                            TextTrimming="CharacterEllipsis"/>
                                                             </DockPanel>
@@ -1272,6 +1280,8 @@
                                                         <DataTemplate.Triggers>
                                                             <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
                                                                 <Setter TargetName="Row" Property="Background" Value="{DynamicResource Ink_22}"/>
+                                                                <Setter TargetName="Remove" Property="Visibility" Value="Visible"/>
+                                                                <Setter TargetName="Time" Property="Visibility" Value="Hidden"/>
                                                             </Trigger>
                                                         </DataTemplate.Triggers>
                                                     </DataTemplate>
