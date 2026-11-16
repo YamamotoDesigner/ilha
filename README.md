@@ -29,11 +29,13 @@ que está tocando, a sua agenda, um timer, notas e os arquivos que você quer te
 | | |
 |---|---|
 | **Música** | Capa, título, progresso e controles do que estiver tocando: Spotify, YouTube no navegador, Media Player e qualquer app compatível com o Windows. No Spotify, o coração salva a faixa nas Músicas Curtidas. |
-| **Agenda e lembretes** | Calendário em semanas que rolam: toque num dia e deixe um lembrete para ele. |
+| **Agenda e lembretes** | Os dias passam de lado (rodinha do mouse ou clique) e cada dia mostra os seus lembretes. |
+| **Tarefas do dia** | Lista com check e barrinha de progresso; as concluídas saem no dia seguinte. |
 | **Foco** | Modos Foco, Pausa e Pausa longa, além de atalhos de 1 min a 1 h 30. A contagem aparece na ilha recolhida e ela avisa quando acabar. |
 | **Prateleira** | Uma aba só para arquivos: arraste para a ilha e solte onde quiser depois. Downloads concluídos já aparecem lá. |
-| **Notas** | Um bloco sempre à mão, salvo automaticamente. |
-| **Área de transferência** | Histórico do que você copiou; clique para copiar de novo. Fica só na memória. |
+| **Notas** | Páginas coloridas, como no Notion, com negrito, itálico e sublinhado. Salvas automaticamente. |
+| **Área de transferência** | Histórico do que você copiou; clique para copiar de novo ou exclua itens um por um. Fica só na memória. |
+| **Ilha completa** | Opcional: música, agenda, tarefas, notas e timer lado a lado numa ilha larga. |
 | **Teleprompter** | O roteiro rola logo abaixo da câmera, com contagem 3-2-1, linha atual em destaque, velocidade ajustável e lembretes como [pausa]. |
 | **Espelho** | Uma prévia redonda da câmera, que só fica ligada enquanto a aba está aberta. |
 | **Monitor do sistema** | Uso de processador e memória com gráfico dos últimos segundos. |
