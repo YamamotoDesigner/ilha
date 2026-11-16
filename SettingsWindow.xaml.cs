@@ -293,6 +293,13 @@ namespace Ilha
             if (FindName("Nav" + name) is System.Windows.Controls.RadioButton nav) nav.IsChecked = true;
         }
 
+        private void WhatsNew_Click(object sender, RoutedEventArgs e)
+        {
+            string version = WhatsNewWindow.CurrentVersion;
+            if (ReleaseNotes.For(version) is not { } slides) return;
+            new WhatsNewWindow(_settings, version, slides) { Owner = this }.Show();
+        }
+
         private void Layout_Checked(object sender, RoutedEventArgs e)
         {
             if (!IsInitialized || _syncing) return;

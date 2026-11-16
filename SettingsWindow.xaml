@@ -953,6 +953,8 @@
                         </StackPanel>
                         <Button Style="{StaticResource SoftButton}" HorizontalAlignment="Left" Margin="0,10,0,0"
                                 Content="{local:T 'Ver a apresentação de novo'}" Click="Onboarding_Click"/>
+                        <Button Style="{StaticResource SoftButton}" HorizontalAlignment="Left" Margin="0,8,0,0"
+                                Content="{local:T 'Ver as novidades desta versão'}" Click="WhatsNew_Click"/>
                         <TextBlock Style="{StaticResource Hint}" Margin="4,14,4,0"
                                    Text="{local:T 'Restaurar padrões volta a aparência e o comportamento ao original, mas mantém notas, tarefas e arquivos da prateleira.'}"/>
                     </StackPanel>

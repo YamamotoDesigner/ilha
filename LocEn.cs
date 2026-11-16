@@ -110,6 +110,7 @@ namespace Ilha
             ["Dentista · 15h"] = "Dentist · 3 pm",
             ["Rua das Flores, 120"] = "120 Flower St",
             ["Reunião às 15h"] = "Meeting at 3 pm",
+            ["Ver as novidades desta versão"] = "See what's new in this version",
             ["Tem lembretes neste dia"] = "Has reminders on this day",
             ["Nada marcado para este dia. Escreva abaixo para criar um lembrete."] = "Nothing planned for this day. Type below to add a reminder.",
             ["Escolher recursos"] = "Choose features",
