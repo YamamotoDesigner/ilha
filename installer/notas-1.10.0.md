@@ -9,4 +9,4 @@
 - **Ícone novo**, texto mais nítido e uma tela de novidades depois de cada atualização (também em Configurações → Sobre).
 
 Windows: baixe o **Ilha-Setup-1.10.0.exe**. Quem já tem a Ilha instalada recebe a atualização sozinho.
-Mac (beta): estas novidades chegam ao Mac numa próxima versão; o instalador do Mac continua na versão 1.9.5.
+Mac (beta): quem já tem a Ilha atualiza com um clique na própria ilha. Quem ainda não tem, baixe o **Ilha-mac-1.10.0.dmg**. No Mac, a tela de novidades aparece depois de atualizar.
