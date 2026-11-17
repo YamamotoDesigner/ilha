@@ -40,6 +40,8 @@ namespace Ilha
                 "dynamic" => Dynamic(a),
                 "hello" => Hello(),
                 "wellness" => Wellness(),
+                "slim" => Slim(a),
+                "convert" => Convert(a),
                 _ => Icon(a),
             };
             // Palco: um cartão suave com um brilho da cor de destaque atrás da ilha.
@@ -480,6 +482,102 @@ namespace Ilha
             return stage;
         }
 
+        /// <summary>Uma janela abre por trás e a ilha vira um risco; o mouse passa e ela abre.</summary>
+        private static FrameworkElement Slim(Brush accent)
+        {
+            const double d = 6;
+            var stage = new Grid();
+            // Janela de um app que entra por baixo
+            var win = new Border
+            {
+                Width = 360, Height = 170, CornerRadius = new CornerRadius(10), Background = Brush(0x26, 0x80, 0x84, 0x90),
+                BorderBrush = Brush(0x40, 0x80, 0x84, 0x90), BorderThickness = new Thickness(1), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 22, 0, 0),
+            };
+            var winContent = new StackPanel { Margin = new Thickness(16, 14, 16, 0) };
+            winContent.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { new Ellipse { Width = 7, Height = 7, Fill = Gray(0x50) }, Spaced(new Ellipse { Width = 7, Height = 7, Fill = Gray(0x50) }, 0, 5), Spaced(new Ellipse { Width = 7, Height = 7, Fill = Gray(0x50) }, 0, 5) } });
+            winContent.Children.Add(Spaced(Bar(200, 7, Gray(0x70)), 22));
+            winContent.Children.Add(Spaced(Bar(280, 5, Gray(0x50)), 12));
+            winContent.Children.Add(Spaced(Bar(250, 5, Gray(0x50)), 8));
+            winContent.Children.Add(Spaced(Bar(180, 5, Gray(0x50)), 8));
+            win.Child = winContent;
+            var slide = new TranslateTransform();
+            win.RenderTransform = slide;
+            Anim(slide, TranslateTransform.YProperty, d, (0, 220), (0.1, 220), (0.24, 0), (0.92, 0), (1, 220));
+            Anim(win, UIElement.OpacityProperty, d, (0, 0), (0.1, 0), (0.2, 1), (0.92, 1), (1, 0));
+            stage.Children.Add(win);
+
+            var island = Island(130, 28, top: 0);
+            island.CornerRadius = new CornerRadius(0, 0, 14, 14);
+            island.Effect = null;
+            Anim(island, FrameworkElement.WidthProperty, d, (0, 130), (0.24, 130), (0.32, 64), (0.56, 64), (0.64, 300), (0.8, 300), (0.86, 64), (0.92, 64), (1, 130));
+            Anim(island, FrameworkElement.HeightProperty, d, (0, 28), (0.24, 28), (0.32, 5), (0.56, 5), (0.64, 64), (0.8, 64), (0.86, 5), (0.92, 5), (1, 28));
+            var mini = new Grid { Height = 28, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(10, 0, 10, 0) };
+            mini.Children.Add(new Border { Width = 16, Height = 16, CornerRadius = new CornerRadius(4), Background = ArtBrush(), HorizontalAlignment = HorizontalAlignment.Left });
+            mini.Children.Add(Bars(accent, HorizontalAlignment.Right));
+            Anim(mini, UIElement.OpacityProperty, d, (0, 1), (0.24, 1), (0.28, 0), (0.94, 0), (1, 1));
+            var open = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(14, 0, 14, 0), VerticalAlignment = VerticalAlignment.Center, Opacity = 0 };
+            open.Children.Add(new Border { Width = 38, Height = 38, CornerRadius = new CornerRadius(8), Background = ArtBrush() });
+            open.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), Children = { Bar(120, 7, Line1), Spaced(Bar(80, 5, Line2), 7) } });
+            Anim(open, UIElement.OpacityProperty, d, (0, 0), (0.62, 0), (0.66, 1), (0.78, 1), (0.82, 0), (1, 0));
+            island.Child = new Grid { Children = { mini, open } };
+            stage.Children.Add(island);
+            stage.Children.Add(Cursor(d, (0, 330, 200), (0.4, 330, 200), (0.56, 222, 3), (0.8, 222, 20), (0.9, 330, 200), (1, 330, 200)));
+            return stage;
+        }
+
+        /// <summary>Um arquivo é arrastado até a ilha: ela chacoalha, um traço a contorna e o PDF fica pronto.</summary>
+        private static FrameworkElement Convert(Brush accent)
+        {
+            const double d = 6;
+            const double iw = 300, ih = 92;
+            var stage = new Grid();
+            var shake = new TranslateTransform();
+            var holder = new Grid { Width = iw, Height = ih, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top, RenderTransform = shake };
+            var island = Island(iw, ih, top: 0);
+            island.CornerRadius = new CornerRadius(0, 0, 20, 20);
+            holder.Children.Add(island);
+
+            // Os dois cartões da pergunta
+            var ask = new Grid { Margin = new Thickness(12, 12, 12, 12) };
+            ask.ColumnDefinitions.Add(new ColumnDefinition());
+            ask.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
+            ask.ColumnDefinitions.Add(new ColumnDefinition());
+            var shelf = new Border { CornerRadius = new CornerRadius(10), Background = Card, Child = Txt(L.T("Guardar"), 11.5, Line2, false, center: true) };
+            var conv = new Border { CornerRadius = new CornerRadius(10), Background = Card, BorderBrush = accent, BorderThickness = new Thickness(1), Child = Txt(L.T("Converter"), 11.5, Line1, true, center: true) };
+            Grid.SetColumn(conv, 2);
+            ask.Children.Add(shelf);
+            ask.Children.Add(conv);
+            Anim(ask, UIElement.OpacityProperty, d, (0, 0), (0.12, 0), (0.18, 1), (0.42, 1), (0.46, 0), (1, 0));
+
+            // Resultado: arquivo pronto
+            var done = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(18, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center, Opacity = 0 };
+            done.Children.Add(new Border { Width = 34, Height = 42, CornerRadius = new CornerRadius(6), Background = Card, BorderBrush = Line3, BorderThickness = new Thickness(1), Child = Txt("PDF", 9.5, accent, true, center: true) });
+            done.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), Children = { Txt("viagem.pdf", 12.5, Line1, true), Spaced(Txt(L.T("Conversão pronta"), 10.5, Line2, false), 3) } });
+            Anim(done, UIElement.OpacityProperty, d, (0, 0), (0.52, 0), (0.58, 1), (0.9, 1), (0.95, 0), (1, 0));
+            island.Child = new Grid { Children = { ask, done } };
+
+            // Traço que se desenha em volta depois de soltar
+            var stroke = new Rectangle { Width = iw + 6, Height = ih + 6, RadiusX = 22, RadiusY = 22, Stroke = accent, StrokeThickness = 1.6, Margin = new Thickness(-3, -3, -3, -3), IsHitTestVisible = false };
+            double perim = (2 * (iw + ih) + 6) / 1.6;
+            stroke.StrokeDashArray = new DoubleCollection { perim, perim };
+            Anim(stroke, Shape.StrokeDashOffsetProperty, d, (0, perim), (0.47, perim), (0.6, 0), (1, 0));
+            Anim(stroke, UIElement.OpacityProperty, d, (0, 0), (0.46, 0), (0.48, 1), (0.66, 1), (0.76, 0), (1, 0));
+            holder.Children.Add(stroke);
+            Anim(shake, TranslateTransform.XProperty, d, (0, 0), (0.45, 0), (0.46, -5), (0.47, 5), (0.48, -3), (0.49, 3), (0.5, 0), (1, 0));
+            stage.Children.Add(holder);
+
+            // Arquivo arrastado junto com o ponteiro
+            var file = new Border { Width = 28, Height = 34, CornerRadius = new CornerRadius(5), Background = ArtBrush(), BorderBrush = Line2, BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+            var fm = new TranslateTransform();
+            file.RenderTransform = fm;
+            Anim(fm, TranslateTransform.XProperty, d, (0, 330), (0.1, 330), (0.4, 262), (1, 262));
+            Anim(fm, TranslateTransform.YProperty, d, (0, 190), (0.1, 190), (0.4, 40), (1, 40));
+            Anim(file, UIElement.OpacityProperty, d, (0, 0), (0.06, 0), (0.1, 1), (0.43, 1), (0.46, 0), (1, 0));
+            stage.Children.Add(new Canvas { IsHitTestVisible = false, Children = { file } });
+            stage.Children.Add(Cursor(d, (0, 344, 206), (0.1, 344, 206), (0.4, 276, 56), (0.6, 276, 56), (0.85, 344, 206), (1, 344, 206)));
+            return stage;
+        }
+
         private static FrameworkElement Nudge(string kind, string title, string text)
         {
             var grid = new Grid { Margin = new Thickness(14, 0, 14, 0), Height = 64, VerticalAlignment = VerticalAlignment.Top };
@@ -629,6 +727,7 @@ namespace Ilha
 
         private static SolidColorBrush Brush(byte a, byte r, byte g, byte b) => new(Color.FromArgb(a, r, g, b));
         private static SolidColorBrush Brush(byte r, byte g, byte b) => new(Color.FromRgb(r, g, b));
+        private static SolidColorBrush Gray(byte a) => new(Color.FromArgb(a, 0x80, 0x84, 0x90));
 
         private static T Frozen<T>(T f) where T : Freezable { f.Freeze(); return f; }
 

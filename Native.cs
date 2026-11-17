@@ -101,6 +101,63 @@ namespace Ilha
                    r.Right >= monitor.Right && r.Bottom >= monitor.Bottom;
         }
 
+        // ───────────── App em primeiro plano (ilha discreta) ─────────────
+
+        public delegate void WinEventProc(IntPtr hook, uint evt, IntPtr hwnd, int idObject, int idChild, uint thread, uint time);
+
+        [DllImport("user32.dll")] private static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr module, WinEventProc proc, uint process, uint thread, uint flags);
+        [DllImport("user32.dll")] private static extern bool UnhookWinEvent(IntPtr hook);
+        [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+        [DllImport("user32.dll")] private static extern short GetAsyncKeyState(int key);
+        [DllImport("user32.dll")] private static extern bool GetCursorPos(out POINT point);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT { public int X, Y; }
+
+        /// <summary>Avisa (na própria thread da interface) sempre que outra janela vem para a frente.</summary>
+        public static IntPtr WatchForeground(WinEventProc callback) =>
+            SetWinEventHook(0x0003, 0x0003, IntPtr.Zero, callback, 0, 0, 0x0000 | 0x0002); // EVENT_SYSTEM_FOREGROUND, fora do processo, ignora o próprio
+
+        public static void StopWatching(IntPtr hook)
+        {
+            if (hook != IntPtr.Zero) UnhookWinEvent(hook);
+        }
+
+        /// <summary>
+        /// true: a área de trabalho está na frente; false: há um app na frente;
+        /// null: algo passageiro (barra de tarefas, menu Iniciar, a própria ilha) — mantém como estava.
+        /// </summary>
+        public static bool? IsDesktopInFront()
+        {
+            IntPtr fg = GetForegroundWindow();
+            if (fg == IntPtr.Zero) return null;
+            GetWindowThreadProcessId(fg, out uint pid);
+            if (pid == (uint)Environment.ProcessId) return null;
+            if (fg == GetShellWindow()) return true;
+
+            var cls = new StringBuilder(96);
+            GetClassName(fg, cls, cls.Capacity);
+            return cls.ToString() switch
+            {
+                "Progman" or "WorkerW" => true,
+                "Shell_TrayWnd" or "Shell_SecondaryTrayWnd" or "NotifyIconOverflowWindow" or
+                "TopLevelWindowForOverflowXamlIsland" or "Windows.UI.Core.CoreWindow" or
+                "XamlExplorerHostIslandWindow" or "MultitaskingViewFrame" or "ForegroundStaging" or
+                "TaskListThumbnailWnd" or "Shell_InputSwitchTopLevelWindow" or "#32768" => null,
+                _ => false,
+            };
+        }
+
+        public static bool LeftButtonDown => (GetAsyncKeyState(0x01) & 0x8000) != 0;
+
+        public static POINT CursorPosition()
+        {
+            GetCursorPos(out POINT p);
+            return p;
+        }
+
+        public static bool WindowRect(IntPtr hwnd, out RECT rect) => GetWindowRect(hwnd, out rect);
+
         /// <summary>Ícone do shell para um arquivo ou pasta.</summary>
         public static ImageSource? GetShellIcon(string path)
         {

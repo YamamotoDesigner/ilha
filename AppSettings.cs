@@ -31,6 +31,8 @@ namespace Ilha
         // Posição
         public string? MonitorDevice { get; set; }
         public bool HideOnFullscreen { get; set; } = true;
+        /// <summary>Com um app na frente, a ilha recolhida vira só um risco no topo (normal na área de trabalho).</summary>
+        public bool AutoSlim { get; set; } = true;
 
         // Aparência
         /// <summary>"Glass" (vidro com desfoque) ou "Solid" (cor sólida).</summary>
@@ -84,6 +86,8 @@ namespace Ilha
         // Abas e recursos
         public bool ShowMedia { get; set; } = true;
         public bool ShowShelf { get; set; } = true;
+        /// <summary>Conversor de arquivos (solte na ilha e escolha o formato).</summary>
+        public bool ShowConverter { get; set; } = true;
         public bool ShowNotes { get; set; } = true;
         public bool ShowTasks { get; set; } = true;
         /// <summary>Música: botões de aleatório e repetir.</summary>
@@ -129,6 +133,8 @@ namespace Ilha
         {
             var d = new AppSettings();
             HideOnFullscreen = d.HideOnFullscreen;
+            AutoSlim = d.AutoSlim;
+            ShowConverter = d.ShowConverter;
             Material = d.Material;
             GlassTint = d.GlassTint;
             IslandColor = d.IslandColor;

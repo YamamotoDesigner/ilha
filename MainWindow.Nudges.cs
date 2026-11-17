@@ -42,6 +42,7 @@ namespace Ilha
             _afterNudge = after;
             _nudging = true;
             AnimateSize(width, NudgeHeight, spring: _settings.SpringAnimation);
+            Fade(SlimFill, 0, 100);
             Fade(CollapsedView, 0, 120);
             Fade(PeekView, 0, 100);
             Fade(NudgeView, 1, 260, delayMs: 140);

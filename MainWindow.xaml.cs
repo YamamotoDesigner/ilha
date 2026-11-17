@@ -178,6 +178,7 @@ namespace Ilha
 
             InitNotes();
             InitNudges();
+            InitConvert();
             _progressTimer.Tick += (_, _) => UpdateProgress();
 
             foreach (var todo in _settings.Todos) _todos.Add(todo);
@@ -245,6 +246,7 @@ namespace Ilha
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
             ApplySettings();
+            InitSlim();
             UpdateMedia();
             UpdateTimerUi();
             _tick.Start();
@@ -330,6 +332,26 @@ namespace Ilha
                     Expand();
                     foreach (var tabButton in TabBar.Children.OfType<RadioButton>())
                         if ((string)tabButton.Tag == testTab) tabButton.IsChecked = true;
+                    // Conversor: ILHA_TEST_CONVERT="arquivo" carrega; ILHA_TEST_CONVERT_RUN="png" já converte;
+                    // ILHA_TEST_DROP=1 mostra a pergunta de arrastar e ILHA_TEST_CONNECT=1 toca o encaixe.
+                    if (testTab == "convert" && Environment.GetEnvironmentVariable("ILHA_TEST_CONVERT") is { Length: > 0 } convertFile)
+                    {
+                        LoadConvert(convertFile.Split('|'));
+                        if (Environment.GetEnvironmentVariable("ILHA_TEST_CONVERT_RUN") is { Length: > 0 } run &&
+                            ConvertOptions.Children.OfType<Button>().FirstOrDefault(b => (string)b.Tag == run) is { } chip)
+                            ConvertOption_Click(chip, new RoutedEventArgs());
+                    }
+                    if (Environment.GetEnvironmentVariable("ILHA_TEST_DROP") is { Length: > 0 } dropZone)
+                    {
+                        ShowDropOverlay(true);
+                        SetDropZone(dropZone);
+                    }
+                    if (Environment.GetEnvironmentVariable("ILHA_TEST_CONNECT") == "1")
+                    {
+                        var connect = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
+                        connect.Tick += (_, _) => PlayConnect(shake: true);
+                        connect.Start();
+                    }
                     if (testTab == "notes" && Environment.GetEnvironmentVariable("ILHA_TEST_NOTE") == "open" && _settings.NotePages.Count > 0)
                         OpenNote(_settings.NotePages[0]);
                     if (testTab == "prompter" && Environment.GetEnvironmentVariable("ILHA_TEST_PROMPTER") == "start")
@@ -613,6 +635,7 @@ namespace Ilha
         {
             "home" => (460, 176),
             "shelf" => (460, 188),
+            "convert" => (480, 198),
             "agenda" => (540, 268),
             "tasks" => (440, 236),
             "notes" => (500, 236),
@@ -781,7 +804,7 @@ namespace Ilha
             var dpi = VisualTreeHelper.GetDpi(this);
             double scale = RootScale.ScaleX;
             double w = Island.ActualWidth * scale, h = Island.ActualHeight * scale;
-            double left = (ActualWidth - w) / 2;
+            double left = (ActualWidth - w) / 2 + IslandShake.X * scale; // acompanha a chacoalhada do encaixe
             double radius = Island.CornerRadius.BottomLeft * scale;
             _glassWindow.SetShape((float)(left * dpi.DpiScaleX), (float)(w * dpi.DpiScaleX),
                                   (float)(h * dpi.DpiScaleY), (float)(radius * dpi.DpiScaleX), Detached);
@@ -820,6 +843,8 @@ namespace Ilha
                 Island.Effect = s.ShowShadow ? new DropShadowEffect { BlurRadius = 18, ShadowDepth = 2, Direction = 270, Opacity = 0.45 } : null;
             }
 
+            SlimFill.Background = new SolidColorBrush(Color.FromArgb(0xEB, baseColor.R, baseColor.G, baseColor.B));
+
             // Luz ambiente: um véu da cor da ilha por cima do brilho mantém o texto legível
             // (mais forte embaixo e à direita, onde ficam os textos menores).
             byte veil = ThemePalette.IsDark ? (byte)0x52 : (byte)0x70;
@@ -835,6 +860,7 @@ namespace Ilha
         private void WatchFullscreen()
         {
             if (_hwnd == IntPtr.Zero) return;
+            RefreshForeground(); // reserva, caso o aviso de troca de janela não chegue
             bool hide = _settings.HideOnFullscreen && !_timerAlerting &&
                         Native.IsForegroundFullscreen(TargetScreen().Bounds, _hwnd);
             if (hide != _hiddenForFullscreen)
@@ -867,6 +893,7 @@ namespace Ilha
             _settings.Save();
             if (_hotkeyRegistered) Native.UnregisterHotKey(_hwnd, HotkeyId);
             if (_clipboardListening) Native.RemoveClipboardFormatListener(_hwnd);
+            Native.StopWatching(_foregroundHook);
             _camera.Stop();
             _downloads.Dispose();
             _tray?.Dispose();
@@ -1062,6 +1089,7 @@ namespace Ilha
             HomeTabGlyph.Data = (Geometry)FindResource(full ? "FillLayout" : "FillHome");
             TabHome.ToolTip = L.T(full ? "Tudo" : "Início");
             TabShelf.Visibility = Vis(s.ShowShelf);
+            TabConvert.Visibility = Vis(s.ShowConverter);
             TabAgenda.Visibility = Vis(s.ShowCalendar && !full);
             TabTasks.Visibility = Vis(s.ShowTasks && !full);
             TabNotes.Visibility = Vis(s.ShowNotes && !full);
@@ -1105,6 +1133,7 @@ namespace Ilha
             UpdateCalendar(force: true);
             ApplyMaterial();
             PositionOnScreen();
+            UpdateSlimWatch();
             UpdateCollapsedState(force: true);
         }
 
@@ -1128,7 +1157,7 @@ namespace Ilha
         // ───────────── Expandir / recolher ─────────────
 
         private bool ShouldStayOpen() =>
-            _draggingOut || _pinned || _timerAlerting || _scrubbing || Island.IsMouseOver ||
+            _draggingOut || _pinned || _timerAlerting || _scrubbing || Island.IsMouseOver || _dropHold || _dropActive ||
             _prompterLocked || _prompterRunning || _prompterCounting ||
             (IsForeground && Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase);
 
@@ -1142,8 +1171,15 @@ namespace Ilha
         {
             _collapseTimer.Stop();
             if (TryGreet()) return; // primeira vez do dia: "Bom dia, Nome!" e depois abre
-            if (_settings.HoverDelayMs <= 0) Expand();
-            else _expandTimer.Start();
+            // No risco, uma pequena espera evita abrir sem querer ao passar pelo topo da tela.
+            int delay = Math.Max(_settings.HoverDelayMs, SlimWanted && !_expanded ? 140 : 0);
+            if (delay <= 0)
+            {
+                Expand();
+                return;
+            }
+            _expandTimer.Interval = TimeSpan.FromMilliseconds(delay);
+            _expandTimer.Start();
         }
 
         private void Island_MouseLeave(object sender, MouseEventArgs e)
@@ -1184,6 +1220,7 @@ namespace Ilha
             _progressTimer.Start();
 
             AnimateSize(_expW, _expH, _settings.SpringAnimation);
+            Fade(SlimFill, 0, 100);
             Fade(CollapsedView, 0, 100);
             Fade(ExpandedView, 1, 260, delayMs: 80);
             var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
@@ -1212,7 +1249,7 @@ namespace Ilha
             ExpandedView.IsHitTestVisible = false;
             Fade(ExpandedView, 0, 110);
             UpdateAmbientVisibility(animate: true);
-            SetDropGlow(false);
+            ShowDropOverlay(false);
             ReleaseKeyboard();
             StopMirror();
             if (_prompterRunning || _prompterCounting) PrompterStop(resetToStart: false);
@@ -1234,9 +1271,19 @@ namespace Ilha
             SetBarsAnimating(showBars && !_expanded);
             if (_nudging && !_expanded) return; // a saudação/lembrete está ocupando a ilha
 
-            string key = $"{any}|{_peeking}|{s.CollapsedWidth}|{s.CollapsedHeight}";
+            // Com um app na frente, a ilha recolhida vira só um risco (ver MainWindow.Slim.cs).
+            bool slim = SlimWanted && !_peeking;
+            string key = $"{any}|{_peeking}|{s.CollapsedWidth}|{s.CollapsedHeight}|{slim}";
             if (_expanded || (!force && key == _collapsedKey)) return;
             _collapsedKey = key;
+            Fade(SlimFill, slim ? 1 : 0, slim ? 220 : 120, delayMs: slim ? 140 : 0);
+            if (slim)
+            {
+                AnimateSize(SlimWidth, SlimHeight, spring: false);
+                Fade(CollapsedView, 0, 120);
+                Fade(PeekView, 0, 120);
+                return;
+            }
 
             double width = s.CollapsedWidth + (_peeking ? PeekExtraWidth : any ? CollapsedExtraWidth : 0);
             AnimateSize(width, s.CollapsedHeight, spring: _settings.SpringAnimation && _peeking);
@@ -1399,11 +1446,11 @@ namespace Ilha
             if (sender is RadioButton { Tag: string tab }) SelectTab(tab);
         }
 
-        private static readonly string[] TabOrder = { "home", "shelf", "agenda", "tasks", "notes", "timer", "clipboard", "mirror", "prompter" };
+        private static readonly string[] TabOrder = { "home", "shelf", "convert", "agenda", "tasks", "notes", "timer", "clipboard", "mirror", "prompter" };
 
         private (string Tab, FrameworkElement Page)[] AllPages => new (string, FrameworkElement)[]
         {
-            ("home", PageHome), ("shelf", PageShelf), ("agenda", PageAgenda), ("tasks", PageTasks), ("notes", PageNotes), ("timer", PageTimer),
+            ("home", PageHome), ("shelf", PageShelf), ("convert", PageConvert), ("agenda", PageAgenda), ("tasks", PageTasks), ("notes", PageNotes), ("timer", PageTimer),
             ("clipboard", PageClipboard), ("mirror", PageMirror), ("prompter", PagePrompter),
         };
 
@@ -1816,37 +1863,6 @@ namespace Ilha
             bool empty = _shelf.Count == 0;
             ShelfHint.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
             ClearShelfButton.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
-        }
-
-        private void Island_DragOver(object sender, DragEventArgs e)
-        {
-            bool accept = !_draggingOut && _settings.ShowShelf && e.Data.GetDataPresent(DataFormats.FileDrop);
-            e.Effects = accept ? DragDropEffects.Copy : DragDropEffects.None;
-            e.Handled = true;
-            if (!accept) return;
-            _collapseTimer.Stop();
-            TabShelf.IsChecked = true;
-            Expand();
-            SetDropGlow(true);
-        }
-
-        private void Island_DragLeave(object sender, DragEventArgs e)
-        {
-            SetDropGlow(false);
-            if (!_draggingOut) RestartCollapseTimer();
-        }
-
-        private void Island_Drop(object sender, DragEventArgs e)
-        {
-            e.Handled = true;
-            SetDropGlow(false);
-            if (_draggingOut || !_settings.ShowShelf || e.Data.GetData(DataFormats.FileDrop) is not string[] paths) return;
-            foreach (var path in paths)
-            {
-                if (_shelf.Any(s => string.Equals(s.Path, path, StringComparison.OrdinalIgnoreCase))) continue;
-                var item = ShelfItem.From(path);
-                if (item.Exists()) _shelf.Add(item);
-            }
         }
 
         private void ShelfItem_MouseDown(object sender, MouseButtonEventArgs e)

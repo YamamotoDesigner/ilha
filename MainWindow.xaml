@@ -322,6 +322,13 @@
             <ScaleTransform x:Name="RootScale" ScaleX="1" ScaleY="1"/>
         </Grid.LayoutTransform>
 
+        <!-- Ilha discreta (só um risco): área invisível em volta dela que só existe enquanto se
+             arrasta algo por perto, para o arquivo "achar" a ilha sem precisar acertar o risco. -->
+        <Border x:Name="DropCatch" Width="340" Height="96" HorizontalAlignment="Center" VerticalAlignment="Top"
+                Background="#01000000" AllowDrop="True" Visibility="Collapsed"
+                DragEnter="Island_DragOver" DragOver="Island_DragOver"
+                DragLeave="Island_DragLeave" Drop="Island_Drop"/>
+
         <!-- A ilha: pendurada na borda superior, cresce a partir do centro -->
         <Border x:Name="Island"
                 HorizontalAlignment="Center" VerticalAlignment="Top"
@@ -331,9 +338,15 @@
                 MouseLeftButtonDown="Island_MouseLeftButtonDown"
                 DragEnter="Island_DragOver" DragOver="Island_DragOver"
                 DragLeave="Island_DragLeave" Drop="Island_Drop">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="IslandShake"/>
+            </Border.RenderTransform>
             <Grid>
                 <!-- Material: cor (sólida ou translúcida sobre o desfoque), brilho e borda de luz -->
                 <Border x:Name="IslandFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="Black"/>
+                <!-- Ilha discreta: o risco fica quase opaco, mesmo com o material de vidro -->
+                <Border x:Name="SlimFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="#E6000000"
+                        Opacity="0" IsHitTestVisible="False"/>
                 <!-- Luz ambiente: a capa da música, bem pequena e esticada, vira um brilho colorido atrás de tudo -->
                 <Grid x:Name="AmbientLayer" IsHitTestVisible="False" Opacity="0">
                     <Border x:Name="AmbientArt" Width="1100" Height="560" HorizontalAlignment="Center" VerticalAlignment="Top"
@@ -491,6 +504,10 @@
                                     <RadioButton x:Name="TabShelf" Style="{StaticResource TabButton}" Tag="shelf"
                                                  ToolTip="{local:T 'Prateleira'}" Checked="Tab_Checked">
                                         <local:Glyph Data="{StaticResource IcoTray}" Size="16" Thickness="1.9"/>
+                                    </RadioButton>
+                                    <RadioButton x:Name="TabConvert" Style="{StaticResource TabButton}" Tag="convert"
+                                                 ToolTip="{local:T 'Conversor'}" Checked="Tab_Checked">
+                                        <local:Glyph Data="{StaticResource IcoConvert}" Size="16" Thickness="1.9"/>
                                     </RadioButton>
                                     <RadioButton x:Name="TabAgenda" Style="{StaticResource TabButton}" Tag="agenda"
                                                  ToolTip="{local:T 'Agenda'}" Checked="Tab_Checked">
@@ -868,6 +885,90 @@
                                                         Click="ClearShelf_Click" ToolTip="{local:T 'Limpar prateleira'}">
                                                     <local:Glyph Data="{StaticResource IcoTrash}" Size="13" Foreground="{DynamicResource Ink_A6}"/>
                                                 </Button>
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- ── Conversor: solte um arquivo e escolha no que ele vira ── -->
+                                    <Grid x:Name="PageConvert" Visibility="Collapsed">
+                                        <Border x:Name="ConvertZone" Style="{StaticResource Card}">
+                                            <Grid>
+                                                <Grid x:Name="ConvertEmpty" IsHitTestVisible="False">
+                                                    <TextBlock Text="{local:T 'CONVERSOR'}" Style="{StaticResource Label}" FontSize="10"
+                                                               Margin="14,12,0,0"/>
+                                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0">
+                                                        <local:Glyph Data="{StaticResource IcoConvert}" Size="22" Thickness="1.6"
+                                                                     Foreground="{DynamicResource Ink_73}" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{local:T 'Solte um arquivo para converter'}" FontSize="12"
+                                                                   Foreground="{DynamicResource Tertiary}"
+                                                                   Margin="0,10,0,0" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{local:T 'Imagem, PDF, áudio, vídeo ou qualquer arquivo'}" FontSize="11"
+                                                                   Foreground="{DynamicResource Ink_4D}"
+                                                                   Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <Grid x:Name="ConvertBody" Margin="14,13,10,10" Visibility="Collapsed">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+                                                    <!-- O arquivo (depois de pronto, o resultado: dá para arrastar para fora) -->
+                                                    <Grid x:Name="ConvertFileRow" Background="Transparent"
+                                                          PreviewMouseLeftButtonDown="ConvertRow_MouseDown" MouseMove="ConvertRow_MouseMove">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid Width="30" Height="30">
+                                                            <Image x:Name="ConvertIcon" Width="28" Height="28"/>
+                                                            <Viewbox x:Name="ConvertCheckBox" Width="26" Height="26" Opacity="0">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path x:Name="ConvertCheck" Data="{StaticResource IcoCheck}"
+                                                                          Stroke="{DynamicResource Accent}" StrokeThickness="2.2"
+                                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                                          StrokeLineJoin="Round"/>
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                        </Grid>
+                                                        <StackPanel Grid.Column="1" Margin="11,0,8,0" VerticalAlignment="Center">
+                                                            <TextBlock x:Name="ConvertName" FontSize="13" FontWeight="Medium"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock x:Name="ConvertInfo" FontSize="11" Margin="0,2,0,0"
+                                                                       Foreground="{DynamicResource Tertiary}"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                        </StackPanel>
+                                                        <Button x:Name="ConvertClose" Grid.Column="2" Style="{StaticResource IconButton}"
+                                                                Width="24" Height="22" VerticalAlignment="Top"
+                                                                Click="ConvertClear_Click" ToolTip="{local:T 'Tirar o arquivo'}">
+                                                            <local:Glyph Data="{StaticResource IcoClose}" Size="11" Thickness="2.6"
+                                                                         Foreground="{DynamicResource Ink_A6}"/>
+                                                        </Button>
+                                                    </Grid>
+                                                    <!-- No que ele pode virar -->
+                                                    <WrapPanel x:Name="ConvertOptions" Grid.Row="1" Margin="0,14,0,0" VerticalAlignment="Top"/>
+                                                    <!-- Convertendo -->
+                                                    <StackPanel x:Name="ConvertWork" Grid.Row="1" Margin="0,8,4,0" VerticalAlignment="Center"
+                                                                Visibility="Collapsed">
+                                                        <TextBlock x:Name="ConvertWorkText" FontSize="12" Foreground="{DynamicResource Secondary}"/>
+                                                        <Grid x:Name="ConvertTrack" Height="3" Margin="0,10,0,0">
+                                                            <Border CornerRadius="1.5" Background="{DynamicResource Ink_22}"/>
+                                                            <Border x:Name="ConvertBar" CornerRadius="1.5" Background="{DynamicResource Accent}"
+                                                                    HorizontalAlignment="Left" Width="0"/>
+                                                        </Grid>
+                                                    </StackPanel>
+                                                    <!-- Pronto -->
+                                                    <WrapPanel x:Name="ConvertDone" Grid.Row="1" Margin="0,14,0,0" VerticalAlignment="Top"
+                                                               Visibility="Collapsed">
+                                                        <Button Style="{StaticResource ChipButton}" Content="{local:T 'Mostrar na pasta'}"
+                                                                Click="ConvertReveal_Click"/>
+                                                        <Button x:Name="ConvertShelfButton" Style="{StaticResource ChipButton}"
+                                                                Content="{local:T 'Guardar na prateleira'}" Click="ConvertToShelf_Click"/>
+                                                        <Button Style="{StaticResource ChipButton}" Content="{local:T 'Outro formato'}"
+                                                                Click="ConvertAgain_Click"/>
+                                                    </WrapPanel>
+                                                </Grid>
                                             </Grid>
                                         </Border>
                                     </Grid>
@@ -1433,8 +1534,40 @@
                                 </Grid>
                             </Grid>
                         </Grid>
+
+                        <!-- Arrastando um arquivo: a ilha pergunta o que fazer com ele (guardar ou converter) -->
+                        <Grid x:Name="DropOverlay" Margin="18,16,18,18" Opacity="0" IsHitTestVisible="False">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition x:Name="DropShelfCol" Width="*"/>
+                                <ColumnDefinition x:Name="DropGapCol" Width="12"/>
+                                <ColumnDefinition x:Name="DropConvertCol" Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="DropShelf" Style="{StaticResource Card}">
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <local:Glyph x:Name="DropShelfGlyph" Data="{StaticResource IcoTray}" Size="24" Thickness="1.6"
+                                                 Foreground="{DynamicResource Ink_A6}" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="DropShelfText" Text="{local:T 'Guardar na prateleira'}" FontSize="12.5"
+                                               FontWeight="Medium" Foreground="{DynamicResource Secondary}"
+                                               Margin="0,10,0,0" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="DropConvert" Grid.Column="2" Style="{StaticResource Card}">
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <local:Glyph x:Name="DropConvertGlyph" Data="{StaticResource IcoConvert}" Size="24" Thickness="1.6"
+                                                 Foreground="{DynamicResource Ink_A6}" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="DropConvertText" Text="{local:T 'Converter'}" FontSize="12.5"
+                                               FontWeight="Medium" Foreground="{DynamicResource Secondary}"
+                                               Margin="0,10,0,0" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
                     </Grid>
                 </Grid>
+
+                <!-- Encaixe: ao soltar um arquivo (ou terminar uma conversão), um traço contorna a ilha -->
+                <Path x:Name="ConnectStroke" Stroke="{DynamicResource Accent}" StrokeThickness="1.6" Opacity="0"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                      IsHitTestVisible="False"/>
             </Grid>
         </Border>
     </Grid>

@@ -476,6 +476,9 @@
                                 </DockPanel>
                                 <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Esconder com app em tela cheia'}" IsChecked="{Binding HideOnFullscreen}"/>
+                                <Border Style="{StaticResource Divider}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Virar um risco discreto com apps abertos'}" IsChecked="{Binding AutoSlim}"
+                                          ToolTip="{local:T 'Na área de trabalho a ilha fica normal; passe o mouse no risco para abrir.'}"/>
                             </StackPanel>
                         </Border>
                         <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Com a ilha flutuante, ela fica no monitor para onde você arrastar.'}"/>
@@ -857,6 +860,8 @@
                         <TextBlock Text="{local:T 'FERRAMENTAS'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Conversor de arquivos'}" IsChecked="{Binding ShowConverter}"/>
+                                <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Histórico da área de transferência'}" IsChecked="{Binding ShowClipboard}"/>
                                 <Border Style="{StaticResource Divider}"/>
                                 <Grid Style="{StaticResource SliderRow}">

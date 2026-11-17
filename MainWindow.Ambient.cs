@@ -152,33 +152,5 @@ namespace Ilha
         }
 
         private FrameworkElement? CurrentPage => AllPages.FirstOrDefault(p => p.Tab == _currentTab).Page;
-
-        // ───────────── Prateleira acende ao arrastar ─────────────
-
-        private bool _dropGlow;
-
-        private void SetDropGlow(bool on)
-        {
-            if (on == _dropGlow) return;
-            _dropGlow = on;
-            if (on)
-            {
-                ShelfZone.SetResourceReference(Border.BorderBrushProperty, "Accent");
-                ShelfZone.BorderThickness = new Thickness(1.5);
-                if (!ReduceMotion)
-                    ShelfZone.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.6, TimeSpan.FromMilliseconds(520))
-                    {
-                        AutoReverse = true,
-                        RepeatBehavior = RepeatBehavior.Forever,
-                        EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
-                    });
-            }
-            else
-            {
-                ShelfZone.BeginAnimation(OpacityProperty, null);
-                ShelfZone.SetResourceReference(Border.BorderBrushProperty, "CardStroke");
-                ShelfZone.BorderThickness = new Thickness(1);
-            }
-        }
     }
 }
