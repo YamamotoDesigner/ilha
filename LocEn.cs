@@ -10,6 +10,9 @@ namespace Ilha
             ["Teleprompter"] = "Teleprompter",
             // Versão de teste: apresentação "Olá", hora cheia, alarme verde
             ["ou pressione Enter"] = "or press Enter",
+            ["Reunião às 15h"] = "Meeting at 3 PM",
+            ["Hoje, na sua agenda"] = "Today, on your calendar",
+            ["Foco, sem distrações"] = "Focus, no distractions",
             ["Eu estou aqui agora!"] = "I'm here now!",
             ["Passe o mouse em mim quando precisar."] = "Hover over me whenever you need.",
             ["{0} min concluídos. Bom trabalho."] = "{0} min done. Nice work.",

@@ -153,7 +153,7 @@ namespace Ilha
             _panel.RenderTransform = new TransformGroup { Children = { _flightScale, _impactScale, _panelMove } };
             _panel.Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 60, ShadowDepth = 18, Opacity = 0.55, Direction = 270 };
             BuildHello();
-            _panel.Child = new Grid { Children = { _wizard, _hello } };
+            _panel.Child = new Grid { Children = { _wizard, _hello, _teaser } };
             _panel.SizeChanged += (_, _) => UpdatePanelShape();
             _stage.Children.Add(_dim);
             _stage.Children.Add(_panel);
@@ -191,18 +191,8 @@ namespace Ilha
 #endif
                 Go(first, animate: false);
                 Activate();
-                // A tela escurece um pouco e o painel surge, como uma apresentação.
-                bool motion = SystemParameters.ClientAreaAnimation;
-                _dim.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 0.42, TimeSpan.FromMilliseconds(motion ? 600 : 0)));
-                if (motion)
-                {
-                    var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-                    _panel.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(520)) { EasingFunction = ease });
-                    _impactScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(0.94, 1, TimeSpan.FromMilliseconds(700)) { EasingFunction = new SpringEase { Damping = 0.8, Frequency = 9 } });
-                    _impactScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(0.94, 1, TimeSpan.FromMilliseconds(700)) { EasingFunction = new SpringEase { Damping = 0.8, Frequency = 9 } });
-                }
-                if (!_nameOnly && first == 0) ShowHello();
-                else _hello.Visibility = Visibility.Collapsed;
+                // A apresentação nasce da própria ilha, lá no topo (ver Emerge).
+                Emerge(showHello: !_nameOnly && first == 0);
 #if DEBUG
                 if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FINALE"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double finaleAt))
                 {
@@ -210,10 +200,10 @@ namespace Ilha
                     auto.Tick += (_, _) => { auto.Stop(); LeaveHello(); Finish(); };
                     auto.Start();
                 }
-                // Vitrine: o "Olá" por 9 s, depois cada etapa por 2,8 s e o final.
+                // Vitrine: a ilha abre e desce (~5 s), o "Olá" até 14 s, depois cada etapa por 2,8 s e o final.
                 if (Environment.GetEnvironmentVariable("ILHA_TEST_TOUR") == "1")
                 {
-                    var tour = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(9) };
+                    var tour = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(14) };
                     tour.Tick += (_, _) =>
                     {
                         tour.Interval = TimeSpan.FromSeconds(2.8);
@@ -286,6 +276,217 @@ namespace Ilha
         private void OnRendering(object? sender, EventArgs e)
         {
             if (_morphing) UpdatePanelShape();
+        }
+
+        // ───────────── Começo: a ilha abre, mostra para que serve e vira a janela ─────────────
+
+        private readonly Grid _teaser = new() { IsHitTestVisible = false };
+
+        /// <summary>Tamanho e posição da ilha recolhida (como a ilha de verdade fica no topo).</summary>
+        private (double W, double H, double Top, bool Attached) IslandTarget()
+        {
+            double scale = Math.Clamp(_s.Scale, 0.6, 1.6);
+            double w = Math.Max(60, _s.CollapsedWidth * scale), h = Math.Max(20, _s.CollapsedHeight * scale);
+            bool attached = string.Equals(_s.IslandStyle, "Attached", StringComparison.OrdinalIgnoreCase);
+            double top = attached ? 0 : 10 * scale;
+#if DEBUG
+            if (int.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_Y"), out int testY)) top += testY;
+#endif
+            return (w, h, top, attached);
+        }
+
+        private void Emerge(bool showHello)
+        {
+            _hello.Visibility = showHello ? Visibility.Visible : Visibility.Collapsed;
+            if (!SystemParameters.ClientAreaAnimation)
+            {
+                _dim.Opacity = 0.42;
+                _teaser.Visibility = Visibility.Collapsed;
+                if (showHello) ShowHello();
+                return;
+            }
+            _panel.Opacity = 0; // escondido até a ilha estar posicionada no topo
+            // Espera o layout (precisa da altura da tela).
+            Dispatcher.BeginInvoke(() => RunEmerge(showHello), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+
+        /// <summary>
+        /// 1. A ilha desce da borda da tela. 2. Abre, como quando você passa o mouse, e mostra
+        /// em sequência a música, um compromisso e o timer. 3. Se solta do topo, desce até o meio
+        /// da tela crescendo e vira a janela da apresentação, onde aparece o "Olá".
+        /// </summary>
+        private void RunEmerge(bool showHello)
+        {
+            _morphing = true;
+            var (w, h, top, attached) = IslandTarget();
+            double sh = _stage.ActualHeight;
+            double Y(double height) => top + height / 2 - sh / 2; // mantém a borda de cima colada no topo
+            TimeSpan Ms(double ms) => TimeSpan.FromMilliseconds(ms);
+            const double OpenW = 340, OpenH = 92;
+
+            var islandColor = IslandColor();
+            var ink = IslandLight ? Color.FromRgb(0x14, 0x14, 0x18) : Colors.White;
+            var panelColor = Color.FromRgb(0x0A, 0x0A, 0x0B);
+            _wizard.Opacity = 0;
+            _hello.Opacity = 0;
+            _attach = attached ? 1 : 0;
+            _panel.Background = new SolidColorBrush(islandColor);
+            _panel.BorderBrush = new SolidColorBrush(Color.FromArgb(0, 0xFF, 0xFF, 0xFF));
+            var shadow = (System.Windows.Media.Effects.DropShadowEffect)_panel.Effect;
+            shadow.Opacity = 0;
+            BuildTeaser(ink);
+
+            // 1. Desce da borda.
+            var drop = new SpringEase { Damping = 0.8, Frequency = 10 };
+            _panel.Width = w;
+            _panel.Height = 0;
+            _panelMove.Y = Y(0);
+            _panel.Opacity = 1;
+            _panel.BeginAnimation(HeightProperty, new DoubleAnimation(0, h, Ms(480)) { BeginTime = Ms(150), EasingFunction = drop });
+            _panelMove.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(Y(0), Y(h), Ms(480)) { BeginTime = Ms(150), EasingFunction = drop });
+
+            // 2. Abre (como no passar do mouse) e mostra o que faz.
+            var open = new SpringEase { Damping = 0.76, Frequency = 8.5 };
+            double tOpen = 900;
+            Delay(tOpen, () =>
+            {
+                _panel.BeginAnimation(WidthProperty, new DoubleAnimation(w, OpenW, Ms(650)) { EasingFunction = open });
+                _panel.BeginAnimation(HeightProperty, new DoubleAnimation(h, OpenH, Ms(650)) { EasingFunction = open });
+                _panelMove.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(Y(h), Y(OpenH), Ms(650)) { EasingFunction = open });
+            });
+            double each = 1000;
+            int count = _teaser.Children.Count;
+            for (int i = 0; i < count; i++)
+            {
+                var item = (FrameworkElement)_teaser.Children[i];
+                var move = (TranslateTransform)item.RenderTransform;
+                double inAt = tOpen + 250 + i * each;
+                var fade = new DoubleAnimationUsingKeyFrames { BeginTime = Ms(inAt), Duration = Ms(each) };
+                fade.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(Ms(300)), new CubicEase { EasingMode = EasingMode.EaseOut }));
+                fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, KeyTime.FromTimeSpan(Ms(each - 200))));
+                fade.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(Ms(each)), new CubicEase { EasingMode = EasingMode.EaseIn }));
+                item.BeginAnimation(OpacityProperty, fade);
+                var slide = new DoubleAnimationUsingKeyFrames { BeginTime = Ms(inAt), Duration = Ms(each) };
+                slide.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(Ms(380)), new CubicEase { EasingMode = EasingMode.EaseOut }));
+                slide.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(Ms(each - 200))));
+                slide.KeyFrames.Add(new EasingDoubleKeyFrame(-8, KeyTime.FromTimeSpan(Ms(each)), new CubicEase { EasingMode = EasingMode.EaseIn }));
+                move.BeginAnimation(TranslateTransform.YProperty, slide);
+            }
+
+            // 3. Solta do topo e desce até o meio, crescendo até virar a janela.
+            double tFree = tOpen + 250 + count * each;
+            Delay(tFree, () =>
+            {
+                AnimateAttach(_attach, 0, 200);
+                _panelMove.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(Y(OpenH), Y(OpenH) - 6, Ms(180)) { EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } });
+            });
+            double tDrop = tFree + 180;
+            Delay(tDrop, () =>
+            {
+                var grow = new SpringEase { Damping = 0.8, Frequency = 6.5 };
+                _panelMove.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(Y(OpenH) - 6, 0, Ms(1000)) { EasingFunction = grow });
+                _panel.BeginAnimation(WidthProperty, new DoubleAnimation(OpenW, PanelW, Ms(1000)) { EasingFunction = grow });
+                _panel.BeginAnimation(HeightProperty, new DoubleAnimation(OpenH, PanelH, Ms(1000)) { EasingFunction = grow });
+                _panel.Background.BeginAnimation(SolidColorBrush.ColorProperty, new ColorAnimation(panelColor, Ms(260)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+                _panel.BorderBrush.BeginAnimation(SolidColorBrush.ColorProperty, new ColorAnimation(Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF), Ms(500)) { BeginTime = Ms(300) });
+                shadow.BeginAnimation(System.Windows.Media.Effects.DropShadowEffect.OpacityProperty, new DoubleAnimation(0, 0.55, Ms(800)));
+                _dim.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 0.42, Ms(900)));
+            });
+
+            // 4. O "Olá" (ou a primeira etapa) aparece dentro da janela.
+            Delay(tDrop + 550, () =>
+            {
+                _teaser.Visibility = Visibility.Collapsed;
+                UIElement page = showHello ? _hello : _wizard;
+                page.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, Ms(500)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+                if (showHello) ShowHello();
+            });
+            Delay(tDrop + 1100, () =>
+            {
+                _morphing = false;
+                _panel.SetResourceReference(Border.BackgroundProperty, "WinBg");
+                _panel.BorderBrush = new SolidColorBrush(Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF));
+                UpdatePanelShape();
+            });
+        }
+
+        private void Delay(double ms, Action action)
+        {
+            var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Math.Max(1, ms)) };
+            t.Tick += (_, _) => { t.Stop(); action(); };
+            t.Start();
+        }
+
+        /// <summary>Cantos de cima: retos (colada no topo) ↔ redondos (solta).</summary>
+        private void AnimateAttach(double from, double to, double ms)
+        {
+            var start = DateTime.Now;
+            EventHandler? step = null;
+            step = (_, _) =>
+            {
+                double k = Math.Min(1, (DateTime.Now - start).TotalMilliseconds / ms);
+                _attach = from + (to - from) * k;
+                UpdatePanelShape();
+                if (k >= 1) CompositionTarget.Rendering -= step;
+            };
+            CompositionTarget.Rendering += step;
+        }
+
+        /// <summary>O que a ilha mostra ao abrir: a música, um compromisso de hoje e o timer.</summary>
+        private void BuildTeaser(Color ink)
+        {
+            _teaser.Children.Clear();
+            _teaser.Visibility = Visibility.Visible;
+            var dim = new SolidColorBrush(Color.FromArgb(0x99, ink.R, ink.G, ink.B));
+            var fg = new SolidColorBrush(ink);
+            var accent = ((SolidColorBrush)Resources["Accent"]).Color;
+
+            FrameworkElement Item(UIElement art, string title, string sub, UIElement? right = null)
+            {
+                var g = new Grid { Margin = new Thickness(18, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center, Opacity = 0, RenderTransform = new TranslateTransform(0, 8) };
+                g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                g.ColumnDefinitions.Add(new ColumnDefinition());
+                g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                g.Children.Add(new Border { Width = 46, Height = 46, Margin = new Thickness(0, 0, 14, 0), Child = art });
+                var col = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+                col.Children.Add(new TextBlock { Text = title, FontSize = 15, FontWeight = FontWeights.SemiBold, Foreground = fg });
+                col.Children.Add(new TextBlock { Text = sub, FontSize = 12, Foreground = dim, Margin = new Thickness(0, 2, 0, 0) });
+                Grid.SetColumn(col, 1);
+                g.Children.Add(col);
+                if (right != null) { Grid.SetColumn(right, 2); g.Children.Add(right); }
+                return g;
+            }
+
+            // Música: capa, título e o equalizador mexendo.
+            var cover = new Border { CornerRadius = new CornerRadius(10), Background = new LinearGradientBrush(Color.FromRgb(0xFF, 0x7A, 0x59), Color.FromRgb(0x8E, 0x3C, 0xF7), 45) };
+            var bars = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            foreach (var sp in new[] { 0.42, 0.31, 0.5, 0.37 })
+            {
+                var sc = new ScaleTransform(1, 0.4);
+                var bar = new Border { Width = 3, Height = 16, Margin = new Thickness(1.5, 0, 1.5, 0), CornerRadius = new CornerRadius(1), Background = new SolidColorBrush(accent), RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = sc };
+                sc.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(0.3, 1, TimeSpan.FromSeconds(sp)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever });
+                bars.Children.Add(bar);
+            }
+            _teaser.Children.Add(Item(cover, "Maré Baixa", "Costa Verde", bars));
+
+            // Agenda: o dia de hoje e um compromisso.
+            var today = DateTime.Today;
+            var culture = System.Globalization.CultureInfo.GetCultureInfo(L.English ? "en-US" : "pt-BR");
+            var dayTile = new Border { CornerRadius = new CornerRadius(10), Background = new SolidColorBrush(Color.FromArgb(0x18, ink.R, ink.G, ink.B)) };
+            var dayCol = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            dayCol.Children.Add(new TextBlock { Text = today.ToString("MMM", culture).TrimEnd('.').ToUpperInvariant(), FontSize = 9, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(accent), HorizontalAlignment = HorizontalAlignment.Center });
+            dayCol.Children.Add(new TextBlock { Text = today.Day.ToString(), FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = fg, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, -2, 0, 0) });
+            dayTile.Child = dayCol;
+            _teaser.Children.Add(Item(dayTile, L.T("Reunião às 15h"), L.T("Hoje, na sua agenda")));
+
+            // Timer: o contorno (parte já cheia) e o tempo.
+            var ring = new Grid();
+            ring.Children.Add(new Border { CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(2.5), BorderBrush = new SolidColorBrush(Color.FromArgb(0x26, ink.R, ink.G, ink.B)) });
+            var arc = new Border { CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(2.5), BorderBrush = new SolidColorBrush(accent) };
+            arc.OpacityMask = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0), GradientStops = { new GradientStop(Colors.Black, 0), new GradientStop(Colors.Black, 0.62), new GradientStop(Colors.Transparent, 0.62) } };
+            ring.Children.Add(arc);
+            ring.Children.Add(new TextBlock { Text = "25", FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = fg, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+            _teaser.Children.Add(Item(ring, "24:59", L.T("Foco, sem distrações")));
         }
 
         // ───────────── Olá ─────────────
