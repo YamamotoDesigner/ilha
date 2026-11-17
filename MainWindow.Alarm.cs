@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
@@ -16,7 +17,6 @@ namespace Ilha
         private readonly DispatcherTimer _alarmSoundTimer = new();
         private int _alarmSoundsLeft;
         private bool _alertShowing;
-        private const double AlertHeight = 62;
         private string _lastChime = "";
 
         private void InitAlarm()
@@ -71,69 +71,40 @@ namespace Ilha
             AlarmSounds.Stop();
         }
 
-        /// <summary>A ilha recolhe (se estava aberta) e vira o cartão verde com o OK.</summary>
+        /// <summary>Tempo esgotado: a ilha recolhe (se estava aberta) e fica só verde, no tamanho de sempre.</summary>
         private void ShowAlertCard()
         {
             if (_expanded) Collapse();
             if (_peeking) EndPeek(animate: false);
             if (_nudging) EndNudge(runAfter: false);
             _alertShowing = true;
-            int minutes = (int)Math.Round(_timerPreset.TotalMinutes);
-            AlertTitle.Text = L.T("Tempo esgotado!");
-            AlertText.Text = minutes > 0 ? L.F("{0} min concluídos. Bom trabalho.", minutes) : L.T("Bom trabalho.");
-            AlertIconHost.Child = NudgeArt.Build("alarm");
-            double textW = Math.Max(Measure(AlertTitle.Text, 14, FontWeights.SemiBold), Measure(AlertText.Text, 11.5, FontWeights.Normal));
-            double width = Math.Clamp(textW + 14 + 40 + 12 + 12 + 64 + 14, 320, 560);
-            AnimateSize(width, AlertHeight, spring: _settings.SpringAnimation);
+            AnimateSize(_settings.CollapsedWidth, _settings.CollapsedHeight, spring: false);
             Fade(SlimFill, 0, 100);
-            Fade(CollapsedView, 0, 120);
+            Fade(CollapsedView, 0, 160);
             Fade(PeekView, 0, 100);
-            Fade(AlertFill, 1, 420);
-            Fade(AlertView, 1, 280, delayMs: 160);
-            AlertView.IsHitTestVisible = true;
-            if (!ReduceMotion)
-            {
-                var pop = new DoubleAnimation(0.3, 1, TimeSpan.FromMilliseconds(620))
-                {
-                    BeginTime = TimeSpan.FromMilliseconds(140),
-                    EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.7 },
-                };
-                AlertIconScale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
-                AlertIconScale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
-                PlayConnect(shake: true);
-            }
+            Fade(AlertFill, 1, 520);
+            Island.Cursor = Cursors.Hand;
+            Island.ToolTip = L.T("Tempo esgotado. Clique para parar.");
         }
 
         private void HideAlertCard()
         {
             if (!_alertShowing) return;
             _alertShowing = false;
-            AlertView.IsHitTestVisible = false;
-            Fade(AlertView, 0, 140);
-            Fade(AlertFill, 0, 520, delayMs: 60);
+            Fade(AlertFill, 0, 520);
+            Island.ClearValue(CursorProperty);
+            Island.ToolTip = null;
             _collapsedKey = "";
             if (!_expanded) UpdateCollapsedState(force: true);
         }
 
-        private void AlertOk_Click(object sender, RoutedEventArgs e)
+        /// <summary>Clicar na ilha verde para o alarme.</summary>
+        private bool TryStopAlertByClick()
         {
+            if (!_alertShowing) return false;
             StopAlert();
-            // Fica recolhida: a pessoa só queria dizer "vi".
             RestartCollapseTimer();
-        }
-
-        // ───── Chegada (fim da apresentação) ─────
-
-        /// <summary>A primeira coisa que a ilha diz, logo depois de colar no topo da tela.</summary>
-        public void ShowArrival()
-        {
-            var wait = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
-            wait.Tick += (_, _) =>
-            {
-                wait.Stop();
-                ShowMinimal(L.T("Eu estou aqui agora!"), 14, 3);
-            };
-            wait.Start();
+            return true;
         }
 
         // ───── Hora cheia ─────

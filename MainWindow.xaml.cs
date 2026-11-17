@@ -178,6 +178,9 @@ namespace Ilha
             InitNudges();
             InitConvert();
             InitAlarm();
+            // Já nasce do tamanho recolhido (sem crescer/encolher no primeiro instante).
+            Island.Width = _settings.CollapsedWidth;
+            Island.Height = _settings.CollapsedHeight;
             _progressTimer.Tick += (_, _) => UpdateProgress();
 
             foreach (var todo in _settings.Todos) _todos.Add(todo);
@@ -459,6 +462,7 @@ namespace Ilha
 
         private void Island_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (TryStopAlertByClick()) { e.Handled = true; return; } // ilha verde: clicar para o alarme
             if (!_expanded) DragIsland(e); // recolhida: qualquer ponto da ilha serve de alça
         }
 
@@ -1021,8 +1025,7 @@ namespace Ilha
             {
                 if (L.Lang != langBefore) { App.Restart(ExitApp); return; }
                 ApplySettings();
-                welcome.FadeOutAndClose();
-                ShowArrival();
+                welcome.FadeOutAndClose(delayMs: 150);
             };
             welcome.Show();
         }
@@ -2186,11 +2189,6 @@ namespace Ilha
             }
             if (_settings.ShowTimer) TabTimer.IsChecked = true;
             ShowAlertCard();
-            TimerDisplay.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.25, TimeSpan.FromMilliseconds(450))
-            {
-                AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-            });
             UpdateTimerUi();
         }
 

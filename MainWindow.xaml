@@ -343,7 +343,7 @@
             </Border.RenderTransform>
             <Grid>
                 <!-- Material: cor (sólida ou translúcida sobre o desfoque), brilho e borda de luz -->
-                <Border x:Name="IslandFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="Black"/>
+                <Border x:Name="IslandFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="Transparent"/>
                 <!-- Ilha discreta: o risco fica quase opaco, mesmo com o material de vidro -->
                 <Border x:Name="SlimFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="#E6000000"
                         Opacity="0" IsHitTestVisible="False"/>
@@ -459,48 +459,6 @@
                             <TextBlock x:Name="NudgeText" FontSize="11.5" Foreground="{DynamicResource Secondary}" Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
-                    </Grid>
-
-                    <!-- Tempo esgotado: cartão verde com o OK (a ilha não abre até a pessoa confirmar) -->
-                    <Grid x:Name="AlertView" Height="62" VerticalAlignment="Top" Margin="14,0,12,0" Opacity="0"
-                          IsHitTestVisible="False">
-                        <Grid.Resources>
-                            <SolidColorBrush x:Key="Ink_FF" Color="#17332A"/>
-                            <SolidColorBrush x:Key="Accent" Color="#2E6B4E"/>
-                        </Grid.Resources>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Border x:Name="AlertIconHost" Width="40" Height="40" Margin="0,0,12,0" VerticalAlignment="Center"
-                                RenderTransformOrigin="0.5,0.5">
-                            <Border.RenderTransform><ScaleTransform x:Name="AlertIconScale"/></Border.RenderTransform>
-                        </Border>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock x:Name="AlertTitle" FontSize="14" FontWeight="SemiBold" Foreground="#17332A"
-                                       TextTrimming="CharacterEllipsis"/>
-                            <TextBlock x:Name="AlertText" FontSize="11.5" Foreground="#4C6E5C" Margin="0,2,0,0"
-                                       TextTrimming="CharacterEllipsis"/>
-                        </StackPanel>
-                        <Button x:Name="AlertOk" Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" Cursor="Hand"
-                                Focusable="False" Click="AlertOk_Click">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bg" CornerRadius="9" Background="#17332A" Padding="18,7">
-                                        <TextBlock Text="OK" FontSize="13" FontWeight="SemiBold" Foreground="#E4F4EA"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bg" Property="Background" Value="#24493A"/>
-                                        </Trigger>
-                                        <Trigger Property="IsPressed" Value="True">
-                                            <Setter TargetName="Bg" Property="Opacity" Value="0.85"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
                     </Grid>
 
                     <!-- Só um texto, centralizado: a hora cheia e o "Eu estou aqui agora!" -->

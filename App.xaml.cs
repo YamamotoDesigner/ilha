@@ -79,13 +79,9 @@ namespace Ilha
                 setup.Finished += () =>
                 {
                     // A janela preta acabou de virar a ilha lá no topo: a ilha de verdade aparece
-                    // no mesmo lugar, a apresentação some e a ilha diz "Eu estou aqui agora!".
+                    // por baixo, termina de se ajeitar e só então a apresentação some, devagar (sem piscar).
                     var main = StartIsland();
-                    main.ContentRendered += (_, _) =>
-                    {
-                        setup.FadeOutAndClose();
-                        main.ShowArrival();
-                    };
+                    main.ContentRendered += (_, _) => setup.FadeOutAndClose(delayMs: 650);
                 };
                 setup.Show();
             }

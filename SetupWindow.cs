@@ -763,11 +763,16 @@ namespace Ilha
         }
 
         /// <summary>Some depressa, já com a ilha de verdade no lugar.</summary>
-        public void FadeOutAndClose()
+        public void FadeOutAndClose(int delayMs = 0)
         {
             if (_closed) return;
             if (!IsLoaded) { Close(); return; }
-            var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(SystemParameters.ClientAreaAnimation ? 200 : 0));
+            bool motion = SystemParameters.ClientAreaAnimation;
+            var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(motion ? 380 : 0))
+            {
+                BeginTime = TimeSpan.FromMilliseconds(motion ? delayMs : 0),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+            };
             fade.Completed += (_, _) => Close();
             BeginAnimation(OpacityProperty, fade);
         }

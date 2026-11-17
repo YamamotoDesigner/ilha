@@ -976,7 +976,7 @@
                             </StackPanel>
                         </Border>
                         <TextBlock Style="{StaticResource Hint}"
-                                   Text="{local:T 'Quando o tempo acaba, a ilha fica verde e espera você passar o mouse e dar OK.'}"/>
+                                   Text="{local:T 'Quando o tempo acaba, a ilha fica verde até você clicar nela.'}"/>
 
                         <TextBlock Text="{local:T 'ILHA RECOLHIDA'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
