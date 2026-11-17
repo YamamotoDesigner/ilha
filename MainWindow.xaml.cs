@@ -83,8 +83,6 @@ namespace Ilha
         private TimeSpan _timerPaused = TimeSpan.FromMinutes(5);
         private DateTime? _timerEndsAt;
         private bool _timerAlerting;
-        private DateTime _timerAlertUntil;
-        private int _alertSoundsLeft;
 
         private bool TimerRunning => _timerEndsAt != null;
 
@@ -179,6 +177,7 @@ namespace Ilha
             InitNotes();
             InitNudges();
             InitConvert();
+            InitAlarm();
             _progressTimer.Tick += (_, _) => UpdateProgress();
 
             foreach (var todo in _settings.Todos) _todos.Add(todo);
@@ -1020,8 +1019,10 @@ namespace Ilha
             var welcome = new SetupWindow(_settings, replay: true);
             welcome.Finished += () =>
             {
-                if (L.Lang != langBefore) App.Restart(ExitApp);
-                else ApplySettings();
+                if (L.Lang != langBefore) { App.Restart(ExitApp); return; }
+                ApplySettings();
+                welcome.FadeOutAndClose();
+                ShowArrival();
             };
             welcome.Show();
         }
@@ -1170,6 +1171,7 @@ namespace Ilha
         private void Island_MouseEnter(object sender, MouseEventArgs e)
         {
             _collapseTimer.Stop();
+            if (_alertShowing) return; // tempo esgotado: o OK fica ali, a ilha não abre
             if (TryGreet()) return; // primeira vez do dia: "Bom dia, Nome!" e depois abre
             // No risco, uma pequena espera evita abrir sem querer ao passar pelo topo da tela.
             int delay = Math.Max(_settings.HoverDelayMs, SlimWanted && !_expanded ? 140 : 0);
@@ -1197,6 +1199,7 @@ namespace Ilha
 
         private void ToggleFromHotkey()
         {
+            if (_timerAlerting) { StopAlert(); return; } // o atalho também serve de OK
             if (_expanded)
             {
                 _pinned = false;
@@ -1269,6 +1272,7 @@ namespace Ilha
             Bars.Visibility = showBars ? Visibility.Visible : Visibility.Collapsed;
             CollapsedTimerText.Visibility = showTimer ? Visibility.Visible : Visibility.Collapsed;
             SetBarsAnimating(showBars && !_expanded);
+            if (_alertShowing && !_expanded) return; // o cartão verde do tempo esgotado ocupa a ilha
             if (_nudging && !_expanded) return; // a saudação/lembrete está ocupando a ilha
 
             // Com um app na frente, a ilha recolhida vira só um risco (ver MainWindow.Slim.cs).
@@ -1313,7 +1317,7 @@ namespace Ilha
         private void ShowPeek(Geometry? icon, bool filled, Geometry? icon2, ImageSource? art, string text,
                               double? level, string value, Brush? accent = null, double seconds = 1.8)
         {
-            if (_expanded || _hiddenForFullscreen || _nudging) return;
+            if (_expanded || _hiddenForFullscreen || _nudging || _alertShowing) return;
             PeekGlyph.Data = icon;
             PeekGlyph.Filled = filled;
             PeekGlyph2.Data = icon2;
@@ -1579,6 +1583,7 @@ namespace Ilha
                 WatchCharging();
                 _stats.Sample();
                 _media.Resync();
+                CheckChime();
             }
             if (!_expanded) return;
             UpdateClock();
@@ -2100,16 +2105,7 @@ namespace Ilha
 
             if (_timerAlerting)
             {
-                if (_alertSoundsLeft > 0 && (DateTime.Now.Millisecond < 250))
-                {
-                    _alertSoundsLeft--;
-                    SystemSounds.Exclamation.Play();
-                }
-                if (DateTime.Now >= _timerAlertUntil)
-                {
-                    StopAlert();
-                    RestartCollapseTimer();
-                }
+                // Fica verde até a pessoa dar OK (ver MainWindow.Alarm.cs).
             }
 
             if (TimerRunning || _timerAlerting) UpdateTimerUi();
@@ -2177,9 +2173,7 @@ namespace Ilha
         private void StartAlert()
         {
             _timerAlerting = true;
-            _timerAlertUntil = DateTime.Now.AddSeconds(12);
-            _alertSoundsLeft = 3;
-            SystemSounds.Exclamation.Play();
+            StartAlarmSound();
 
             if (_hiddenForFullscreen)
             {
@@ -2189,7 +2183,7 @@ namespace Ilha
                 PositionOnScreen();
             }
             if (_settings.ShowTimer) TabTimer.IsChecked = true;
-            Expand();
+            ShowAlertCard();
             TimerDisplay.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.25, TimeSpan.FromMilliseconds(450))
             {
                 AutoReverse = true,
@@ -2202,7 +2196,8 @@ namespace Ilha
         {
             if (!_timerAlerting) return;
             _timerAlerting = false;
-            _alertSoundsLeft = 0;
+            StopAlarmSound();
+            HideAlertCard();
             TimerDisplay.BeginAnimation(OpacityProperty, null);
             UpdateTimerUi();
         }

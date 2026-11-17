@@ -26,6 +26,8 @@ namespace Ilha
             "stretch" => Steps(),
             "alarm" => Bell(),
             "teeth" => Sparkle(),
+            "clock" => Clock(),
+            "here" => Here(),
             "hello" => GreetingFor(DateTime.Now.Hour),
             _ => Sun(),
         };
@@ -163,6 +165,53 @@ namespace Ilha
             Loop(pulse, ScaleTransform.ScaleXProperty, 2.4, (0, 1), (0.5, 1.08), (1, 1), delay: 0.9);
             Loop(pulse, ScaleTransform.ScaleYProperty, 2.4, (0, 1), (0.5, 1.08), (1, 1), delay: 0.9);
             Loop(small, UIElement.OpacityProperty, 1.8, (0, 1), (0.5, 0.3), (1, 1), delay: 1.2);
+            return c;
+        }
+
+        // ── Relógio: o mostrador se desenha, o ponteiro dos minutos dá uma volta inteira e para no 12 ──
+        private static FrameworkElement Clock()
+        {
+            var c = Stage();
+            var face = Line(c, "M20 7 A13 13 0 1 1 19.99 7");
+            DrawOn(face, 0.8, 0);
+            var ticks = Line(c, "M20 9.5 V11 M30.5 20 H29 M20 30.5 V29 M9.5 20 H11");
+            DrawOn(ticks, 0.4, 0.5);
+            var hourHand = Line(c, "M20 20 V14.5");
+            var minuteHand = Line(c, "M20 20 V10.5", accent: true);
+            int h = DateTime.Now.Hour % 12;
+            var hourTurn = new RotateTransform(h * 30 - 30, 20, 20);
+            var minTurn = new RotateTransform(0, 20, 20);
+            hourHand.RenderTransform = hourTurn;
+            minuteHand.RenderTransform = minTurn;
+            Dot(c, 20, 20, 1.6);
+            Animate(minTurn, RotateTransform.AngleProperty, 0, 360, 1.3, 0.55);
+            Animate(hourTurn, RotateTransform.AngleProperty, h * 30 - 30, h * 30, 1.3, 0.55);
+            return c;
+        }
+
+        // ── Cheguei: o marcador se desenha, o ponto aparece e um círculo se espalha embaixo ──
+        private static FrameworkElement Here()
+        {
+            var c = Stage();
+            var pin = Line(c, "M20 31 C20 31 11 22.5 11 16.5 A9 9 0 0 1 29 16.5 C29 22.5 20 31 20 31 Z");
+            DrawOn(pin, 0.8, 0);
+            var dot = Dot(c, 20, 16.5, 2.6, accent: true);
+            dot.Opacity = 0;
+            Animate(dot, UIElement.OpacityProperty, 0, 1, 0.3, 0.7);
+            var ring = new Ellipse { Width = 16, Height = 5, StrokeThickness = 1.2 };
+            ring.SetResourceReference(Shape.StrokeProperty, "Accent");
+            Canvas.SetLeft(ring, 12);
+            Canvas.SetTop(ring, 32);
+            var grow = new ScaleTransform(0.2, 0.2, 8, 2.5);
+            ring.RenderTransform = grow;
+            ring.Opacity = 0;
+            c.Children.Add(ring);
+            Loop(grow, ScaleTransform.ScaleXProperty, 2.2, (0, 0.2), (0.6, 1.4), (1, 1.4), delay: 0.9);
+            Loop(grow, ScaleTransform.ScaleYProperty, 2.2, (0, 0.2), (0.6, 1.4), (1, 1.4), delay: 0.9);
+            Loop(ring, UIElement.OpacityProperty, 2.2, (0, 0.9), (0.6, 0), (1, 0), delay: 0.9);
+            var bob = new TranslateTransform(0, 0);
+            pin.RenderTransform = bob;
+            Loop(bob, TranslateTransform.YProperty, 2.2, (0, 0), (0.25, -1.5), (0.5, 0), delay: 0.9);
             return c;
         }
 

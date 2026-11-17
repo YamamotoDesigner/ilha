@@ -927,6 +927,57 @@
                             </StackPanel>
                         </Border>
 
+                        <TextBlock Text="{local:T 'HORA E ALARME'}" Style="{StaticResource Section}"/>
+                        <Border Style="{StaticResource Group}">
+                            <StackPanel>
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding HourChime}">
+                                    <StackPanel>
+                                        <TextBlock Text="{local:T 'Mostrar a hora cheia'}"/>
+                                        <TextBlock Text="{local:T 'A ilha se abre um instante e mostra o horário, para você sentir o tempo passar.'}"
+                                                   FontSize="12" Foreground="{DynamicResource Text3}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </CheckBox>
+                                <Border Style="{StaticResource Divider}"/>
+                                <DockPanel Margin="16,10">
+                                    <Border DockPanel.Dock="Right" CornerRadius="9" Padding="2" Background="{DynamicResource Control}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <RadioButton x:Name="Chime60" Style="{StaticResource Segment}" GroupName="Chime"
+                                                         Content="{local:T 'A cada hora'}" Checked="Chime_Checked"/>
+                                            <RadioButton x:Name="Chime30" Style="{StaticResource Segment}" GroupName="Chime"
+                                                         Content="{local:T 'A cada 30 min'}" Checked="Chime_Checked"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Text="{local:T 'Com que frequência'}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <Border Style="{StaticResource Divider}"/>
+                                <DockPanel Margin="16,9">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Padding="12,5" Margin="10,0,0,0"
+                                            Content="{local:T 'Ouvir'}" Click="AlarmPreview_Click"/>
+                                    <TextBlock Text="{local:T 'Som do alarme do timer'}" Width="180" VerticalAlignment="Center"/>
+                                    <ComboBox x:Name="AlarmCombo" DisplayMemberPath="Label" SelectedValuePath="Id"
+                                              SelectionChanged="AlarmCombo_SelectionChanged"/>
+                                </DockPanel>
+                                <TextBlock x:Name="AlarmFileText" Margin="16,0,16,10" FontSize="12" Foreground="{DynamicResource Text3}"
+                                           TextTrimming="CharacterEllipsis" Visibility="Collapsed"/>
+                                <Border Style="{StaticResource Divider}"/>
+                                <DockPanel Margin="16,10">
+                                    <Border DockPanel.Dock="Right" CornerRadius="9" Padding="2" Background="{DynamicResource Control}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <RadioButton x:Name="Repeat3" Style="{StaticResource Segment}" GroupName="AlarmRepeat"
+                                                         Content="3x" Tag="3" Checked="Repeat_Checked"/>
+                                            <RadioButton x:Name="Repeat6" Style="{StaticResource Segment}" GroupName="AlarmRepeat"
+                                                         Content="6x" Tag="6" Checked="Repeat_Checked"/>
+                                            <RadioButton x:Name="Repeat10" Style="{StaticResource Segment}" GroupName="AlarmRepeat"
+                                                         Content="10x" Tag="10" Checked="Repeat_Checked"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Text="{local:T 'Repetir o som'}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Style="{StaticResource Hint}"
+                                   Text="{local:T 'Quando o tempo acaba, a ilha fica verde e espera você passar o mouse e dar OK.'}"/>
+
                         <TextBlock Text="{local:T 'ILHA RECOLHIDA'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
                             <StackPanel>

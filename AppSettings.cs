@@ -13,6 +13,8 @@ namespace Ilha
         public int LayoutVersion { get; set; }
         /// <summary>A tela de apresentação já foi vista.</summary>
         public bool OnboardingDone { get; set; }
+        /// <summary>Já viu a apresentação nova (Olá + a janela que vira a ilha). Quem atualizou vê uma vez.</summary>
+        public bool NewIntroSeen { get; set; }
         /// <summary>"pt" (Português do Brasil) ou "en" (English US); null = idioma do Windows.</summary>
         public string? Language { get; set; }
         /// <summary>"Dark" ou "Light".</summary>
@@ -25,6 +27,16 @@ namespace Ilha
         public bool Greeting { get; set; } = true;
         /// <summary>Lembretes de bem-estar (água, esticar as pernas, dormir, despertador, dentes).</summary>
         public bool WellnessNudges { get; set; } = true;
+        /// <summary>A cada hora cheia (ou meia hora), a ilha se abre um instante e mostra o horário.</summary>
+        public bool HourChime { get; set; } = true;
+        /// <summary>Intervalo do aviso de horário, em minutos (60 ou 30).</summary>
+        public int HourChimeMinutes { get; set; } = 60;
+        /// <summary>Som do alarme do timer: um dos sons da Ilha (ver AlarmSounds) ou "file".</summary>
+        public string AlarmSound { get; set; } = "sino";
+        /// <summary>Arquivo de som escolhido pela pessoa (quando AlarmSound = "file").</summary>
+        public string AlarmSoundFile { get; set; } = "";
+        /// <summary>Quantas vezes o som toca enquanto ninguém dá OK.</summary>
+        public int AlarmRepeats { get; set; } = 6;
         /// <summary>Quando cada lembrete apareceu pela última vez.</summary>
         public Dictionary<string, DateTime> NudgeLog { get; set; } = new();
 
@@ -183,6 +195,10 @@ namespace Ilha
             LiveTrack = d.LiveTrack;
             Greeting = d.Greeting;
             WellnessNudges = d.WellnessNudges;
+            HourChime = d.HourChime;
+            HourChimeMinutes = d.HourChimeMinutes;
+            AlarmSound = d.AlarmSound;
+            AlarmRepeats = d.AlarmRepeats;
         }
 
         private static string Folder =>

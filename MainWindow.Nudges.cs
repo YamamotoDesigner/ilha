@@ -32,7 +32,7 @@ namespace Ilha
 
         private void ShowNudge(string kind, string title, string text, double seconds, Action? after = null)
         {
-            if (_expanded || _hiddenForFullscreen) return;
+            if (_expanded || _hiddenForFullscreen || _alertShowing) return;
             if (_peeking) EndPeek(animate: false);
             NudgeIconHost.Child = NudgeArt.Build(kind);
             NudgeTitle.Text = title;
@@ -71,6 +71,7 @@ namespace Ilha
             var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(runAfter ? 140 : 0));
             fade.Completed += (_, _) => { if (!_nudging) NudgeIconHost.Child = null; };
             NudgeView.BeginAnimation(OpacityProperty, fade);
+            ChimeView.BeginAnimation(OpacityProperty, new DoubleAnimation(0, TimeSpan.FromMilliseconds(runAfter ? 140 : 0)));
             var after = runAfter ? _afterNudge : null;
             _afterNudge = null;
             _collapsedKey = "";

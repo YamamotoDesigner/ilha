@@ -62,7 +62,7 @@ namespace Ilha
             L.Set(settings.Language ?? L.SystemDefault);
             ThemePalette.Apply(!string.Equals(settings.Theme, "Light", StringComparison.OrdinalIgnoreCase));
 
-            bool showOnboarding = !settings.OnboardingDone;
+            bool showOnboarding = !settings.OnboardingDone || !settings.NewIntroSeen;
 #if DEBUG
             if (Environment.GetEnvironmentVariable("ILHA_TEST_TAB") is { Length: > 0 }) showOnboarding = false;
             if (Environment.GetEnvironmentVariable("ILHA_TEST_ONBOARD") == "1") showOnboarding = true;
@@ -76,7 +76,17 @@ namespace Ilha
             if (showOnboarding || askName)
             {
                 var setup = new SetupWindow(settings, nameOnly: !showOnboarding);
-                setup.Finished += StartIsland;
+                setup.Finished += () =>
+                {
+                    // A janela preta acabou de virar a ilha lá no topo: a ilha de verdade aparece
+                    // no mesmo lugar, a apresentação some e a ilha diz "Eu estou aqui agora!".
+                    var main = StartIsland();
+                    main.ContentRendered += (_, _) =>
+                    {
+                        setup.FadeOutAndClose();
+                        main.ShowArrival();
+                    };
+                };
                 setup.Show();
             }
             else
@@ -84,12 +94,14 @@ namespace Ilha
                 StartIsland();
             }
         }
-        private static void StartIsland()
+        private static MainWindow StartIsland()
         {
             // O vidro fica numa janela própria, logo atrás da ilha (ver BackdropWindow).
             var glass = new BackdropWindow();
             glass.Show();
-            new MainWindow(glass).Show();
+            var main = new MainWindow(glass);
+            main.Show();
+            return main;
         }
 
         /// <summary>Abre uma nova instância (que espera esta fechar) e encerra esta.</summary>

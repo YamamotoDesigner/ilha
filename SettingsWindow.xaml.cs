@@ -173,10 +173,67 @@ namespace Ilha
             LightRadio.IsChecked = light;
             LangPt.IsChecked = !L.English;
             LangEn.IsChecked = L.English;
+            Chime60.IsChecked = _settings.HourChimeMinutes != 30;
+            Chime30.IsChecked = _settings.HourChimeMinutes == 30;
+            Repeat3.IsChecked = _settings.AlarmRepeats <= 3;
+            Repeat6.IsChecked = _settings.AlarmRepeats > 3 && _settings.AlarmRepeats < 10;
+            Repeat10.IsChecked = _settings.AlarmRepeats >= 10;
+            AlarmCombo.ItemsSource = AlarmSounds.Choices;
+            AlarmCombo.SelectedValue = _settings.AlarmSound;
+            if (AlarmCombo.SelectedIndex < 0) AlarmCombo.SelectedIndex = 0;
+            ShowAlarmFile();
             UpdateFloatOptions();
             _syncing = false;
             DrawSizePreview();
         }
+
+        // ───────────── Hora cheia e alarme ─────────────
+
+        private void Chime_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized || _syncing) return;
+            _settings.HourChimeMinutes = sender == Chime30 ? 30 : 60;
+        }
+
+        private void Repeat_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized || _syncing || sender is not FrameworkElement { Tag: string tag }) return;
+            if (int.TryParse(tag, out int n)) _settings.AlarmRepeats = n;
+        }
+
+        private void AlarmCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsInitialized || _syncing || AlarmCombo.SelectedValue is not string id) return;
+            if (id == AlarmSounds.FileId)
+            {
+                // Som da pessoa: escolhe o arquivo; se desistir, volta para o som anterior.
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = L.T("Escolha um som"),
+                    Filter = L.T("Sons") + " (*.wav;*.mp3;*.m4a;*.wma;*.aac)|*.wav;*.mp3;*.m4a;*.wma;*.aac",
+                };
+                if (dialog.ShowDialog(this) != true)
+                {
+                    _syncing = true;
+                    AlarmCombo.SelectedValue = _settings.AlarmSound;
+                    _syncing = false;
+                    return;
+                }
+                _settings.AlarmSoundFile = dialog.FileName;
+            }
+            _settings.AlarmSound = id;
+            ShowAlarmFile();
+            AlarmSounds.Play(_settings);
+        }
+
+        private void ShowAlarmFile()
+        {
+            bool file = _settings.AlarmSound == AlarmSounds.FileId && _settings.AlarmSoundFile.Length > 0;
+            AlarmFileText.Visibility = file ? Visibility.Visible : Visibility.Collapsed;
+            AlarmFileText.Text = file ? System.IO.Path.GetFileName(_settings.AlarmSoundFile) : "";
+        }
+
+        private void AlarmPreview_Click(object sender, RoutedEventArgs e) => AlarmSounds.Play(_settings);
 
         // ───────────── Tema e idioma ─────────────
 
