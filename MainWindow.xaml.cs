@@ -1256,6 +1256,8 @@ namespace Ilha
             ReleaseKeyboard();
             StopMirror();
             if (_prompterRunning || _prompterCounting) PrompterStop(resetToStart: false);
+            // A agenda volta para hoje: na próxima vez que abrir, não precisa rolar de volta.
+            if (_selectedDate != DateTime.Today) SelectDay(DateTime.Today);
             UpdateCollapsedState(force: true);
         }
 

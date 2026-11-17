@@ -204,11 +204,24 @@ namespace Ilha
                 if (!_nameOnly && first == 0) ShowHello();
                 else _hello.Visibility = Visibility.Collapsed;
 #if DEBUG
-                if (Environment.GetEnvironmentVariable("ILHA_TEST_FINALE") == "1")
+                if (double.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_FINALE"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double finaleAt))
                 {
-                    var auto = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+                    var auto = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(finaleAt <= 1 ? 1.5 : finaleAt) };
                     auto.Tick += (_, _) => { auto.Stop(); LeaveHello(); Finish(); };
                     auto.Start();
+                }
+                // Vitrine: o "Olá" por 9 s, depois cada etapa por 2,8 s e o final.
+                if (Environment.GetEnvironmentVariable("ILHA_TEST_TOUR") == "1")
+                {
+                    var tour = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(9) };
+                    tour.Tick += (_, _) =>
+                    {
+                        tour.Interval = TimeSpan.FromSeconds(2.8);
+                        if (_helloShowing) { LeaveHello(); return; }
+                        if (_done) { tour.Stop(); return; }
+                        Next();
+                    };
+                    tour.Start();
                 }
 #endif
             };
@@ -599,6 +612,9 @@ namespace Ilha
             double w = Math.Max(60, _s.CollapsedWidth * scale), h = Math.Max(20, _s.CollapsedHeight * scale);
             bool attached = string.Equals(_s.IslandStyle, "Attached", StringComparison.OrdinalIgnoreCase);
             double top = attached ? 0 : 10 * scale;
+#if DEBUG
+            if (int.TryParse(Environment.GetEnvironmentVariable("ILHA_TEST_Y"), out int testY)) top += testY;
+#endif
             double screenH = _stage.ActualHeight;
             double dy = top + h / 2 - screenH / 2; // centro do painel → centro da ilha no topo
 

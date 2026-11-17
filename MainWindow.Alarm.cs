@@ -22,6 +22,16 @@ namespace Ilha
         private void InitAlarm()
         {
 #if DEBUG
+            // Vitrine: ILHA_TEST_SHOWCASE=1 mostra a hora cheia (6 s) e depois o tempo esgotado (15 s).
+            if (Environment.GetEnvironmentVariable("ILHA_TEST_SHOWCASE") == "1")
+            {
+                var a = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
+                a.Tick += (_, _) => { a.Stop(); ShowChime(DateTime.Now.Date.AddHours(DateTime.Now.Hour)); };
+                a.Start();
+                var b = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
+                b.Tick += (_, _) => { b.Stop(); _timerPreset = TimeSpan.FromMinutes(25); StartAlert(); };
+                b.Start();
+            }
             // Testes: ILHA_TEST_ALERT=1 (tempo esgotado em 2 s), ILHA_TEST_CHIME=1 (hora cheia em 2 s).
             if (Environment.GetEnvironmentVariable("ILHA_TEST_ALERT") == "1" || Environment.GetEnvironmentVariable("ILHA_TEST_CHIME") == "1")
             {
@@ -121,7 +131,7 @@ namespace Ilha
             wait.Tick += (_, _) =>
             {
                 wait.Stop();
-                ShowNudge("here", L.T("Eu estou aqui agora!"), L.T("Passe o mouse em mim quando precisar."), 4.5);
+                ShowMinimal(L.T("Eu estou aqui agora!"), 14, 3);
             };
             wait.Start();
         }
@@ -144,35 +154,41 @@ namespace Ilha
 
         private void ShowChime(DateTime at)
         {
+            string time = at.ToString(_settings.Use24h ? "HH:mm" : "h:mm tt", L.English ? System.Globalization.CultureInfo.GetCultureInfo("en-US") : System.Globalization.CultureInfo.CurrentCulture);
+            ShowMinimal(time, 17, 2.2);
+        }
+
+        /// <summary>
+        /// Só um texto, sem ícone: a ilha cresce um pouco, o texto sobe de leve e some logo.
+        /// Usado na hora cheia e no "Eu estou aqui agora!".
+        /// </summary>
+        private void ShowMinimal(string text, double fontSize, double seconds)
+        {
             if (_expanded || _hiddenForFullscreen || _timerAlerting) return;
             if (_peeking) EndPeek(animate: false);
-            string time = at.ToString(_settings.Use24h ? "HH:mm" : "h:mm tt", L.English ? System.Globalization.CultureInfo.GetCultureInfo("en-US") : System.Globalization.CultureInfo.CurrentCulture);
-            ChimeTime.Text = time;
-            ChimeText.Text = at.Minute == 0
-                ? (at.Hour == 12 ? L.T("Meio-dia.") : at.Hour == 0 ? L.T("Meia-noite.") : L.T("Mais uma hora se passou."))
-                : L.T("Meia hora se passou.");
-            ChimeIconHost.Child = NudgeArt.Build("clock");
-            double width = Math.Clamp(Measure(time, 26, FontWeights.SemiBold) + Measure(ChimeText.Text, 12, FontWeights.Normal) + 14 + 40 + 12 + 12 + 34, 260, 520);
+            ChimeTime.Text = text;
+            ChimeTime.FontSize = fontSize;
+            double height = Math.Max(_settings.CollapsedHeight + 8, 40);
+            double width = Math.Max(_settings.CollapsedWidth, Measure(text, fontSize, FontWeights.SemiBold) + 56);
+            ChimeView.Height = height;
             _afterNudge = null;
             _nudging = true;
-            AnimateSize(width, NudgeHeight, spring: _settings.SpringAnimation);
+            AnimateSize(width, height, spring: _settings.SpringAnimation);
             Fade(SlimFill, 0, 100);
             Fade(CollapsedView, 0, 120);
             Fade(PeekView, 0, 100);
-            Fade(ChimeView, 1, 300, delayMs: 160);
+            Fade(ChimeView, 1, 260, delayMs: 140);
             if (!ReduceMotion)
             {
-                // O horário entra deslizando um pouco, depois do relógio começar a girar.
-                ChimeTime.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(380)) { BeginTime = TimeSpan.FromMilliseconds(380) });
-                ChimeTimeShift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(520))
+                ChimeTime.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320)) { BeginTime = TimeSpan.FromMilliseconds(180) });
+                ChimeTimeShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(5, 0, TimeSpan.FromMilliseconds(460))
                 {
-                    BeginTime = TimeSpan.FromMilliseconds(380),
+                    BeginTime = TimeSpan.FromMilliseconds(180),
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
                 });
-                ChimeText.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(380)) { BeginTime = TimeSpan.FromMilliseconds(700) });
             }
             _nudgeTimer.Stop();
-            _nudgeTimer.Interval = TimeSpan.FromSeconds(4.5);
+            _nudgeTimer.Interval = TimeSpan.FromSeconds(seconds);
             _nudgeTimer.Start();
         }
     }
