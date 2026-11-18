@@ -2,190 +2,128 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Ilha"
-        Title="{local:T 'Apoie o Ilha'}" Width="760" SizeToContent="Height" ResizeMode="NoResize"
+        Title="{local:T 'Apoie o Ilha'}" Width="420" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WinBg}" Foreground="{DynamicResource WinFg}"
         FontFamily="{DynamicResource UiFont}" FontSize="13.5"
         TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="Grayscale" TextOptions.TextHintingMode="Fixed">
 
     <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="60" GlassFrameThickness="0" ResizeBorderThickness="0"
+        <WindowChrome CaptionHeight="48" GlassFrameThickness="0" ResizeBorderThickness="0"
                       CornerRadius="0" UseAeroCaptionButtons="False"/>
     </WindowChrome.WindowChrome>
 
     <Window.Resources>
-        <!-- Linha de ação: ícone, título, descrição e seta -->
-        <Style x:Key="ActionRow" TargetType="Button">
+        <!-- Linha de uma lista agrupada: ícone discreto, texto e seta -->
+        <Style x:Key="ListRow" TargetType="Button">
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Foreground" Value="{DynamicResource WinFg}"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid>
-                            <Border CornerRadius="12" Background="{DynamicResource CardBg}"
-                                    BorderBrush="{DynamicResource Line}" BorderThickness="1" Padding="12,11">
-                                <DockPanel>
-                                    <local:Glyph DockPanel.Dock="Right" Data="{StaticResource IcoChevronRight}" Size="14"
-                                                 Foreground="{DynamicResource Text3}" VerticalAlignment="Center"/>
-                                    <ContentPresenter VerticalAlignment="Center"/>
-                                </DockPanel>
-                            </Border>
-                            <Border x:Name="Hover" CornerRadius="12" Background="{DynamicResource Ink_FF}" Opacity="0" IsHitTestVisible="False"/>
+                        <Grid Background="Transparent">
+                            <Border x:Name="Hover" Background="{DynamicResource Ink_FF}" Opacity="0" Margin="4,3"
+                                    CornerRadius="8" IsHitTestVisible="False"/>
+                            <DockPanel Margin="14,0,12,0" Height="42">
+                                <local:Glyph DockPanel.Dock="Right" Data="{StaticResource IcoChevronRight}" Size="13"
+                                             Foreground="{DynamicResource Text3}" VerticalAlignment="Center"/>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </DockPanel>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Hover" Property="Opacity" Value="0.04"/>
+                                <Setter TargetName="Hover" Property="Opacity" Value="0.05"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Hover" Property="Opacity" Value="0.08"/>
+                                <Setter TargetName="Hover" Property="Opacity" Value="0.09"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="IconTile" TargetType="Border">
-            <Setter Property="Width" Value="34"/>
-            <Setter Property="Height" Value="34"/>
-            <Setter Property="CornerRadius" Value="9"/>
-            <Setter Property="Margin" Value="0,0,12,0"/>
-        </Style>
-        <Style x:Key="RowTitle" TargetType="TextBlock">
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13.5"/>
-        </Style>
-        <Style x:Key="RowText" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12"/>
+        <Style x:Key="RowIcon" TargetType="local:Glyph">
+            <Setter Property="Size" Value="16"/>
             <Setter Property="Foreground" Value="{DynamicResource Text2}"/>
-            <Setter Property="Margin" Value="0,1,0,0"/>
-            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="RowDivider" TargetType="Border">
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Margin" Value="42,0,0,0"/>
+            <Setter Property="Background" Value="{DynamicResource Line}"/>
         </Style>
     </Window.Resources>
 
-    <StackPanel Margin="28,22,28,28">
-        <!-- Cabeçalho -->
-        <DockPanel>
-            <Button DockPanel.Dock="Right" Style="{StaticResource CloseButton}" VerticalAlignment="Top"
-                    Click="Close_Click" ToolTip="{local:T 'Fechar'}">
-                <local:Glyph Data="{StaticResource IcoClose}" Size="14"/>
-            </Button>
-            <Border Width="48" Height="48" CornerRadius="13" VerticalAlignment="Top">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FF5C7C" Offset="0"/>
-                        <GradientStop Color="#E0306A" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
-                <local:Glyph Data="{StaticResource IcoHeart}" Filled="True" Size="24" Foreground="White"/>
-            </Border>
-            <StackPanel Margin="16,2,0,0">
-                <TextBlock Text="{local:T 'Apoie o Ilha'}" FontSize="24" FontWeight="SemiBold"/>
-                <TextBlock Foreground="{DynamicResource Text2}" Margin="0,4,0,0" TextWrapping="Wrap" MaxWidth="560"
-                           HorizontalAlignment="Left"
-                           Text="{local:T 'O Ilha é gratuito e feito por uma pessoa só. Uma doação, uma estrela ou um aviso de problema ajudam ele a continuar melhorando.'}"/>
+    <Grid>
+        <Button Style="{StaticResource CloseButton}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,12,0"
+                Click="Close_Click" ToolTip="{local:T 'Fechar'}" WindowChrome.IsHitTestVisibleInChrome="True">
+            <local:Glyph Data="{StaticResource IcoClose}" Size="14"/>
+        </Button>
+
+        <StackPanel Margin="32,40,32,28">
+            <TextBlock Text="{local:T 'Apoie o Ilha'}" FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+            <TextBlock Foreground="{DynamicResource Text2}" Margin="0,8,0,0" TextWrapping="Wrap" TextAlignment="Center"
+                       Text="{local:T 'O Ilha é gratuito e feito por uma pessoa só. Se ele ajuda no seu dia, um Pix de qualquer valor mantém o projeto andando.'}"/>
+
+            <!-- Pix -->
+            <StackPanel x:Name="PixCard" Margin="0,24,0,0">
+                <Border Background="White" CornerRadius="14" Padding="12" HorizontalAlignment="Center">
+                    <Image x:Name="QrImage" Width="168" Height="168" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                </Border>
+                <TextBlock x:Name="ReceiverText" HorizontalAlignment="Center" Margin="0,12,0,0"
+                           Foreground="{DynamicResource Text3}" FontSize="12"/>
+                <Button x:Name="CopyButton" Style="{StaticResource AccentButton}" Margin="0,16,0,0" Padding="0,9"
+                        HorizontalAlignment="Stretch" Click="Copy_Click">
+                    <TextBlock x:Name="CopyText" Text="{local:T 'Copiar código Pix'}"/>
+                </Button>
+                <TextBox x:Name="CodeBox" IsReadOnly="True" TextWrapping="NoWrap" FontSize="11" Margin="0,8,0,0"
+                         FontFamily="Cascadia Mono, Consolas" Visibility="Collapsed"/>
             </StackPanel>
-        </DockPanel>
 
-        <Grid Margin="0,24,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="PixCol" Width="290"/>
-                <ColumnDefinition x:Name="PixGap" Width="20"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Doação via Pix -->
-            <Border x:Name="PixCard" CornerRadius="16" Background="{DynamicResource CardBg}"
-                    BorderBrush="{DynamicResource Line}" BorderThickness="1" Padding="20,18">
+            <!-- Outras formas de ajudar: uma lista simples -->
+            <Border Margin="0,24,0,0" CornerRadius="12" Background="{DynamicResource CardBg}"
+                    BorderBrush="{DynamicResource Line}" BorderThickness="1">
                 <StackPanel>
-                    <TextBlock Text="{local:T 'DOAR VIA PIX'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Text3}"/>
-                    <Border Background="{DynamicResource Ink_FF}" CornerRadius="14" Padding="12" Margin="0,14,0,0" HorizontalAlignment="Center">
-                        <Image x:Name="QrImage" Width="190" Height="190" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                    </Border>
-                    <TextBlock x:Name="ReceiverText" HorizontalAlignment="Center" Margin="0,12,0,0"
-                               Foreground="{DynamicResource Text2}" FontSize="12.5"/>
-                    <TextBlock Text="{local:T 'App do banco → Pix → Ler QR code'}" HorizontalAlignment="Center"
-                               Foreground="{DynamicResource Text3}" FontSize="12" Margin="0,2,0,0"/>
-                    <Button x:Name="CopyButton" Style="{StaticResource AccentButton}" Margin="0,16,0,0" Padding="0,9"
-                            HorizontalAlignment="Stretch" Click="Copy_Click">
-                        <TextBlock x:Name="CopyText" Text="{local:T 'Copiar código Pix (copia e cola)'}"/>
+                    <Button Style="{StaticResource ListRow}" Tag="https://github.com/YamamotoDesigner/ilha" Click="Link_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <local:Glyph Style="{StaticResource RowIcon}" Data="{StaticResource IcoStar}"/>
+                            <TextBlock Text="{local:T 'Dar uma estrela no GitHub'}" VerticalAlignment="Center"/>
+                        </StackPanel>
                     </Button>
-                    <TextBox x:Name="CodeBox" IsReadOnly="True" TextWrapping="NoWrap" FontSize="11" Margin="0,8,0,0"
-                             FontFamily="Cascadia Mono, Consolas" Visibility="Collapsed"/>
+                    <Border Style="{StaticResource RowDivider}"/>
+                    <Button x:Name="ShareButton" Style="{StaticResource ListRow}" Click="Share_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <local:Glyph Style="{StaticResource RowIcon}" Data="{StaticResource IcoShare}"/>
+                            <TextBlock x:Name="ShareText" Text="{local:T 'Indicar para um amigo'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Border Style="{StaticResource RowDivider}"/>
+                    <Button Style="{StaticResource ListRow}" Tag="https://github.com/YamamotoDesigner/ilha/issues/new?title=Problema%3A%20"
+                            Click="Link_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <local:Glyph Style="{StaticResource RowIcon}" Data="{StaticResource IcoBug}"/>
+                            <TextBlock Text="{local:T 'Relatar um problema'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Border Style="{StaticResource RowDivider}"/>
+                    <Button Style="{StaticResource ListRow}" Tag="https://github.com/YamamotoDesigner/ilha/issues/new?title=Ideia%3A%20"
+                            Click="Link_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <local:Glyph Style="{StaticResource RowIcon}" Data="{StaticResource IcoBulb}"/>
+                            <TextBlock Text="{local:T 'Sugerir uma ideia'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Border Style="{StaticResource RowDivider}"/>
+                    <Button Style="{StaticResource ListRow}" Tag="https://yamamotodesigner.github.io/ilha/" Click="Link_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <local:Glyph Style="{StaticResource RowIcon}" Data="{StaticResource IcoGlobe}"/>
+                            <TextBlock Text="{local:T 'Conhecer o site'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Border>
-
-            <!-- Outras formas de ajudar -->
-            <StackPanel Grid.Column="2">
-                <TextBlock Text="{local:T 'OUTRAS FORMAS DE AJUDAR'}" FontSize="11.5" FontWeight="SemiBold"
-                           Foreground="{DynamicResource Text3}" Margin="2,0,0,10"/>
-
-                <Button Style="{StaticResource ActionRow}" Tag="https://github.com/YamamotoDesigner/ilha" Click="Link_Click">
-                    <DockPanel>
-                        <Border Style="{StaticResource IconTile}" Background="#33FACC15">
-                            <local:Glyph Data="{StaticResource IcoStar}" Size="17" Foreground="#FACC15"/>
-                        </Border>
-                        <StackPanel>
-                            <TextBlock Text="{local:T 'Dar uma estrela no GitHub'}" Style="{StaticResource RowTitle}"/>
-                            <TextBlock Text="{local:T 'De graça, e ajuda mais gente a encontrar o Ilha.'}" Style="{StaticResource RowText}"/>
-                        </StackPanel>
-                    </DockPanel>
-                </Button>
-
-                <Button x:Name="ShareButton" Style="{StaticResource ActionRow}" Click="Share_Click">
-                    <DockPanel>
-                        <Border Style="{StaticResource IconTile}" Background="#334CC9F0">
-                            <local:Glyph Data="{StaticResource IcoShare}" Size="17" Foreground="#4CC9F0"/>
-                        </Border>
-                        <StackPanel>
-                            <TextBlock Text="{local:T 'Indicar para um amigo'}" Style="{StaticResource RowTitle}"/>
-                            <TextBlock x:Name="ShareText" Text="{local:T 'Copia o link do site para você mandar.'}" Style="{StaticResource RowText}"/>
-                        </StackPanel>
-                    </DockPanel>
-                </Button>
-
-                <Button Style="{StaticResource ActionRow}" Tag="https://github.com/YamamotoDesigner/ilha/issues/new?title=Problema%3A%20"
-                        Click="Link_Click">
-                    <DockPanel>
-                        <Border Style="{StaticResource IconTile}" Background="#33FB923C">
-                            <local:Glyph Data="{StaticResource IcoBug}" Size="17" Foreground="#FB923C"/>
-                        </Border>
-                        <StackPanel>
-                            <TextBlock Text="{local:T 'Relatar um problema'}" Style="{StaticResource RowTitle}"/>
-                            <TextBlock Text="{local:T 'Algo cortado, travando ou estranho? Conte o que aconteceu.'}" Style="{StaticResource RowText}"/>
-                        </StackPanel>
-                    </DockPanel>
-                </Button>
-
-                <Button Style="{StaticResource ActionRow}" Tag="https://github.com/YamamotoDesigner/ilha/issues/new?title=Ideia%3A%20"
-                        Click="Link_Click">
-                    <DockPanel>
-                        <Border Style="{StaticResource IconTile}" Background="#33A78BFA">
-                            <local:Glyph Data="{StaticResource IcoBulb}" Size="17" Foreground="#A78BFA"/>
-                        </Border>
-                        <StackPanel>
-                            <TextBlock Text="{local:T 'Sugerir uma ideia'}" Style="{StaticResource RowTitle}"/>
-                            <TextBlock Text="{local:T 'Um recurso que faria diferença no seu dia.'}" Style="{StaticResource RowText}"/>
-                        </StackPanel>
-                    </DockPanel>
-                </Button>
-
-                <Button Style="{StaticResource ActionRow}" Tag="https://yamamotodesigner.github.io/ilha/" Click="Link_Click"
-                        Margin="0">
-                    <DockPanel>
-                        <Border Style="{StaticResource IconTile}" Background="#337CE3A1">
-                            <local:Glyph Data="{StaticResource IcoGlobe}" Size="17" Foreground="#7CE3A1"/>
-                        </Border>
-                        <StackPanel>
-                            <TextBlock Text="{local:T 'Conhecer o site'}" Style="{StaticResource RowTitle}"/>
-                            <TextBlock Text="{local:T 'Novidades e download da última versão.'}" Style="{StaticResource RowText}"/>
-                        </StackPanel>
-                    </DockPanel>
-                </Button>
-            </StackPanel>
-        </Grid>
-
-        <TextBlock Text="{local:T 'Obrigado por usar o Ilha 💚'}" HorizontalAlignment="Center" Margin="0,22,0,0"
-                   Foreground="{DynamicResource Text3}" FontSize="12.5"/>
-    </StackPanel>
+        </StackPanel>
+    </Grid>
 </Window>

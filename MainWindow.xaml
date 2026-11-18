@@ -348,7 +348,6 @@
                 <Border x:Name="SlimFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="#E6000000"
                         Opacity="0" IsHitTestVisible="False"/>
                 <!-- Música tocando com a ilha em risco: ondinhas dentro do próprio risco -->
-                <Canvas x:Name="SlimWaves" Opacity="0" IsHitTestVisible="False" ClipToBounds="True"/>
                 <!-- Tempo do timer acabou: a ilha fica verde (pastel) até a pessoa dar OK -->
                 <Border x:Name="AlertFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="#B9E2C8"
                         Opacity="0" IsHitTestVisible="False"/>
@@ -623,6 +622,8 @@
                                 </Grid>
 
                                 <Grid x:Name="Pages" Grid.Row="1" Margin="0,12,0,0" ClipToBounds="True">
+                                    <!-- "Foto" da aba que está saindo (troca cruzada sem piscar) -->
+                                    <Canvas x:Name="LeavingLayer" IsHitTestVisible="False" Panel.ZIndex="0"/>
 
                                     <!-- ── Início: mídia + sistema + prateleira ── -->
                                     <Grid x:Name="PageHome">
@@ -1001,9 +1002,19 @@
                                         <Grid Height="58">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <StackPanel VerticalAlignment="Center" Margin="2,0,12,0" MinWidth="50">
+                                            <Button Grid.Column="1" Style="{StaticResource IconButton}" Width="22" Height="40"
+                                                    Click="MonthPrev_Click" ToolTip="{local:T 'MÃªs anterior'}" VerticalAlignment="Center">
+                                                <local:Glyph Data="{StaticResource IcoChevronLeft}" Size="15" Foreground="{DynamicResource Tertiary}"/>
+                                            </Button>
+                                            <Button Grid.Column="3" Style="{StaticResource IconButton}" Width="22" Height="40"
+                                                    Click="MonthNext_Click" ToolTip="{local:T 'PrÃ³ximo mÃªs'}" VerticalAlignment="Center">
+                                                <local:Glyph Data="{StaticResource IcoChevronRight}" Size="15" Foreground="{DynamicResource Tertiary}"/>
+                                            </Button>
+                                            <StackPanel VerticalAlignment="Center" Margin="2,0,8,0" MinWidth="50">
                                                 <TextBlock x:Name="CalMonth" FontSize="24" FontWeight="SemiBold"/>
                                                 <Grid Margin="1,2,0,0">
                                                     <TextBlock x:Name="CalYear" Style="{StaticResource Label}"/>
@@ -1013,9 +1024,11 @@
                                                             Content="{local:T 'Hoje'}"/>
                                                 </Grid>
                                             </StackPanel>
-                                            <!-- Os dias passam de lado: rolar o mouse ou clicar num dia -->
-                                            <Canvas x:Name="DayStrip" Grid.Column="1" ClipToBounds="True" Background="Transparent"
-                                                    MouseWheel="DayStrip_MouseWheel">
+                                            <!-- Os dias passam de lado: rolar o mouse, arrastar ou clicar num dia -->
+                                            <Canvas x:Name="DayStrip" Grid.Column="2" ClipToBounds="True" Background="Transparent"
+                                                    MouseWheel="DayStrip_MouseWheel" MouseLeftButtonDown="DayStrip_MouseDown"
+                                                    MouseMove="DayStrip_MouseMove" MouseLeftButtonUp="DayStrip_MouseUp"
+                                                    LostMouseCapture="DayStrip_LostCapture">
                                                 <Canvas.OpacityMask>
                                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                                         <GradientStop Color="#00000000" Offset="0"/>

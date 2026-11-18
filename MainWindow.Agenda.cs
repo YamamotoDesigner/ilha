@@ -12,13 +12,13 @@ using System.Windows.Media.Animation;
 namespace Ilha
 {
     /// <summary>
-    /// Agenda: os dias passam de lado numa faixa (rolar o mouse ou clicar), o dia escolhido cresce
+    /// Agenda: os dias passam de lado numa faixa (rolar, arrastar ou clicar; setas trocam o mês), o dia escolhido cresce
     /// no centro e, embaixo, ficam os lembretes desse dia.
     /// </summary>
     public partial class MainWindow
     {
         private const double DayCellW = 40, DayCellH = 58;
-        private const int DaysBack = 60, DaysAhead = 366;
+        private const int DaysBack = 190, DaysAhead = 366;
         private DateTime _stripStart;
         private DateTime _stripBuiltFor;
         private string _stripLang = "";
@@ -162,7 +162,7 @@ namespace Ilha
                     }
                 }
             }
-            CenterDayStrip(motion);
+            if (!_stripDragging) CenterDayStrip(motion); // no arraste, quem move a faixa é o mouse
         }
 
         /// <summary>Desliza a faixa até o dia escolhido ficar no centro.</summary>
@@ -199,6 +199,67 @@ namespace Ilha
             _wheelAcc -= steps * 120;
             SelectDay(_selectedDate.AddDays(-steps));
         }
+
+        // ───── Arrastar a faixa de dias e trocar de mês ─────
+
+        private bool _stripPressed, _stripDragging;
+        private double _stripDownX, _stripDownShift;
+
+        private void DayStrip_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            _stripPressed = true;
+            _stripDragging = false;
+            _stripDownX = e.GetPosition(DayStrip).X;
+            _stripDownShift = DayStripShift.X;
+        }
+
+        /// <summary>Passou de 5 px: vira arraste. A faixa segue o mouse e o dia do centro vai sendo escolhido.</summary>
+        private void DayStrip_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_stripPressed) return;
+            if (e.LeftButton != MouseButtonState.Pressed) { EndStripDrag(); return; }
+            double dx = e.GetPosition(DayStrip).X - _stripDownX;
+            if (!_stripDragging)
+            {
+                if (Math.Abs(dx) < 5) return;
+                _stripDragging = true;
+                DayStrip.CaptureMouse();
+                DayStrip.Cursor = Cursors.SizeWE;
+                DayStripShift.BeginAnimation(TranslateTransform.XProperty, null);
+            }
+            double w = DayStrip.ActualWidth;
+            double min = Math.Round(w / 2 - ((_dayCells.Count - 1) * DayCellW + DayCellW / 2));
+            double max = Math.Round(w / 2 - DayCellW / 2);
+            double x = Math.Clamp(_stripDownShift + dx, min, max);
+            DayStripShift.X = x;
+            int index = (int)Math.Round((w / 2 - x - DayCellW / 2) / DayCellW);
+            index = Math.Clamp(index, 0, _dayCells.Count - 1);
+            var day = _stripStart.AddDays(index);
+            if (day != _selectedDate) SelectDay(day);
+        }
+
+        private void DayStrip_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_stripDragging) e.Handled = true; // não conta como clique num dia
+            EndStripDrag();
+        }
+
+        private void DayStrip_LostCapture(object sender, MouseEventArgs e) => EndStripDrag();
+
+        private void EndStripDrag()
+        {
+            if (!_stripPressed) return;
+            bool wasDragging = _stripDragging;
+            _stripPressed = false;
+            _stripDragging = false;
+            if (DayStrip.IsMouseCaptured) DayStrip.ReleaseMouseCapture();
+            DayStrip.ClearValue(CursorProperty);
+            if (wasDragging) CenterDayStrip(animate: !ReduceMotion); // encaixa no dia do centro
+        }
+
+        private void MonthPrev_Click(object sender, RoutedEventArgs e) => SelectDay(_selectedDate.AddMonths(-1));
+
+        private void MonthNext_Click(object sender, RoutedEventArgs e) => SelectDay(_selectedDate.AddMonths(1));
 
         private void AgendaToday_Click(object sender, RoutedEventArgs e) => SelectDay(DateTime.Today);
 

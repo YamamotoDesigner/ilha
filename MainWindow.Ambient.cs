@@ -132,7 +132,7 @@ namespace Ilha
         // ───────────── Entrada em cascata ─────────────
 
         /// <summary>Os blocos da página sobem e aparecem um depois do outro.</summary>
-        private void StaggerIn(FrameworkElement page)
+        private void StaggerIn(FrameworkElement page, bool fade = true)
         {
             if (ReduceMotion) return;
             var blocks = (page as Panel)?.Children.OfType<FrameworkElement>()
@@ -145,7 +145,16 @@ namespace Ilha
                 var delay = TimeSpan.FromMilliseconds(40 + i * 55);
                 var rise = new TranslateTransform(0, 12);
                 block.RenderTransform = rise;
-                block.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300)) { BeginTime = delay });
+                if (fade)
+                {
+                    // Começa invisível já no primeiro quadro (com BeginTime, o bloco aparecia e sumia antes: piscava).
+                    var show = new DoubleAnimationUsingKeyFrames();
+                    show.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                    show.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(delay)));
+                    show.KeyFrames.Add(new LinearDoubleKeyFrame(1, KeyTime.FromTimeSpan(delay + TimeSpan.FromMilliseconds(300))));
+                    block.BeginAnimation(OpacityProperty, show);
+                }
+                else block.BeginAnimation(OpacityProperty, null);
                 rise.BeginAnimation(TranslateTransform.YProperty,
                     new DoubleAnimation(12, 0, TimeSpan.FromMilliseconds(460)) { BeginTime = delay, EasingFunction = ease });
             }

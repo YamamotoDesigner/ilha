@@ -8,6 +8,17 @@ namespace Ilha
         public static readonly Dictionary<string, string> Strings = new()
         {
             ["Teleprompter"] = "Teleprompter",
+            // 1.13.2
+            ["Só Spotify e YouTube"] = "Only Spotify and YouTube",
+            ["Desligado, a ilha mostra qualquer app ou site que estiver tocando som."] = "When off, the island shows any app or site that is playing sound.",
+            ["Mês anterior"] = "Previous month",
+            ["Próximo mês"] = "Next month",
+            ["O Ilha é gratuito e feito por uma pessoa só. Se ele ajuda no seu dia, um Pix de qualquer valor mantém o projeto andando."] = "Ilha is free and made by one person. If it helps your day, a Pix of any amount keeps the project going.",
+            ["Pix para {0}"] = "Pix to {0}",
+            ["Copiar código Pix"] = "Copy Pix code",
+            ["Código copiado. Cole no app do seu banco."] = "Code copied. Paste it in your bank app.",
+            ["Selecione o código abaixo e copie"] = "Select the code below and copy it",
+            ["Link do site copiado"] = "Website link copied",
             // Versão de teste: apresentação "Olá", hora cheia, alarme verde
             ["ou pressione Enter"] = "or press Enter",
             ["Reunião às 15h"] = "Meeting at 3 PM",
@@ -30,7 +41,7 @@ namespace Ilha
             ["Ouvir"] = "Play",
             ["Som do alarme do timer"] = "Timer alarm sound",
             ["Repetir o som"] = "Repeat the sound",
-            ["Quando o tempo acaba, a ilha fica verde. Passe o mouse e toque em OK."] = "When time is up, the island turns green. Hover it and tap OK.",
+            ["Quando o tempo acaba, a ilha dá uma chacoalhada discreta. Toque nela para parar o som."] = "When time is up, the island gives a subtle shake. Tap it to stop the sound.",
             ["Tempo esgotado. Clique para parar."] = "Time is up. Click to stop.",
             ["Escolha um som"] = "Choose a sound",
             ["Sons"] = "Sounds",
@@ -106,9 +117,9 @@ namespace Ilha
             ["Conversão pronta"] = "Conversion done",
             ["Guardar"] = "Keep",
             ["Discreta quando você trabalha"] = "Out of the way while you work",
-            ["Quando uma janela fica embaixo da ilha, ela vira um risco para não cobrir abas e botões. Minimizou, ela volta. Com música, o risco ganha ondas."] = "When a window sits under the island, it becomes a thin line so it won't cover tabs and buttons. Minimize it and the island comes back. With music on, the line shows waves.",
+            ["Quando uma janela fica embaixo da ilha, ela vira um risco para não cobrir abas e botões. Minimizou, ela volta."] = "When a window sits under the island, it becomes a thin line so it won't cover tabs and buttons. Minimize it and the island comes back.",
             ["Hora a hora"] = "Hour by hour",
-            ["A cada hora a ilha mostra o horário por um instante. E quando o timer acaba, ela fica verde até você tocar em OK."] = "Every hour the island shows the time for a moment. And when the timer ends, it turns green until you tap OK.",
+            ["A cada hora a ilha mostra o horário por um instante. E quando o timer acaba, ela dá uma chacoalhada discreta."] = "Every hour the island shows the time for a moment. And when the timer ends, it gives a subtle shake.",
             ["Solte com vontade"] = "Drop it like you mean it",
             ["Arrastar um arquivo até a ilha ficou mais divertido: os cartões crescem, a ilha pisca e chacoalha ao receber."] = "Dragging a file to the island is more fun now: the cards grow, and the island flashes and shakes as it catches it.",
             ["Com um app na frente, a ilha vira um risco fino no topo. Passe o mouse e ela abre. Na área de trabalho, volta ao normal."] = "With an app in front, the island becomes a thin line at the top. Hover and it opens. On the desktop, it goes back to normal.",

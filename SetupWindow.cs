@@ -1129,8 +1129,8 @@ namespace Ilha
         {
             bool light = IslandLight, floating = IslandFloating;
             _island.Background = new SolidColorBrush(light ? Color.FromRgb(0xF5, 0xF5, 0xF7) : Color.FromRgb(0x05, 0x05, 0x06));
-            _island.BorderBrush = new SolidColorBrush(light ? Color.FromArgb(0x22, 0, 0, 0) : Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF));
-            _island.BorderThickness = new Thickness(1);
+            _island.BorderBrush = null; // sem contorno: a borda clara marcava o limite da ilha
+            _island.BorderThickness = new Thickness(0);
             // Dentro da ilha, a cor do traço segue a ilha (e não a janela).
             _island.Resources["Ink_FF"] = new SolidColorBrush(light ? Color.FromRgb(0x14, 0x14, 0x18) : Colors.White);
             _island.Resources["Accent"] = Resources["Accent"];

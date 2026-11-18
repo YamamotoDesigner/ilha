@@ -332,6 +332,20 @@ namespace Ilha
                     if (testTab == "idle") return; // só a ilha recolhida, esperando avisos
                     _pinned = true;
                     Expand();
+                    // ILHA_TEST_CYCLE="home,agenda": alterna as abas a cada 1,5 s (para ver piscadas na troca).
+                    if (Environment.GetEnvironmentVariable("ILHA_TEST_CYCLE") is { Length: > 0 } cycle)
+                    {
+                        var tabs = cycle.Split(',');
+                        int at = 0;
+                        var swap = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
+                        swap.Tick += (_, _) =>
+                        {
+                            at = (at + 1) % tabs.Length;
+                            foreach (var b in TabBar.Children.OfType<RadioButton>())
+                                if ((string)b.Tag == tabs[at]) b.IsChecked = true;
+                        };
+                        swap.Start();
+                    }
                     foreach (var tabButton in TabBar.Children.OfType<RadioButton>())
                         if ((string)tabButton.Tag == testTab) tabButton.IsChecked = true;
                     // Conversor: ILHA_TEST_CONVERT="arquivo" carrega; ILHA_TEST_CONVERT_RUN="png" já converte;
@@ -847,7 +861,6 @@ namespace Ilha
             }
 
             SlimFill.Background = new SolidColorBrush(Color.FromArgb(0xEB, baseColor.R, baseColor.G, baseColor.B));
-            SetWaveInk(baseColor);
 
             // Luz ambiente: um véu da cor da ilha por cima do brilho mantém o texto legível
             // (mais forte embaixo e à direita, onde ficam os textos menores).
@@ -1055,6 +1068,7 @@ namespace Ilha
         private void ApplySettings()
         {
             var s = _settings;
+            _media.OnlyMainApps = s.MediaOnlyMainApps;
 
             // Tema, cores e material
             bool dark = !string.Equals(s.Theme, "Light", StringComparison.OrdinalIgnoreCase);
@@ -1282,7 +1296,6 @@ namespace Ilha
             Bars.Visibility = showBars ? Visibility.Visible : Visibility.Collapsed;
             CollapsedTimerText.Visibility = showTimer ? Visibility.Visible : Visibility.Collapsed;
             SetBarsAnimating(showBars && !_expanded);
-            UpdateSlimWaves();
             if (_alertShowing && !_expanded) return; // o cartão verde do tempo esgotado ocupa a ilha
             if (_nudging && !_expanded) return; // a saudação/lembrete está ocupando a ilha
 
@@ -1478,6 +1491,35 @@ namespace Ilha
         /// <summary>Sem animações quando o Windows pede menos movimento.</summary>
         private static bool ReduceMotion => !SystemParameters.ClientAreaAnimation;
 
+        /// <summary>Imagem da página como está agora, no mesmo lugar dentro de <c>Pages</c>.</summary>
+        private Image? SnapshotPage(FrameworkElement page)
+        {
+            try
+            {
+                double w = page.ActualWidth, h = page.ActualHeight;
+                if (w < 2 || h < 2) return null;
+                var dpi = VisualTreeHelper.GetDpi(page);
+                var at = page.TranslatePoint(new Point(0, 0), LeavingLayer);
+                var visual = new DrawingVisual();
+                using (var dc = visual.RenderOpen())
+                    dc.DrawRectangle(new VisualBrush(page) { Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top },
+                        null, new Rect(0, 0, w, h));
+                var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(w * dpi.DpiScaleX), (int)Math.Ceiling(h * dpi.DpiScaleY),
+                    96 * dpi.DpiScaleX, 96 * dpi.DpiScaleY, PixelFormats.Pbgra32);
+                bmp.Render(visual);
+                bmp.Freeze();
+                var image = new Image { Source = bmp, Width = w, Height = h, IsHitTestVisible = false };
+                RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.NearestNeighbor);
+                Canvas.SetLeft(image, at.X);
+                Canvas.SetTop(image, at.Y);
+                return image;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         private void SelectTab(string tab)
         {
             if (PageHome == null) return; // durante InitializeComponent
@@ -1521,11 +1563,52 @@ namespace Ilha
                 else if (changed && !layoutChanged && Shown(name, previous) && page.Visibility == Visibility.Visible && !ReduceMotion)
                 {
                     // Sai: some rápido para o lado oposto enquanto a nova entra (troca cruzada).
+                    // Quem sai é uma "foto" da página: a ilha já se reorganiza para o tamanho da próxima aba,
+                    // e a página de verdade, espremida, perdia cartões por um quadro (parecia uma piscada).
+                    var shot = SnapshotPage(page);
+                    if (shot != null)
+                    {
+                        page.Visibility = Visibility.Collapsed;
+                        page.BeginAnimation(OpacityProperty, null);
+                        page.Opacity = 1;
+                        page.IsHitTestVisible = true;
+                        LeavingLayer.Children.Add(shot);
+                        Pages.ClipToBounds = false; // quem corta é a própria ilha, que encolhe animando
+                        var shotMove = new TranslateTransform();
+                        shot.RenderTransform = shotMove;
+                        var shotFade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(220)); // cruza com a nova (240 ms)
+                        // A foto não pode passar da borda da ilha, que encolhe animando: recorta a cada quadro.
+                        EventHandler clipToIsland = (_, _) =>
+                        {
+                            try
+                            {
+                                var origin = Island.TranslatePoint(new Point(0, 0), shot);
+                                double bottom = origin.Y + Island.ActualHeight - 8;
+                                shot.Clip = new RectangleGeometry(new Rect(-40, -40, shot.Width + 80, Math.Max(0, bottom + 40)));
+                            }
+                            catch (InvalidOperationException)
+                            {
+                                // Fora da árvore visual (já removida).
+                            }
+                        };
+                        clipToIsland(null, EventArgs.Empty);
+                        CompositionTarget.Rendering += clipToIsland;
+                        shotFade.Completed += (_, _) =>
+                        {
+                            CompositionTarget.Rendering -= clipToIsland;
+                            LeavingLayer.Children.Remove(shot);
+                            if (LeavingLayer.Children.Count == 0) Pages.ClipToBounds = true;
+                        };
+                        shot.BeginAnimation(OpacityProperty, shotFade);
+                        shotMove.BeginAnimation(vertical ? TranslateTransform.YProperty : TranslateTransform.XProperty,
+                            new DoubleAnimation(-12 * dir, TimeSpan.FromMilliseconds(220)) { EasingFunction = ease });
+                        continue;
+                    }
                     Panel.SetZIndex(page, 0);
                     page.IsHitTestVisible = false;
                     var move = new TranslateTransform();
                     page.RenderTransform = move;
-                    var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(160));
+                    var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(220));
                     var leaving = page;
                     fade.Completed += (_, _) =>
                     {
@@ -1546,10 +1629,10 @@ namespace Ilha
             }
             MoveTabIndicator(animate: changed);
             if (changed) ApplyTabSize(animate: _expanded);
-            if (changed && _expanded && CurrentPage is { } entering) StaggerIn(entering);
+            if (changed && _expanded && CurrentPage is { } entering) StaggerIn(entering, fade: false); // a página já entra com fade: apagar os blocos também deixava um quadro quase preto (piscada)
             if (tab != "prompter" && previous == "prompter" && _prompterRunning) PrompterStop(resetToStart: false);
             if (changed && !Shown("notes", tab) && !Shown("agenda", tab) && !Shown("tasks", tab) && tab != "prompter") ReleaseKeyboard();
-            if (changed && Shown("agenda", tab) && !Shown("agenda", previous)) SelectDay(DateTime.Today);
+            if (changed && Shown("agenda", tab) && !Shown("agenda", previous) && _selectedDate != DateTime.Today) SelectDay(DateTime.Today); // já em hoje: não refaz a lista (piscava)
             if (changed && Shown("notes", previous) && !Shown("notes", tab)) SaveOpenNote();
             if (tab == "mirror" && _expanded) StartMirror();
             else StopMirror();

@@ -36,14 +36,12 @@ namespace Ilha
                 QrImage.Source = Support.CreateQr(code);
                 CodeBox.Text = code;
                 string? name = Support.ReceiverName(code);
-                ReceiverText.Text = name != null ? $"Para: {name}" : "";
+                ReceiverText.Text = name != null ? string.Format(L.T("Pix para {0}"), name) : "";
             }
             else
             {
                 // Sem Pix configurado: só as outras formas de ajudar.
                 PixCard.Visibility = Visibility.Collapsed;
-                PixCol.Width = new GridLength(0);
-                PixGap.Width = new GridLength(0);
             }
         }
 
@@ -51,22 +49,22 @@ namespace Ilha
         {
             if (TryCopy(Support.PixCode))
             {
-                CopyText.Text = L.T("Copiado! Cole no app do seu banco ✓");
+                CopyText.Text = L.T("Código copiado. Cole no app do seu banco.");
             }
             else
             {
                 CodeBox.Visibility = Visibility.Visible;
                 CodeBox.Focus();
                 CodeBox.SelectAll();
-                CopyText.Text = L.T("Não deu para copiar — selecione o código abaixo");
+                CopyText.Text = L.T("Selecione o código abaixo e copie");
             }
-            After(3, () => CopyText.Text = L.T("Copiar código Pix (copia e cola)"));
+            After(3, () => CopyText.Text = L.T("Copiar código Pix"));
         }
 
         private void Share_Click(object sender, RoutedEventArgs e)
         {
-            ShareText.Text = TryCopy(SiteUrl) ? L.T("Link copiado! Agora é só colar na conversa ✓") : SiteUrl;
-            After(3, () => ShareText.Text = L.T("Copia o link do site para você mandar."));
+            ShareText.Text = TryCopy(SiteUrl) ? L.T("Link do site copiado") : SiteUrl;
+            After(3, () => ShareText.Text = L.T("Indicar para um amigo"));
         }
 
         private void Link_Click(object sender, RoutedEventArgs e)

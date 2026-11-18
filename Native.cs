@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
@@ -156,6 +157,25 @@ namespace Ilha
         [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr hWnd);
         [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out RECT value, int size);
         [DllImport("dwmapi.dll", EntryPoint = "DwmGetWindowAttribute")] private static extern int DwmGetCloaked(IntPtr hwnd, int attr, out int value, int size);
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int max);
+        [DllImport("user32.dll")] private static extern int GetWindowTextLength(IntPtr hWnd);
+
+        /// <summary>Títulos das janelas principais abertas (inclusive minimizadas).</summary>
+        public static List<string> WindowTitles()
+        {
+            var list = new List<string>();
+            EnumWindows((hwnd, _) =>
+            {
+                if (!IsWindowVisible(hwnd)) return true;
+                int len = GetWindowTextLength(hwnd);
+                if (len <= 0 || len > 1000) return true;
+                var sb = new StringBuilder(len + 1);
+                GetWindowText(hwnd, sb, sb.Capacity);
+                list.Add(sb.ToString());
+                return true;
+            }, IntPtr.Zero);
+            return list;
+        }
 
         /// <summary>
         /// Olha as janelas de cima para baixo e diz se a primeira que encosta na faixa da ilha é

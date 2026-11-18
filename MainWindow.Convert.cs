@@ -346,10 +346,20 @@ namespace Ilha
             glow.Completed += (_, _) => _connectActive = false;
             ConnectStroke.BeginAnimation(OpacityProperty, glow);
 
-            if (!shake) return;
-            // Chacoalhada: vai e volta cada vez menor, como algo que encaixou no lugar.
+            if (shake) ShakeIsland(gentle: false);
+        }
+
+        /// <summary>
+        /// Chacoalhada: vai e volta cada vez menor, como algo que encaixou no lugar.
+        /// A versão suave (alarme do timer) é só uma vibradinha discreta.
+        /// </summary>
+        private void ShakeIsland(bool gentle)
+        {
+            if (_hiddenForFullscreen || ReduceMotion) return;
             var wobble = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.Stop };
-            (double X, int Ms)[] steps = { (-11, 60), (9, 130), (-7, 200), (5, 270), (-3, 340), (1.5, 410), (0, 480) };
+            (double X, int Ms)[] steps = gentle
+                ? new[] { (-4.0, 50), (3.5, 100), (-3.0, 150), (2.5, 200), (-1.5, 250), (1.0, 300), (0.0, 350) }
+                : new[] { (-11.0, 60), (9.0, 130), (-7.0, 200), (5.0, 270), (-3.0, 340), (1.5, 410), (0.0, 480) };
             foreach (var (x, ms) in steps)
                 wobble.KeyFrames.Add(new EasingDoubleKeyFrame(x, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(ms)),
                     new SineEase { EasingMode = EasingMode.EaseInOut }));

@@ -954,6 +954,14 @@
                                     </StackPanel>
                                 </CheckBox>
                                 <Border Style="{StaticResource Divider}"/>
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding MediaOnlyMainApps}">
+                                    <StackPanel>
+                                        <TextBlock Text="{local:T 'Só Spotify e YouTube'}"/>
+                                        <TextBlock Text="{local:T 'Desligado, a ilha mostra qualquer app ou site que estiver tocando som.'}"
+                                                   FontSize="12" Foreground="{DynamicResource Text3}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </CheckBox>
+                                <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding ShowShuffleRepeat}">
                                     <StackPanel>
                                         <TextBlock Text="{local:T 'Aleatório e repetir'}"/>
@@ -1104,7 +1112,7 @@
                             </StackPanel>
                         </Border>
                         <TextBlock Style="{StaticResource Hint}"
-                                   Text="{local:T 'Quando o tempo acaba, a ilha fica verde. Passe o mouse e toque em OK.'}"/>
+                                   Text="{local:T 'Quando o tempo acaba, a ilha dá uma chacoalhada discreta. Toque nela para parar o som.'}"/>
 
                         <TextBlock Text="{local:T 'ILHA RECOLHIDA'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">

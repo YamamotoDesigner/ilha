@@ -104,7 +104,6 @@ namespace Ilha
                 _catchTimer.Stop();
                 DropCatch.Visibility = Visibility.Collapsed;
             }
-            UpdateSlimWaves();
         }
 
         /// <summary>
@@ -126,95 +125,6 @@ namespace Ilha
             }
             var visibility = on ? Visibility.Visible : Visibility.Collapsed;
             if (DropCatch.Visibility != visibility) DropCatch.Visibility = visibility;
-        }
-
-        // ───────────── Ondas da música dentro do risco ─────────────
-
-        private System.Windows.Shapes.Rectangle[] _waveBars = Array.Empty<System.Windows.Shapes.Rectangle>();
-        private bool _wavesOn;
-        private readonly System.Diagnostics.Stopwatch _waveClock = new();
-        private Brush _waveInk = new SolidColorBrush(Color.FromArgb(0xE0, 255, 255, 255));
-
-        private bool WavesWanted =>
-            SlimWanted && !_expanded && !_peeking && !_alertShowing && !_nudging && !_hiddenForFullscreen &&
-            _settings.ShowMedia && _media.HasSession && _media.IsPlaying;
-
-        /// <summary>Cor das ondas: clara na ilha escura, escura na ilha clara.</summary>
-        private void SetWaveInk(Color island)
-        {
-            bool light = island.R * 0.3 + island.G * 0.59 + island.B * 0.11 > 150;
-            _waveInk = new SolidColorBrush(light ? Color.FromArgb(0xB8, 0, 0, 0) : Color.FromArgb(0xE6, 255, 255, 255));
-            _waveInk.Freeze();
-            foreach (var bar in _waveBars) bar.Fill = _waveInk;
-        }
-
-        private void UpdateSlimWaves()
-        {
-            bool want = WavesWanted;
-            if (want == _wavesOn) return;
-            _wavesOn = want;
-            if (want)
-            {
-                _waveClock.Restart();
-                CompositionTarget.Rendering -= DrawSlimWaves;
-                CompositionTarget.Rendering += DrawSlimWaves;
-                Fade(SlimWaves, 1, 420, delayMs: 260);
-            }
-            else
-            {
-                Fade(SlimWaves, 0, 160);
-                var stop = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
-                stop.Tick += (_, _) =>
-                {
-                    stop.Stop();
-                    if (!_wavesOn) CompositionTarget.Rendering -= DrawSlimWaves;
-                };
-                stop.Start();
-            }
-        }
-
-        /// <summary>
-        /// Barrinhas finas que sobem e descem como uma onda de som, sempre dentro do risco:
-        /// mais altas no meio, sumindo nas pontas, com um "pulso" leve como batida.
-        /// </summary>
-        private void DrawSlimWaves(object? sender, EventArgs e)
-        {
-            if (_wavesOn && !WavesWanted) { UpdateSlimWaves(); return; }
-            double w = SlimWaves.ActualWidth, h = SlimWaves.ActualHeight;
-            if (w < 12 || h < 2) return;
-
-            const double barW = 1.5, step = 2.5;
-            double inset = Math.Min(10, w * 0.12);
-            int count = Math.Max(3, (int)((w - inset * 2) / step));
-            if (_waveBars.Length != count)
-            {
-                SlimWaves.Children.Clear();
-                _waveBars = new System.Windows.Shapes.Rectangle[count];
-                for (int i = 0; i < count; i++)
-                {
-                    var bar = new System.Windows.Shapes.Rectangle { Width = barW, Fill = _waveInk, RadiusX = 0.8, RadiusY = 0.8 };
-                    _waveBars[i] = bar;
-                    SlimWaves.Children.Add(bar);
-                }
-            }
-
-            double t = _waveClock.Elapsed.TotalSeconds;
-            double start = (w - (count - 1) * step - barW) / 2;
-            double beat = 0.72 + 0.28 * Math.Pow(Math.Abs(Math.Sin(t * 3.3)), 3);
-            double max = h - 1.2;
-            for (int i = 0; i < count; i++)
-            {
-                double u = count == 1 ? 0.5 : i / (double)(count - 1);
-                double env = Math.Pow(Math.Sin(Math.PI * u), 0.7);
-                double wave = 0.5 + 0.5 * (0.55 * Math.Sin(u * 13 - t * 5.4) +
-                                           0.30 * Math.Sin(u * 29 + t * 3.2) +
-                                           0.15 * Math.Sin(u * 6 - t * 8.1));
-                double bh = Math.Max(0.8, max * env * (0.25 + 0.75 * wave) * beat);
-                var bar = _waveBars[i];
-                bar.Height = bh;
-                System.Windows.Controls.Canvas.SetLeft(bar, start + i * step);
-                System.Windows.Controls.Canvas.SetTop(bar, (h - bh) / 2);
-            }
         }
     }
 }

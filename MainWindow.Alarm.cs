@@ -8,8 +8,8 @@ using System.Windows.Threading;
 namespace Ilha
 {
     /// <summary>
-    /// Tempo esgotado: a ilha fica verde (um verde pastel, calmo), o som escolhido toca algumas vezes
-    /// e tudo fica assim até a pessoa passar o mouse e dar OK.
+    /// Tempo esgotado: a ilha dá uma chacoalhada discreta a cada toque do som escolhido
+    /// e o alarme encerra sozinho no último toque (ou quando a pessoa toca na ilha).
     /// Hora cheia: de hora em hora (ou de meia em meia), a ilha se abre um instante e mostra o horário.
     /// </summary>
     public partial class MainWindow
@@ -48,9 +48,11 @@ namespace Ilha
             _alarmSoundTimer.Interval = TimeSpan.FromSeconds(AlarmSounds.RepeatSeconds);
             _alarmSoundTimer.Tick += (_, _) =>
             {
-                if (!_timerAlerting || _alarmSoundsLeft <= 0) { _alarmSoundTimer.Stop(); return; }
+                if (!_timerAlerting) { _alarmSoundTimer.Stop(); return; }
+                if (_alarmSoundsLeft <= 0) { StopAlert(); return; } // último toque acabou: o alarme encerra sozinho
                 _alarmSoundsLeft--;
                 AlarmSounds.Play(_settings);
+                ShakeIsland(gentle: true);
             };
         }
 
@@ -61,7 +63,7 @@ namespace Ilha
             _alarmSoundsLeft = Math.Clamp(_settings.AlarmRepeats, 1, 30) - 1;
             AlarmSounds.Play(_settings);
             _alarmSoundTimer.Stop();
-            if (_alarmSoundsLeft > 0) _alarmSoundTimer.Start();
+            _alarmSoundTimer.Start();
         }
 
         private void StopAlarmSound()
@@ -71,39 +73,23 @@ namespace Ilha
             AlarmSounds.Stop();
         }
 
-        /// <summary>Tempo esgotado: a ilha recolhe (se estava aberta) e fica só verde, no tamanho de sempre.</summary>
+        /// <summary>Tempo esgotado: a ilha só dá uma chacoalhada discreta, sem mudar de cor.</summary>
         private void ShowAlertCard()
         {
-            if (_expanded) Collapse();
             if (_peeking) EndPeek(animate: false);
             if (_nudging) EndNudge(runAfter: false);
-            _alertShowing = true;
-            AnimateSize(_settings.CollapsedWidth, _settings.CollapsedHeight, spring: false);
-            Fade(SlimFill, 0, 100);
-            Fade(CollapsedView, 0, 160);
-            Fade(PeekView, 0, 100);
-            Fade(AlertFill, 1, 520);
-            Island.Cursor = Cursors.Hand;
-            Island.ToolTip = null;
-            if (Island.IsMouseOver) Fade(AlertOk, 1, 180);
+            ShakeIsland(gentle: true);
         }
 
         private void HideAlertCard()
         {
-            if (!_alertShowing) return;
             _alertShowing = false;
-            Fade(AlertFill, 0, 520);
-            Fade(AlertOk, 0, 120);
-            Island.ClearValue(CursorProperty);
-            Island.ToolTip = null;
-            _collapsedKey = "";
-            if (!_expanded) UpdateCollapsedState(force: true);
         }
 
-        /// <summary>Clicar na ilha verde para o alarme.</summary>
+        /// <summary>Clicar na ilha enquanto o alarme toca: para o som.</summary>
         private bool TryStopAlertByClick()
         {
-            if (!_alertShowing) return false;
+            if (!_timerAlerting) return false;
             StopAlert();
             RestartCollapseTimer();
             return true;

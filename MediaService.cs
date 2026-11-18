@@ -56,8 +56,131 @@ namespace Ilha
         public async Task InitAsync()
         {
             _manager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
-            _manager.CurrentSessionChanged += (m, _) => _dispatcher.InvokeAsync(() => Attach(m.GetCurrentSession()));
-            Attach(_manager.GetCurrentSession());
+            _manager.CurrentSessionChanged += (_, _) => _dispatcher.InvokeAsync(() => _ = PickAsync());
+            _manager.SessionsChanged += (_, _) => _dispatcher.InvokeAsync(() => _ = PickAsync());
+            _pickTimer.Interval = TimeSpan.FromSeconds(1.5);
+            _pickTimer.Tick += (_, _) => _ = PickAsync();
+            _pickTimer.Start();
+            await PickAsync();
+        }
+
+        // ───── Quais apps aparecem ─────
+
+        private readonly DispatcherTimer _pickTimer = new();
+        private bool _picking;
+        private bool _onlyMainApps = true;
+        /// <summary>Títulos já reconhecidos como YouTube (a aba pode ir para o fundo depois).</summary>
+        private readonly System.Collections.Generic.HashSet<string> _youTubeTitles = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Ligado (padrão): só Spotify e YouTube aparecem na ilha. Desligado: qualquer app com som.</summary>
+        public bool OnlyMainApps
+        {
+            get => _onlyMainApps;
+            set
+            {
+                if (_onlyMainApps == value) return;
+                _onlyMainApps = value;
+                if (_manager != null) _ = PickAsync();
+            }
+        }
+
+        private static readonly string[] Browsers =
+            { "chrome", "msedge", "firefox", "opera", "brave", "vivaldi", "arc", "thorium", "zen", "librewolf", "floorp" };
+
+        private static bool IsBrowser(string id)
+        {
+            string x = id.ToLowerInvariant();
+            if (x.Length >= 12 && x.All(Uri.IsHexDigit)) return true; // Firefox usa um ID opaco
+            return Browsers.Any(b => x.Contains(b));
+        }
+
+        /// <summary>
+        /// O navegador não diz qual site está tocando. O título da janela diz ("Vídeo - YouTube - Google Chrome"):
+        /// se alguma janela tem o título da mídia junto com "YouTube", é YouTube. Fica guardado para quando
+        /// a aba for para o fundo.
+        /// </summary>
+        private bool IsYouTube(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title)) return false;
+            if (_youTubeTitles.Contains(title)) return true;
+            foreach (string w in Native.WindowTitles())
+            {
+                if (!w.Contains("YouTube", StringComparison.OrdinalIgnoreCase)) continue;
+                if (w.Contains(title, StringComparison.OrdinalIgnoreCase) ||
+                    w.StartsWith("YouTube Music", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_youTubeTitles.Count > 200) _youTubeTitles.Clear();
+                    _youTubeTitles.Add(title);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private async Task<bool> AllowedAsync(GlobalSystemMediaTransportControlsSession s)
+        {
+            if (!_onlyMainApps) return true;
+            string id = s.SourceAppUserModelId ?? "";
+            if (id.Contains("Spotify", StringComparison.OrdinalIgnoreCase)) return true;
+            if (id.Contains("YouTube", StringComparison.OrdinalIgnoreCase)) return true; // apps/PWA do YouTube
+            if (!IsBrowser(id)) return false;
+            try
+            {
+                var props = await s.TryGetMediaPropertiesAsync();
+                return IsYouTube(props?.Title ?? "");
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool Playing(GlobalSystemMediaTransportControlsSession s)
+        {
+            try { return s.GetPlaybackInfo()?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing; }
+            catch { return false; }
+        }
+
+        /// <summary>
+        /// Escolhe a sessão mostrada. Sem filtro: a que o Windows indica. Com filtro: entre Spotify e YouTube,
+        /// a indicada pelo Windows se for uma delas e estiver tocando; senão a que estiver tocando; senão a primeira.
+        /// </summary>
+        private async Task PickAsync()
+        {
+            if (_manager == null || _picking) return;
+            _picking = true;
+            try
+            {
+                var current = _manager.GetCurrentSession();
+                var chosen = current;
+                if (_onlyMainApps)
+                {
+                    var allowed = new System.Collections.Generic.List<GlobalSystemMediaTransportControlsSession>();
+                    foreach (var s in _manager.GetSessions())
+                        if (await AllowedAsync(s)) allowed.Add(s);
+                    bool IsCurrent(GlobalSystemMediaTransportControlsSession s) =>
+                        current != null && s.SourceAppUserModelId == current.SourceAppUserModelId;
+                    chosen = allowed.FirstOrDefault(s => IsCurrent(s) && Playing(s))
+                             ?? allowed.FirstOrDefault(Playing)
+                             ?? allowed.FirstOrDefault(s => _session != null && s.SourceAppUserModelId == _session.SourceAppUserModelId)
+                             ?? allowed.FirstOrDefault();
+                }
+                if (!SameSession(chosen, _session)) Attach(chosen);
+            }
+            catch
+            {
+                // A lista de sessões mudou no meio da leitura: tenta de novo no próximo ciclo.
+            }
+            finally
+            {
+                _picking = false;
+            }
+        }
+
+        private static bool SameSession(GlobalSystemMediaTransportControlsSession? a, GlobalSystemMediaTransportControlsSession? b)
+        {
+            if (a == null || b == null) return a == b;
+            return ReferenceEquals(a, b) || a.SourceAppUserModelId == b.SourceAppUserModelId;
         }
 
         private void Attach(GlobalSystemMediaTransportControlsSession? session)

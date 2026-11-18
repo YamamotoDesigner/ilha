@@ -97,6 +97,8 @@ namespace Ilha
 
         // Abas e recursos
         public bool ShowMedia { get; set; } = true;
+        /// <summary>Música: só Spotify e YouTube aparecem (desligado: qualquer app tocando som).</summary>
+        public bool MediaOnlyMainApps { get; set; } = true;
         public bool ShowShelf { get; set; } = true;
         /// <summary>Conversor de arquivos (solte na ilha e escolha o formato).</summary>
         public bool ShowConverter { get; set; } = true;
@@ -177,6 +179,7 @@ namespace Ilha
             CollapsedShowEqualizer = d.CollapsedShowEqualizer;
             CollapsedShowTimer = d.CollapsedShowTimer;
             ShowMedia = d.ShowMedia;
+            MediaOnlyMainApps = d.MediaOnlyMainApps;
             ShowShelf = d.ShowShelf;
             ShowNotes = d.ShowNotes;
             ShowTimer = d.ShowTimer;
