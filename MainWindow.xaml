@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Ilha"
-        Title="{local:T 'Ilha'}" Width="720" Height="300"
+        Title="{local:T 'Ilha'}" Width="720" Height="300" Left="-10000" Top="-10000"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="NoResize" Topmost="True" ShowInTaskbar="False" ShowActivated="False"
         FontFamily="{DynamicResource UiFont}" FontSize="13" Foreground="{DynamicResource Ink_FF}"
@@ -347,9 +347,13 @@
                 <!-- Ilha discreta: o risco fica quase opaco, mesmo com o material de vidro -->
                 <Border x:Name="SlimFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="#E6000000"
                         Opacity="0" IsHitTestVisible="False"/>
+                <!-- Música tocando com a ilha em risco: ondinhas dentro do próprio risco -->
+                <Canvas x:Name="SlimWaves" Opacity="0" IsHitTestVisible="False" ClipToBounds="True"/>
                 <!-- Tempo do timer acabou: a ilha fica verde (pastel) até a pessoa dar OK -->
                 <Border x:Name="AlertFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="#B9E2C8"
                         Opacity="0" IsHitTestVisible="False"/>
+                <!-- Soltou um arquivo: um clarão rápido na cor de destaque -->
+                <Border x:Name="DropFlash" CornerRadius="{Binding CornerRadius, ElementName=Island}" Opacity="0" IsHitTestVisible="False"/>
                 <!-- Luz ambiente: a capa da música, bem pequena e esticada, vira um brilho colorido atrás de tudo -->
                 <Grid x:Name="AmbientLayer" IsHitTestVisible="False" Opacity="0">
                     <Border x:Name="AmbientArt" Width="1100" Height="560" HorizontalAlignment="Center" VerticalAlignment="Top"
@@ -1576,7 +1580,7 @@
                 </Grid>
 
                 <!-- Encaixe: ao soltar um arquivo (ou terminar uma conversão), um traço contorna a ilha -->
-                <Path x:Name="ConnectStroke" Stroke="{DynamicResource Accent}" StrokeThickness="1.6" Opacity="0"
+                <Path x:Name="ConnectStroke" Stroke="{DynamicResource Accent}" StrokeThickness="2.2" Opacity="0"
                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                       IsHitTestVisible="False"/>
             </Grid>

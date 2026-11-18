@@ -847,6 +847,7 @@ namespace Ilha
             }
 
             SlimFill.Background = new SolidColorBrush(Color.FromArgb(0xEB, baseColor.R, baseColor.G, baseColor.B));
+            SetWaveInk(baseColor);
 
             // Luz ambiente: um véu da cor da ilha por cima do brilho mantém o texto legível
             // (mais forte embaixo e à direita, onde ficam os textos menores).
@@ -897,6 +898,7 @@ namespace Ilha
             if (_hotkeyRegistered) Native.UnregisterHotKey(_hwnd, HotkeyId);
             if (_clipboardListening) Native.RemoveClipboardFormatListener(_hwnd);
             Native.StopWatching(_foregroundHook);
+            Native.StopWatching(_windowHook);
             _camera.Stop();
             _downloads.Dispose();
             _tray?.Dispose();
@@ -1024,6 +1026,7 @@ namespace Ilha
             welcome.Finished += () =>
             {
                 if (L.Lang != langBefore) { App.Restart(ExitApp); return; }
+                HoldFullSize(3.5);
                 ApplySettings();
                 welcome.FadeOutAndClose(delayMs: 150);
             };
@@ -1137,6 +1140,7 @@ namespace Ilha
             UpdateCalendar(force: true);
             ApplyMaterial();
             PositionOnScreen();
+            RefreshForeground();
             UpdateSlimWatch();
             UpdateCollapsedState(force: true);
         }
@@ -1277,6 +1281,7 @@ namespace Ilha
             Bars.Visibility = showBars ? Visibility.Visible : Visibility.Collapsed;
             CollapsedTimerText.Visibility = showTimer ? Visibility.Visible : Visibility.Collapsed;
             SetBarsAnimating(showBars && !_expanded);
+            UpdateSlimWaves();
             if (_alertShowing && !_expanded) return; // o cartão verde do tempo esgotado ocupa a ilha
             if (_nudging && !_expanded) return; // a saudação/lembrete está ocupando a ilha
 

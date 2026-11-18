@@ -94,6 +94,7 @@ namespace Ilha
             _dropLeaveTimer.Stop();
             bool accept = DropAccepted(e);
             string zone = DropZoneAt(e);
+            if (accept) PlayGulp(zone);
             ShowDropOverlay(false);
             if (!accept || e.Data.GetData(DataFormats.FileDrop) is not string[] paths || paths.Length == 0) return;
 
@@ -139,8 +140,9 @@ namespace Ilha
                 DropConvertCol.Width = convert ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
                 DropGapCol.Width = new GridLength(shelf && convert ? 12 : 0);
                 _dropZone = "";
+                PopDropCards();
             }
-            Fade(DropOverlay, on ? 1 : 0, on ? 180 : 120, delayMs: on ? 60 : 0);
+            Fade(DropOverlay, on ? 1 : 0, on ? 180 : 260, delayMs: on ? 60 : 40);
             Fade(ContentRoot, on ? 0 : 1, on ? 110 : 200, delayMs: on ? 0 : 60);
         }
 
@@ -154,21 +156,118 @@ namespace Ilha
             void Light(Border card, Glyph glyph, TextBlock text, bool on)
             {
                 card.SetResourceReference(Border.BorderBrushProperty, on ? "Accent" : "CardStroke");
-                card.BorderThickness = new Thickness(on ? 1.5 : 1);
-                glyph.SetResourceReference(Glyph.ForegroundProperty, on ? "Ink_FF" : "Ink_73");
+                card.BorderThickness = new Thickness(on ? 2 : 1);
+                if (on) card.Background = AccentTint(0.14); else card.SetResourceReference(Border.BackgroundProperty, "CardFill");
+                glyph.SetResourceReference(Glyph.ForegroundProperty, on ? "Accent" : "Ink_73");
                 text.SetResourceReference(TextBlock.ForegroundProperty, on ? "Ink_FF" : "Tertiary");
-                card.BeginAnimation(OpacityProperty, new DoubleAnimation(on ? 1 : 0.6, TimeSpan.FromMilliseconds(140)));
-                if (on && !ReduceMotion)
+                card.BeginAnimation(OpacityProperty, new DoubleAnimation(on ? 1 : 0.45, TimeSpan.FromMilliseconds(160)));
+                if (ReduceMotion) return;
+
+                // O cartão escolhido cresce com mola e o outro recua; o ícone dá um pulo.
+                var scale = CardScale(card);
+                var to = new DoubleAnimation(on ? 1.06 : 0.94, TimeSpan.FromMilliseconds(on ? 620 : 300))
                 {
-                    // O cartão escolhido dá um pulinho curto ao receber o cursor.
-                    var scale = new ScaleTransform(1, 1);
-                    card.RenderTransformOrigin = new Point(0.5, 0.5);
-                    card.RenderTransform = scale;
-                    var pop = new DoubleAnimation(0.975, 1, TimeSpan.FromMilliseconds(320)) { EasingFunction = new SpringEase { Damping = 0.7, Frequency = 9 } };
-                    scale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
-                    scale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+                    EasingFunction = on ? new SpringEase { Damping = 0.45, Frequency = 7 } : new CubicEase { EasingMode = EasingMode.EaseOut },
+                };
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, to);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty, to);
+
+                if (glyph.RenderTransform is not TransformGroup g)
+                {
+                    g = new TransformGroup();
+                    g.Children.Add(new ScaleTransform(1, 1));
+                    g.Children.Add(new TranslateTransform());
+                    glyph.RenderTransform = g;
+                    glyph.RenderTransformOrigin = new Point(0.5, 0.5);
+                }
+                var gs = (ScaleTransform)g.Children[0];
+                var gt = (TranslateTransform)g.Children[1];
+                var grow = new DoubleAnimation(on ? 1.3 : 1, TimeSpan.FromMilliseconds(on ? 700 : 260))
+                {
+                    EasingFunction = on ? new SpringEase { Damping = 0.4, Frequency = 7 } : new CubicEase { EasingMode = EasingMode.EaseOut },
+                };
+                gs.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+                gs.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+                if (on)
+                {
+                    var hop = new DoubleAnimationUsingKeyFrames();
+                    hop.KeyFrames.Add(new EasingDoubleKeyFrame(-9, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(150)), new QuadraticEase { EasingMode = EasingMode.EaseOut }));
+                    hop.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(700)), new SpringEase { Damping = 0.35, Frequency = 6 }));
+                    gt.BeginAnimation(TranslateTransform.YProperty, hop);
                 }
             }
+        }
+
+        private static ScaleTransform CardScale(Border card)
+        {
+            if (card.RenderTransform is ScaleTransform s) return s;
+            s = new ScaleTransform(1, 1);
+            card.RenderTransformOrigin = new Point(0.5, 0.5);
+            card.RenderTransform = s;
+            return s;
+        }
+
+        private Brush AccentTint(double alpha)
+        {
+            var c = FindResource("Accent") is SolidColorBrush b ? b.Color : Color.FromRgb(0x7C, 0xE3, 0xA1);
+            var brush = new SolidColorBrush(Color.FromArgb((byte)(255 * alpha), c.R, c.G, c.B));
+            brush.Freeze();
+            return brush;
+        }
+
+        /// <summary>Os cartões de "guardar"/"converter" entram crescendo com mola, um depois do outro.</summary>
+        private void PopDropCards()
+        {
+            if (ReduceMotion) return;
+            int i = 0;
+            foreach (var card in new[] { DropShelf, DropConvert })
+            {
+                if (card.Visibility != Visibility.Visible) continue;
+                card.SetResourceReference(Border.BackgroundProperty, "CardFill");
+                var s = CardScale(card);
+                var pop = new DoubleAnimation(0.8, 1, TimeSpan.FromMilliseconds(640))
+                {
+                    BeginTime = TimeSpan.FromMilliseconds(40 + 70 * i++),
+                    EasingFunction = new SpringEase { Damping = 0.5, Frequency = 6.5 },
+                    FillBehavior = FillBehavior.HoldEnd,
+                };
+                s.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
+                s.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+            }
+        }
+
+        /// <summary>
+        /// Ao soltar: o cartão escolhido "engole" o arquivo (cresce e some), a ilha pisca na cor de
+        /// destaque e o conteúdo novo chega com um quique.
+        /// </summary>
+        private void PlayGulp(string zone)
+        {
+            if (ReduceMotion) return;
+            var card = zone == "convert" ? DropConvert : DropShelf;
+            var s = CardScale(card);
+            var swell = new DoubleAnimation(1.16, TimeSpan.FromMilliseconds(200)) { EasingFunction = new BackEase { Amplitude = 0.6, EasingMode = EasingMode.EaseOut } };
+            s.BeginAnimation(ScaleTransform.ScaleXProperty, swell);
+            s.BeginAnimation(ScaleTransform.ScaleYProperty, swell);
+
+            DropFlash.Background = AccentTint(1);
+            var flash = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(700) };
+            flash.KeyFrames.Add(new LinearDoubleKeyFrame(0.32, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));
+            flash.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(700)), new CubicEase { EasingMode = EasingMode.EaseOut }));
+            DropFlash.BeginAnimation(OpacityProperty, flash);
+
+            if (ContentRoot.RenderTransform is not ScaleTransform cs)
+            {
+                cs = new ScaleTransform(1, 1);
+                ContentRoot.RenderTransform = cs;
+            }
+            ContentRoot.RenderTransformOrigin = new Point(0.5, 0.3);
+            var bounce = new DoubleAnimation(0.86, 1, TimeSpan.FromMilliseconds(760))
+            {
+                BeginTime = TimeSpan.FromMilliseconds(120),
+                EasingFunction = new SpringEase { Damping = 0.42, Frequency = 6 },
+            };
+            cs.BeginAnimation(ScaleTransform.ScaleXProperty, bounce);
+            cs.BeginAnimation(ScaleTransform.ScaleYProperty, bounce);
         }
 
         // ───────────── Encaixe: chacoalhada + traço em volta ─────────────
@@ -250,7 +349,7 @@ namespace Ilha
             if (!shake) return;
             // Chacoalhada: vai e volta cada vez menor, como algo que encaixou no lugar.
             var wobble = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.Stop };
-            (double X, int Ms)[] steps = { (-5, 55), (4.2, 120), (-3.2, 185), (2.2, 250), (-1.2, 310), (0, 380) };
+            (double X, int Ms)[] steps = { (-11, 60), (9, 130), (-7, 200), (5, 270), (-3, 340), (1.5, 410), (0, 480) };
             foreach (var (x, ms) in steps)
                 wobble.KeyFrames.Add(new EasingDoubleKeyFrame(x, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(ms)),
                     new SineEase { EasingMode = EasingMode.EaseInOut }));

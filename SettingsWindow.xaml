@@ -17,6 +17,134 @@
     <Window.Resources>
         <SolidColorBrush x:Key="Accent" Color="#7CE3A1"/>
 
+        <!-- Barra de rolagem fina e arredondada, sem as setinhas do Windows -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="MinWidth" Value="10"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True" Margin="0,4">
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Border x:Name="Bar" Width="4" CornerRadius="2" HorizontalAlignment="Center"
+                                                    Background="{DynamicResource Text3}" Opacity="0.45"/>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bar" Property="Width" Value="6"/>
+                                                    <Setter TargetName="Bar" Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                                <Trigger Property="IsDragging" Value="True">
+                                                    <Setter TargetName="Bar" Property="Width" Value="6"/>
+                                                    <Setter TargetName="Bar" Property="Opacity" Value="0.85"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Listas de escolha (monitor, som do alarme): mesmo desenho dos botões, nada do visual antigo do Windows -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource WinFg}"/>
+            <Setter Property="Background" Value="{DynamicResource Control}"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="MinWidth" Value="180"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="Toggle" Focusable="False" ClickMode="Press"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Grid>
+                                            <Border CornerRadius="8" Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                    BorderBrush="{DynamicResource Line}" BorderThickness="1"/>
+                                            <Border x:Name="Hover" CornerRadius="8" Background="{DynamicResource Ink_FF}" Opacity="0"/>
+                                            <Path HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,1,12,0"
+                                                  Data="M0,0 L4,4 L8,0" Stroke="{DynamicResource Text2}" StrokeThickness="1.5"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                        </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Hover" Property="Opacity" Value="0.06"/>
+                                            </Trigger>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Hover" Property="Opacity" Value="0.1"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter IsHitTestVisible="False" Margin="12,0,32,0" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"/>
+                            <Popup x:Name="PART_Popup" Placement="Bottom" VerticalOffset="4" AllowsTransparency="True" Focusable="False"
+                                   PopupAnimation="Fade" IsOpen="{TemplateBinding IsDropDownOpen}">
+                                <Border Margin="8,0,8,12" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                        Background="{DynamicResource WinBg}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
+                                        CornerRadius="10" Padding="4">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="270" Opacity="0.25"/>
+                                    </Border.Effect>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource WinFg}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Grid>
+                            <Border x:Name="Bg" CornerRadius="6" Background="{DynamicResource Ink_FF}" Opacity="0"/>
+                            <DockPanel Margin="10,7">
+                                <Path x:Name="Check" DockPanel.Dock="Right" Margin="12,0,2,0" VerticalAlignment="Center" Visibility="Hidden"
+                                      Data="M0,4 L3.5,7.5 L10,0" Stroke="{DynamicResource Accent}" StrokeThickness="1.6"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.08"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Título de grupo -->
         <Style x:Key="Section" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11.5"/>
@@ -477,11 +605,11 @@
                                 <Border Style="{StaticResource Divider}"/>
                                 <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Esconder com app em tela cheia'}" IsChecked="{Binding HideOnFullscreen}"/>
                                 <Border Style="{StaticResource Divider}"/>
-                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Virar um risco discreto com apps abertos'}" IsChecked="{Binding AutoSlim}"
-                                          ToolTip="{local:T 'Na área de trabalho a ilha fica normal; passe o mouse no risco para abrir.'}"/>
+                                <CheckBox Style="{StaticResource Switch}" Content="{local:T 'Ilha dinâmica'}" IsChecked="{Binding AutoSlim}"
+                                          ToolTip="{local:T 'Quando uma janela fica embaixo da ilha, ela vira um risco para não cobrir abas e botões. Minimizou ou tirou a janela dali, ela volta ao normal.'}"/>
                             </StackPanel>
                         </Border>
-                        <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Com a ilha flutuante, ela fica no monitor para onde você arrastar.'}"/>
+                        <TextBlock Style="{StaticResource Hint}" Text="{local:T 'Ilha dinâmica: quando um navegador ou outra janela fica embaixo da ilha, ela vira um risco para não cobrir abas e botões. Minimizou ou tirou a janela dali, ela volta ao normal. Com a ilha flutuante, ela fica no monitor para onde você arrastar.'}"/>
 
                         <TextBlock Text="{local:T 'RELÓGIO'}" Style="{StaticResource Section}"/>
                         <Border Style="{StaticResource Group}">
@@ -951,7 +1079,7 @@
                                 </DockPanel>
                                 <Border Style="{StaticResource Divider}"/>
                                 <DockPanel Margin="16,9">
-                                    <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Padding="12,5" Margin="10,0,0,0"
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource SoftButton}" Padding="12,5" Margin="10,0,0,0"
                                             Content="{local:T 'Ouvir'}" Click="AlarmPreview_Click"/>
                                     <TextBlock Text="{local:T 'Som do alarme do timer'}" Width="180" VerticalAlignment="Center"/>
                                     <ComboBox x:Name="AlarmCombo" DisplayMemberPath="Label" SelectedValuePath="Id"

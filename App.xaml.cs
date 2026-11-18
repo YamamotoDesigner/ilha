@@ -80,7 +80,7 @@ namespace Ilha
                 {
                     // A janela preta acabou de virar a ilha lá no topo: a ilha de verdade aparece
                     // por baixo, termina de se ajeitar e só então a apresentação some, devagar (sem piscar).
-                    var main = StartIsland();
+                    var main = StartIsland(holdSeconds: 3.5);
                     main.ContentRendered += (_, _) => setup.FadeOutAndClose(delayMs: 650);
                 };
                 setup.Show();
@@ -90,12 +90,13 @@ namespace Ilha
                 StartIsland();
             }
         }
-        private static MainWindow StartIsland()
+        private static MainWindow StartIsland(double holdSeconds = 0)
         {
             // O vidro fica numa janela própria, logo atrás da ilha (ver BackdropWindow).
             var glass = new BackdropWindow();
             glass.Show();
             var main = new MainWindow(glass);
+            if (holdSeconds > 0) main.HoldFullSize(holdSeconds);
             main.Show();
             return main;
         }

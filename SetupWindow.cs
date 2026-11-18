@@ -491,26 +491,63 @@ namespace Ilha
 
         // ───────────── Olá ─────────────
 
+        /// <summary>Nome de cada idioma, mostrado bem pequeno embaixo da palavra.</summary>
+        private static readonly string[] HelloLangs =
+        {
+            "English", "Português", "Español", "Français", "日本語", "Italiano", "한국어", "Deutsch",
+            "中文", "Русский", "हिन्दी", "Türkçe", "Ελληνικά", "Svenska", "Română", "Čeština",
+        };
+
+        /// <summary>Luz de fundo: um tom suave diferente para cada idioma.</summary>
+        private static readonly Color[] HelloTints =
+        {
+            Color.FromRgb(0x8E, 0xB8, 0xFF), Color.FromRgb(0x7C, 0xE3, 0xA1), Color.FromRgb(0xFF, 0xB0, 0x8A),
+            Color.FromRgb(0xC9, 0xA7, 0xFF), Color.FromRgb(0xFF, 0x9F, 0xB8), Color.FromRgb(0x8F, 0xE0, 0xE8),
+            Color.FromRgb(0xFF, 0xD2, 0x7A), Color.FromRgb(0xA9, 0xC8, 0xFF),
+        };
+
+        private readonly TextBlock _helloLang = new();
+        private readonly RadialGradientBrush _helloGlow = new();
+
         private void BuildHello()
         {
             _hello.SetResourceReference(Panel.BackgroundProperty, "WinBg");
-            // Um brilho bem suave da cor de destaque, respirando atrás das palavras.
+            _hello.ClipToBounds = true;
+
+            // Luz bem suave atrás da palavra; muda de cor a cada idioma e respira devagar.
+            _helloGlow.GradientStops.Add(new GradientStop(Color.FromArgb(0x30, 0x8E, 0xB8, 0xFF), 0));
+            _helloGlow.GradientStops.Add(new GradientStop(Color.FromArgb(0x10, 0x8E, 0xB8, 0xFF), 0.45));
+            _helloGlow.GradientStops.Add(new GradientStop(Color.FromArgb(0, 0x8E, 0xB8, 0xFF), 1));
             var glow = new Border
             {
-                Width = 520, Height = 300, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 60), IsHitTestVisible = false, Opacity = 0.6,
+                Width = 640, Height = 420, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 70), IsHitTestVisible = false, Background = _helloGlow,
+                RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new ScaleTransform(1, 1),
             };
-            var accent = ((SolidColorBrush)Resources["Accent"]).Color;
-            glow.Background = new RadialGradientBrush(Color.FromArgb(0x1E, accent.R, accent.G, accent.B), Colors.Transparent);
             if (SystemParameters.ClientAreaAnimation)
-                glow.BeginAnimation(OpacityProperty, new DoubleAnimation(0.35, 0.8, TimeSpan.FromSeconds(3.2)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase() });
+            {
+                var breathe = new DoubleAnimation(0.9, 1.12, TimeSpan.FromSeconds(3.6)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } };
+                ((ScaleTransform)glow.RenderTransform).BeginAnimation(ScaleTransform.ScaleXProperty, breathe);
+                ((ScaleTransform)glow.RenderTransform).BeginAnimation(ScaleTransform.ScaleYProperty, breathe);
+            }
             _hello.Children.Add(glow);
 
-            _helloWords.Height = 120;
+            _helloWords.Height = 170;
             _helloWords.VerticalAlignment = VerticalAlignment.Center;
-            _helloWords.Margin = new Thickness(0, 0, 0, 60);
+            _helloWords.Margin = new Thickness(0, 0, 0, 80);
             _helloWords.IsHitTestVisible = false;
             _hello.Children.Add(_helloWords);
+
+            _helloLang.FontSize = 12;
+            _helloLang.FontWeight = FontWeights.Medium;
+            _helloLang.HorizontalAlignment = HorizontalAlignment.Center;
+            _helloLang.VerticalAlignment = VerticalAlignment.Center;
+            _helloLang.Margin = new Thickness(0, 150, 0, 0);
+            _helloLang.Opacity = 0;
+            _helloLang.IsHitTestVisible = false;
+            _helloLang.SetResourceReference(TextBlock.ForegroundProperty, "Text3");
+            TextOptions.SetTextFormattingMode(_helloLang, TextFormattingMode.Ideal);
+            _hello.Children.Add(_helloLang);
 
             var start = PrimaryButton();
             start.Content = L.T("Começar");
@@ -521,6 +558,7 @@ namespace Ilha
             bottom.Tag = "start";
             _hello.Children.Add(bottom);
             _hello.MouseLeftButtonUp += (_, e) => { if (e.OriginalSource is not Button) LeaveHello(); };
+            _helloTimer.Interval = TimeSpan.FromSeconds(2.4);
             _helloTimer.Tick += (_, _) => NextHello();
         }
 
@@ -536,50 +574,113 @@ namespace Ilha
                 if (child is FrameworkElement { Tag: "start" } bottom)
                     bottom.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(SystemParameters.ClientAreaAnimation ? 700 : 0))
                     {
-                        BeginTime = TimeSpan.FromSeconds(SystemParameters.ClientAreaAnimation ? 1.6 : 0),
+                        BeginTime = TimeSpan.FromSeconds(SystemParameters.ClientAreaAnimation ? 2.2 : 0),
                     });
         }
 
-        /// <summary>A palavra atual se desfaz (desfoca e sobe) e a próxima nasce do desfoque, crescendo um pouco.</summary>
+        /// <summary>
+        /// A palavra é "escrita à mão" da esquerda para a direita: o contorno das letras corre
+        /// como uma caneta, logo atrás vem o preenchimento, e uma faixa macia revela tudo no ritmo
+        /// da escrita. Na troca, a palavra anterior se desfaz (desfoca, sobe e some).
+        /// </summary>
         private void NextHello()
         {
             _helloIndex = (_helloIndex + 1) % Hellos.Length;
             bool motion = SystemParameters.ClientAreaAnimation;
-            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            TimeSpan Ms(double ms) => TimeSpan.FromMilliseconds(ms);
+            var outEase = new CubicEase { EasingMode = EasingMode.EaseOut };
+
             foreach (UIElement old in _helloWords.Children.Cast<UIElement>().ToList())
             {
-                if (old is not TextBlock t || t.Tag as string == "leaving") continue;
-                t.Tag = "leaving";
-                if (!motion) { _helloWords.Children.Remove(t); continue; }
-                var dur = TimeSpan.FromMilliseconds(520);
-                var fade = new DoubleAnimation(0, dur) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } };
-                fade.Completed += (_, _) => _helloWords.Children.Remove(t);
-                t.BeginAnimation(OpacityProperty, fade);
-                ((System.Windows.Media.Effects.BlurEffect)t.Effect).BeginAnimation(System.Windows.Media.Effects.BlurEffect.RadiusProperty, new DoubleAnimation(16, dur));
-                ((TranslateTransform)((TransformGroup)t.RenderTransform).Children[1]).BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(-14, dur) { EasingFunction = ease });
+                if (old is not FrameworkElement f || f.Tag as string == "leaving") continue;
+                f.Tag = "leaving";
+                if (!motion) { _helloWords.Children.Remove(f); continue; }
+                var fade = new DoubleAnimation(0, Ms(460)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } };
+                fade.Completed += (_, _) => _helloWords.Children.Remove(f);
+                f.BeginAnimation(OpacityProperty, fade);
+                var blur = new System.Windows.Media.Effects.BlurEffect { Radius = 0 };
+                f.Effect = blur;
+                blur.BeginAnimation(System.Windows.Media.Effects.BlurEffect.RadiusProperty, new DoubleAnimation(14, Ms(460)));
+                if (f.RenderTransform is TranslateTransform tt)
+                    tt.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(-16, Ms(460)) { EasingFunction = outEase });
             }
-            var word = new TextBlock
+
+            // Desenho da palavra: letra cursiva para o alfabeto latino/grego/cirílico; as outras
+            // escritas caem para a fonte do sistema de cada uma.
+            string text = Hellos[_helloIndex];
+            bool latin = text.All(c => c < 0x0530);
+            var family = new FontFamily(latin ? "Segoe Script" : "Yu Gothic UI, Malgun Gothic, Microsoft YaHei UI, Nirmala UI, Segoe UI");
+            var face = new Typeface(family, FontStyles.Normal, latin ? FontWeights.Normal : FontWeights.Light, FontStretches.Normal);
+            var formatted = new FormattedText(text, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+                face, latin ? 92 : 80, Brushes.White, VisualTreeHelper.GetDpi(this).PixelsPerDip);
+            var geometry = formatted.BuildGeometry(new Point(0, 0));
+            var bounds = geometry.Bounds;
+            geometry.Transform = new TranslateTransform(-bounds.X, -bounds.Y);
+            var shape = geometry.GetFlattenedPathGeometry();
+            shape.Freeze();
+            double maxW = PanelW - 80;
+            double fit = bounds.Width > maxW ? maxW / bounds.Width : 1;
+
+            var ink = (Brush)FindResource("WinFg");
+            var fill = new System.Windows.Shapes.Path { Data = shape, Fill = ink, Opacity = motion ? 0 : 1 };
+            var pen = new System.Windows.Shapes.Path
             {
-                Text = Hellos[_helloIndex], FontSize = 78, FontWeight = FontWeights.SemiBold,
-                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-                RenderTransformOrigin = new Point(0.5, 0.5),
-                Effect = new System.Windows.Media.Effects.BlurEffect { Radius = motion ? 22 : 0, KernelType = System.Windows.Media.Effects.KernelType.Gaussian },
-                Opacity = motion ? 0 : 1,
+                Data = shape, Stroke = ink, StrokeThickness = 1.3,
+                StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+                Opacity = motion ? 1 : 0,
             };
-            word.SetResourceReference(TextBlock.ForegroundProperty, "WinFg");
-            var grow = new ScaleTransform(motion ? 0.92 : 1, motion ? 0.92 : 1);
-            var rise = new TranslateTransform(0, motion ? 12 : 0);
-            word.RenderTransform = new TransformGroup { Children = { grow, rise } };
+            var word = new Grid
+            {
+                Width = bounds.Width, Height = bounds.Height,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                LayoutTransform = new ScaleTransform(fit, fit),
+                RenderTransform = new TranslateTransform(),
+                Children = { fill, pen },
+            };
             _helloWords.Children.Add(word);
-            if (!motion) return;
-            var begin = TimeSpan.FromMilliseconds(_helloIndex == 0 ? 250 : 180);
-            word.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(700)) { BeginTime = begin, EasingFunction = ease });
-            ((System.Windows.Media.Effects.BlurEffect)word.Effect).BeginAnimation(System.Windows.Media.Effects.BlurEffect.RadiusProperty,
-                new DoubleAnimation(22, 0, TimeSpan.FromMilliseconds(820)) { BeginTime = begin, EasingFunction = ease });
-            var scale = new DoubleAnimation(0.92, 1, TimeSpan.FromMilliseconds(1100)) { BeginTime = begin, EasingFunction = new QuarticEase { EasingMode = EasingMode.EaseOut } };
-            grow.BeginAnimation(ScaleTransform.ScaleXProperty, scale);
-            grow.BeginAnimation(ScaleTransform.ScaleYProperty, scale);
-            rise.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(12, 0, TimeSpan.FromMilliseconds(900)) { BeginTime = begin, EasingFunction = ease });
+
+            // Idioma e cor da luz.
+            _helloLang.Text = HelloLangs[_helloIndex];
+            var tint = HelloTints[_helloIndex % HelloTints.Length];
+            byte[] alphas = { 0x34, 0x12, 0 };
+            for (int i = 0; i < 3; i++)
+            {
+                var target = Color.FromArgb(alphas[i], tint.R, tint.G, tint.B);
+                if (motion) _helloGlow.GradientStops[i].BeginAnimation(GradientStop.ColorProperty, new ColorAnimation(target, Ms(1400)) { EasingFunction = outEase });
+                else _helloGlow.GradientStops[i].Color = target;
+            }
+            if (!motion) { _helloLang.Opacity = 1; return; }
+
+            var begin = Ms(_helloIndex == 0 ? 300 : 260);
+            double write = Math.Clamp(420 + text.Length * 95, 650, 1250);
+
+            // Faixa que revela da esquerda para a direita, com a borda bem macia.
+            var mask = new LinearGradientBrush { StartPoint = new Point(0, 0.5), EndPoint = new Point(1, 0.5) };
+            var lead = new GradientStop(Colors.Black, -0.18);
+            var edge = new GradientStop(Colors.Transparent, 0);
+            mask.GradientStops.Add(lead);
+            mask.GradientStops.Add(edge);
+            word.OpacityMask = mask;
+            var writeEase = new SineEase { EasingMode = EasingMode.EaseInOut };
+            lead.BeginAnimation(GradientStop.OffsetProperty, new DoubleAnimation(-0.18, 1.0, Ms(write)) { BeginTime = begin, EasingFunction = writeEase });
+            edge.BeginAnimation(GradientStop.OffsetProperty, new DoubleAnimation(0, 1.18, Ms(write)) { BeginTime = begin, EasingFunction = writeEase });
+
+            // A caneta: o contorno corre e depois some, deixando a letra cheia.
+            double units = 220;
+            pen.StrokeDashArray = new DoubleCollection { units, units };
+            pen.StrokeDashOffset = units;
+            pen.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, new DoubleAnimation(units, 0, Ms(write * 1.25)) { BeginTime = begin, EasingFunction = outEase });
+            pen.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.0, Ms(600)) { BeginTime = begin + Ms(write * 0.9) });
+            fill.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, Ms(write * 0.9)) { BeginTime = begin + Ms(write * 0.25), EasingFunction = outEase });
+
+            // Um leve flutuar para cima enquanto escreve.
+            ((TranslateTransform)word.RenderTransform).BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(8, 0, Ms(write + 400)) { BeginTime = begin, EasingFunction = outEase });
+
+            // O nome do idioma troca com um fade curto.
+            var langOut = new DoubleAnimation(0, Ms(180));
+            langOut.Completed += (_, _) =>
+                _helloLang.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 0.9, Ms(500)) { BeginTime = Ms(Math.Max(0, write * 0.5 - 180)), EasingFunction = outEase });
+            _helloLang.BeginAnimation(OpacityProperty, langOut);
         }
 
         private void LeaveHello()

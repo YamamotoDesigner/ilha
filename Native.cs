@@ -148,6 +148,62 @@ namespace Ilha
             };
         }
 
+        // ───────────── Janela embaixo da ilha (ilha dinâmica) ─────────────
+
+        private delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
+        [DllImport("user32.dll")] private static extern bool EnumWindows(EnumWindowsProc proc, IntPtr lParam);
+        [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hWnd);
+        [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr hWnd);
+        [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out RECT value, int size);
+        [DllImport("dwmapi.dll", EntryPoint = "DwmGetWindowAttribute")] private static extern int DwmGetCloaked(IntPtr hwnd, int attr, out int value, int size);
+
+        /// <summary>
+        /// Olha as janelas de cima para baixo e diz se a primeira que encosta na faixa da ilha é
+        /// um app de verdade (navegador, editor… com os botões do topo ali embaixo). Janelas
+        /// minimizadas, escondidas, em outra área de trabalho virtual ou transparentes não contam.
+        /// </summary>
+        public static bool IsAppUnder(RECT strip)
+        {
+            bool found = false;
+            uint self = (uint)Environment.ProcessId;
+            var cls = new StringBuilder(96);
+            EnumWindows((hwnd, _) =>
+            {
+                if (!IsWindowVisible(hwnd) || IsIconic(hwnd)) return true;
+                GetWindowThreadProcessId(hwnd, out uint pid);
+                if (pid == self) return true;
+                int ex = GetWindowLong(hwnd, GWL_EXSTYLE);
+                if ((ex & (WS_EX_TOOLWINDOW | 0x20 /*TRANSPARENT*/)) != 0) return true;
+                if (DwmGetCloaked(hwnd, 14 /*DWMWA_CLOAKED*/, out int cloaked, 4) == 0 && cloaked != 0) return true;
+
+                if (DwmGetWindowAttribute(hwnd, 9 /*DWMWA_EXTENDED_FRAME_BOUNDS*/, out RECT r, Marshal.SizeOf<RECT>()) != 0 &&
+                    !GetWindowRect(hwnd, out r)) return true;
+                if (r.Right - r.Left < 8 || r.Bottom - r.Top < 8) return true;
+                if (r.Left >= strip.Right || r.Right <= strip.Left || r.Top >= strip.Bottom || r.Bottom <= strip.Top) return true;
+
+                cls.Clear();
+                GetClassName(hwnd, cls, cls.Capacity);
+                switch (cls.ToString())
+                {
+                    case "Progman" or "WorkerW":
+                        return false; // chegou na área de trabalho: nada cobrindo
+                    case "Shell_TrayWnd" or "Shell_SecondaryTrayWnd" or "NotifyIconOverflowWindow" or
+                         "TopLevelWindowForOverflowXamlIsland" or "Windows.UI.Core.CoreWindow" or
+                         "XamlExplorerHostIslandWindow" or "MultitaskingViewFrame" or "ForegroundStaging" or
+                         "TaskListThumbnailWnd" or "Shell_InputSwitchTopLevelWindow" or "#32768" or
+                         "tooltips_class32" or "SysShadow":
+                        return true; // passageiro: olha o que está atrás
+                }
+                found = true;
+                return false;
+            }, IntPtr.Zero);
+            return found;
+        }
+
+        /// <summary>Avisa quando uma janela é minimizada/restaurada ou termina de ser movida.</summary>
+        public static IntPtr WatchWindowChanges(WinEventProc callback) =>
+            SetWinEventHook(0x000B, 0x0017, IntPtr.Zero, callback, 0, 0, 0x0000 | 0x0002); // MOVESIZEEND..MINIMIZEEND
+
         public static bool LeftButtonDown => (GetAsyncKeyState(0x01) & 0x8000) != 0;
 
         public static POINT CursorPosition()
