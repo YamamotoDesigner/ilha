@@ -14,6 +14,15 @@ namespace Ilha
 
         public static readonly Dictionary<string, Slide[]> ByVersion = new()
         {
+            ["1.13.1"] = new[]
+            {
+                new Slide("slim", "Ilha dinâmica",
+                    "Quando uma janela fica embaixo da ilha, ela vira um risco para não cobrir abas e botões. Minimizou, ela volta. Com música, o risco ganha ondas."),
+                new Slide("hello", "Hora a hora",
+                    "A cada hora a ilha mostra o horário por um instante. E quando o timer acaba, ela fica verde até você tocar em OK."),
+                new Slide("convert", "Solte com vontade",
+                    "Arrastar um arquivo até a ilha ficou mais divertido: os cartões crescem, a ilha pisca e chacoalha ao receber."),
+            },
             ["1.12.0"] = new[]
             {
                 new Slide("slim", "Discreta quando você trabalha",
