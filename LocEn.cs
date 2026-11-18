@@ -30,7 +30,7 @@ namespace Ilha
             ["Ouvir"] = "Play",
             ["Som do alarme do timer"] = "Timer alarm sound",
             ["Repetir o som"] = "Repeat the sound",
-            ["Quando o tempo acaba, a ilha fica verde até você clicar nela."] = "When time is up, the island turns green until you click it.",
+            ["Quando o tempo acaba, a ilha fica verde. Passe o mouse e toque em OK."] = "When time is up, the island turns green. Hover it and tap OK.",
             ["Tempo esgotado. Clique para parar."] = "Time is up. Click to stop.",
             ["Escolha um som"] = "Choose a sound",
             ["Sons"] = "Sounds",

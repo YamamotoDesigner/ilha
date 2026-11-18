@@ -1178,7 +1178,7 @@ namespace Ilha
         private void Island_MouseEnter(object sender, MouseEventArgs e)
         {
             _collapseTimer.Stop();
-            if (_alertShowing) return; // tempo esgotado: o OK fica ali, a ilha não abre
+            if (_alertShowing) { Fade(AlertOk, 1, 180); return; } // tempo esgotado: aparece o OK, a ilha não abre
             if (TryGreet()) return; // primeira vez do dia: "Bom dia, Nome!" e depois abre
             // No risco, uma pequena espera evita abrir sem querer ao passar pelo topo da tela.
             int delay = Math.Max(_settings.HoverDelayMs, SlimWanted && !_expanded ? 140 : 0);
@@ -1194,6 +1194,7 @@ namespace Ilha
         private void Island_MouseLeave(object sender, MouseEventArgs e)
         {
             _expandTimer.Stop();
+            if (_alertShowing) Fade(AlertOk, 0, 220);
             _pinned = false;
             RestartCollapseTimer();
         }
@@ -1339,6 +1340,12 @@ namespace Ilha
             PeekValue.Text = value;
             PeekValue.Visibility = value.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             PeekBar.Visibility = level.HasValue ? Visibility.Visible : Visibility.Collapsed;
+            PeekValue.Margin = new Thickness(level.HasValue ? 8 : 0, 0, 0, 0);
+            bool right = level.HasValue || value.Length > 0;
+            PeekRight.Visibility = right ? Visibility.Visible : Visibility.Collapsed;
+            // O grupo todo fica no centro da ilha; o texto só corta se não couber.
+            double rightW = right ? 14 + (level.HasValue ? 70 + 8 : 0) + (value.Length > 0 ? 34 : 0) : 0;
+            PeekText.MaxWidth = Math.Max(60, _settings.CollapsedWidth + PeekExtraWidth - 24 - 22 - 10 - rightW);
             if (level is double l)
             {
                 PeekBarFill.Background = accent ?? Ink(0xFF);

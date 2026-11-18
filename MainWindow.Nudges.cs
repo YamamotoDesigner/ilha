@@ -38,7 +38,7 @@ namespace Ilha
             NudgeTitle.Text = title;
             NudgeText.Text = text;
             double textW = Math.Max(Measure(title, 14, FontWeights.SemiBold), Measure(text, 11.5, FontWeights.Normal));
-            double width = Math.Clamp(textW + 14 + 40 + 12 + 20 + 34, 280, 580);
+            double width = Math.Clamp(textW + 40 + 12 + 56, 260, 580); // ícone + texto, com a mesma folga dos dois lados
             _afterNudge = after;
             _nudging = true;
             AnimateSize(width, NudgeHeight, spring: _settings.SpringAnimation);

@@ -84,7 +84,8 @@ namespace Ilha
             Fade(PeekView, 0, 100);
             Fade(AlertFill, 1, 520);
             Island.Cursor = Cursors.Hand;
-            Island.ToolTip = L.T("Tempo esgotado. Clique para parar.");
+            Island.ToolTip = null;
+            if (Island.IsMouseOver) Fade(AlertOk, 1, 180);
         }
 
         private void HideAlertCard()
@@ -92,6 +93,7 @@ namespace Ilha
             if (!_alertShowing) return;
             _alertShowing = false;
             Fade(AlertFill, 0, 520);
+            Fade(AlertOk, 0, 120);
             Island.ClearValue(CursorProperty);
             Island.ToolTip = null;
             _collapsedKey = "";

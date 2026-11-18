@@ -352,6 +352,9 @@
                 <!-- Tempo do timer acabou: a ilha fica verde (pastel) até a pessoa dar OK -->
                 <Border x:Name="AlertFill" CornerRadius="{Binding CornerRadius, ElementName=Island}" Background="#B9E2C8"
                         Opacity="0" IsHitTestVisible="False"/>
+                <!-- Ilha verde: passando o mouse, aparece o OK para tocar -->
+                <TextBlock x:Name="AlertOk" Text="OK" FontSize="13" FontWeight="SemiBold" Foreground="#17332A"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0" IsHitTestVisible="False"/>
                 <!-- Soltou um arquivo: um clarão rápido na cor de destaque -->
                 <Border x:Name="DropFlash" CornerRadius="{Binding CornerRadius, ElementName=Island}" Opacity="0" IsHitTestVisible="False"/>
                 <!-- Luz ambiente: a capa da música, bem pequena e esticada, vira um brilho colorido atrás de tudo -->
@@ -422,10 +425,10 @@
                                    Typography.NumeralAlignment="Tabular"/>
                     </Grid>
 
-                    <!-- Aviso rápido (volume, carregando, nova música) -->
-                    <DockPanel x:Name="PeekView" Height="34" VerticalAlignment="Top" Margin="12,0" Opacity="0"
-                               IsHitTestVisible="False" LastChildFill="True">
-                        <Grid DockPanel.Dock="Left" Width="22" VerticalAlignment="Center">
+                    <!-- Avisos rápidos: ícone, texto e valor sempre centralizados na ilha -->
+                    <StackPanel x:Name="PeekView" Height="34" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="12,0"
+                                Orientation="Horizontal" Opacity="0" IsHitTestVisible="False">
+                        <Grid Width="22" VerticalAlignment="Center">
                             <local:Glyph x:Name="PeekGlyph" Size="16" Filled="True"/>
                             <local:Glyph x:Name="PeekGlyph2" Size="16"/>
                             <Border x:Name="PeekArt" Width="22" Height="22" CornerRadius="6" Visibility="Collapsed">
@@ -434,7 +437,9 @@
                                 </Border.Background>
                             </Border>
                         </Grid>
-                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock x:Name="PeekText" FontSize="12.5" FontWeight="Medium" Margin="10,0,0,0"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <StackPanel x:Name="PeekRight" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
                             <Grid x:Name="PeekBar" Width="70" Height="5" VerticalAlignment="Center">
                                 <Border CornerRadius="1.5" Background="{DynamicResource Ink_33}"/>
                                 <Border x:Name="PeekBarFill" CornerRadius="1.5" Background="{DynamicResource Ink_FF}"
@@ -443,22 +448,20 @@
                             <TextBlock x:Name="PeekValue" FontSize="12" FontWeight="SemiBold" Margin="8,0,0,0"
                                        Typography.NumeralAlignment="Tabular" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <TextBlock x:Name="PeekText" FontSize="12.5" FontWeight="Medium" Margin="10,0,10,0"
-                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                    </DockPanel>
+                    </StackPanel>
 
                     <!-- Saudação e lembretes de bem-estar: a ilha cresce com um ícone animado e uma frase -->
-                    <Grid x:Name="NudgeView" Height="62" VerticalAlignment="Top" Margin="14,0,20,0" Opacity="0"
+                    <Grid x:Name="NudgeView" Height="62" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16,0" Opacity="0"
                           IsHitTestVisible="False">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <Border x:Name="NudgeIconHost" Width="40" Height="40" Margin="0,0,12,0" VerticalAlignment="Center"
                                 RenderTransformOrigin="0.5,0.5">
                             <Border.RenderTransform><ScaleTransform x:Name="NudgeIconScale"/></Border.RenderTransform>
                         </Border>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" MaxWidth="460">
                             <TextBlock x:Name="NudgeTitle" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                             <TextBlock x:Name="NudgeText" FontSize="11.5" Foreground="{DynamicResource Secondary}" Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis"/>
